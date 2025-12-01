@@ -31,7 +31,7 @@
                 @method('PUT')
 
                 <div class="card shadow-sm border-0">
-                    <div class="card-header bg-white py-3">
+                    <div class="card-header py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Konfiguration der Ereignisse</h6>
                     </div>
                     
@@ -65,7 +65,7 @@
                                         <small class="text-muted d-block mt-1 ms-4">
                                             {{ $setting->description }}
                                         </small>
-                                        <div class="ms-4 mt-1 badge bg-secondary text-white" style="font-size: 0.7em;">
+                                        <div class="ms-4 mt-1 badge" style="font-size: 0.7em;">
                                             Internal Key: {{ $setting->action }}
                                         </div>
                                     </div>
@@ -73,7 +73,7 @@
                                     {{-- Rechte Spalte: Webhook URL Input --}}
                                     <div class="col-md-8">
                                         <div class="input-group">
-                                            <span class="input-group-text bg-white text-muted">URL</span>
+                                            <span class="input-group-text text-muted">URL</span>
                                             <input type="url" 
                                                    class="form-control" 
                                                    id="input_{{ $setting->id }}"
@@ -93,7 +93,7 @@
 
                     </div>
 
-                    <div class="card-footer bg-white text-end py-3">
+                    <div class="card-footer text-end py-3">
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="fas fa-save"></i> Einstellungen speichern
                         </button>
