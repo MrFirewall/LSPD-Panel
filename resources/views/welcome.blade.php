@@ -19,7 +19,7 @@
 
 <div class="login-box">
     <div class="login-logo">
-        <a href="#"><b>EMS</b> Panel</a>
+        <a href="#"><b>LSPD</b> Panel</a>
     </div>
 
     {{-- AdminLTE verwendet 'card' und 'card-primary' --}}
