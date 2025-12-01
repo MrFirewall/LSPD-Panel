@@ -163,11 +163,7 @@
     </div>
 
     {{-- FOOTER --}}
-    <footer class="main-footer">
-        {{-- Push Notification Buttons --}}
-        <button id="enable-push" class="btn btn-sm btn-info float-left mr-3" style="display: none;">Desktop-Benachrichtigungen aktivieren</button>
-        <button id="disable-push" class="btn btn-sm btn-danger float-left mr-3" style="display: none;">Desktop-Benachrichtigungen deaktivieren</button>
-
+    <footer class="main-footer">        
         <div class="float-right d-none d-sm-inline">Version 1.0</div>
         <strong>Copyright &copy; 2025 LSPD Panel.</strong> All rights reserved.
     </footer>

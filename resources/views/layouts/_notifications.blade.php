@@ -122,3 +122,5 @@
 <a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer text-center border-top">
     Alle Benachrichtigungen anzeigen
 </a>
+<button id="enable-push" class="btn btn-sm btn-info float-left mr-3" style="display: none;">Desktop-Benachrichtigungen aktivieren</button>
+<button id="disable-push" class="btn btn-sm btn-danger float-left mr-3" style="display: none;">Desktop-Benachrichtigungen deaktivieren</button>
