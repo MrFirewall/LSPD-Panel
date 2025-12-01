@@ -5,12 +5,9 @@
         overflow-y: auto;
         overflow-x: hidden;
     }
-    
-    /* Scrollbar Styling (dezent) */
     .notification-list-scroll::-webkit-scrollbar { width: 4px; }
     .notification-list-scroll::-webkit-scrollbar-thumb { background-color: rgba(128,128,128,0.3); border-radius: 2px; }
 
-    /* Text-Wrap Logik */
     .notification-content {
         white-space: normal;
         overflow-wrap: break-word;
@@ -18,13 +15,11 @@
         color: inherit; 
     }
     
-    /* Hover-Effekt für den Haken */
     .mark-read-btn:hover {
         color: #28a745 !important; 
         background-color: rgba(40, 167, 69, 0.1);
     }
 
-    /* Damit der Button wie normaler Text aussieht */
     .btn-text-wrapper {
         text-align: left;
         width: 100%;
@@ -33,13 +28,8 @@
         background: transparent;
         color: inherit;
     }
-    .btn-text-wrapper:hover {
-        background-color: rgba(0,0,0,0.05); /* Leichter Hover Effekt */
-    }
-    /* Dark Mode Hover Anpassung */
-    .dark-mode .btn-text-wrapper:hover {
-        background-color: rgba(255,255,255,0.05);
-    }
+    .btn-text-wrapper:hover { background-color: rgba(0,0,0,0.05); }
+    .dark-mode .btn-text-wrapper:hover { background-color: rgba(255,255,255,0.05); }
 </style>
 
 {{-- 1. HEADER --}}
@@ -71,38 +61,38 @@
         @endphp
 
         {{-- GRUPPEN TITEL --}}
-        <a href="#{{ $collapseId }}" 
+        <a href="#" 
            class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom"
-           data-toggle="collapse" 
-           role="button" 
-           aria-expanded="true" 
-           onclick="event.stopPropagation();">
+           
+           {{-- WICHTIG: Manuelles Togglen, da stopPropagation das normale Bootstrap-Verhalten blockiert --}}
+           onclick="event.preventDefault(); event.stopPropagation(); $('#{{ $collapseId }}').collapse('toggle'); return false;">
+           
             <span>
                 <i class="{{ $group['group_icon'] }} {{ $iconColor }} mr-2"></i> 
                 {{ $group['group_title'] }}
             </span>
+            {{-- Kleiner Pfeil, der sich optional per CSS drehen könnte (hier statisch) --}}
             <i class="fas fa-chevron-down text-xs opacity-50"></i>
         </a>
 
         {{-- ITEMS IN GRUPPE --}}
-        <div class="collapse show" id="{{ $collapseId }}">
+        {{-- ÄNDERUNG: Klasse 'show' entfernt, damit es standardmäßig ZU ist --}}
+        <div class="collapse" id="{{ $collapseId }}">
             @foreach ($group['items'] as $notification)
                 
                 <div class="d-flex border-bottom">
                     
-                    {{-- A) BUTTON: NUR GELESEN MARKIEREN (Kein Redirect) --}}
+                    {{-- A) BUTTON: NUR GELESEN MARKIEREN --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="d-flex">
                         @csrf
-                        {{-- HIER KEIN HIDDEN INPUT "redirect_to_target" --}}
                         <button type="submit" class="btn btn-link text-muted mark-read-btn d-flex align-items-center justify-content-center px-3 border-right h-100" style="text-decoration: none; border-radius: 0;" title="Als gelesen markieren">
                             <i class="fas fa-check"></i>
                         </button>
                     </form>
 
-                    {{-- B) BUTTON: TEXT KLICKEN (Gelesen + Redirect) --}}
+                    {{-- B) BUTTON: TEXT KLICKEN (Redirect) --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
                         @csrf
-                        {{-- HIER IST DER SCHLÜSSEL: --}}
                         <input type="hidden" name="redirect_to_target" value="1">
                         
                         <button type="submit" class="btn-text-wrapper p-2 h-100">
