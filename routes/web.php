@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\ExamAttemptController as AdminExamAttemptControll
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use App\Http\Controllers\Admin\DiscordSettingController;
 
 use App\Http\Controllers\PushSubscriptionController;
 /*
@@ -241,7 +242,13 @@ Route::middleware(['auth.cfx', 'can:admin.access'])->prefix('admin')->name('admi
 
     // Benachrichtigungsregeln Verwaltung
     Route::middleware(['can:notification.rules.manage'])->resource('notification-rules', NotificationRuleController::class)->except(['show']);
-
+    
+    Route::get('/discord-settings', [DiscordSettingController::class, 'index'])
+        ->name('discord.index');
+        
+    // Route zum Speichern der Daten
+    Route::put('/discord-settings', [DiscordSettingController::class, 'update'])
+        ->name('discord.update');
 });
 
 

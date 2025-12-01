@@ -15,8 +15,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             //PermissionsSeeder::class,
-            RankSeeder::class,
-            DepartmentSeeder::class,
+            //RankSeeder::class,
+            //DepartmentSeeder::class,
+            DiscordSettingsSeeder::class,
         ]);
     }
 }

@@ -284,6 +284,15 @@
                     </a>
                 </li>
                 @endcan
+                @can('discord.settings')
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('admin.discord.index') ? 'active' : '' }}" 
+                    href="{{ route('admin.discord.index') }}">
+                        <i class="fab fa-discord"></i>
+                        <span>Discord Einstellungen</span>
+                    </a>
+                </li>
+                @endcan
             </ul>
         </li>
         @endcanany
