@@ -1,4 +1,4 @@
-@extends('layouts.app') {{-- oder 'layouts.admin', je nachdem wie dein Haupt-Layout heißt --}}
+@extends('layouts.app')
 
 @section('title', 'Discord Einstellungen')
 
@@ -13,49 +13,50 @@
                     <i class="fab fa-discord" style="color: #5865F2;"></i> Discord Webhooks
                 </h2>
                 <a href="https://support.discord.com/hc/de/articles/228383668-Webhooks-verwenden" target="_blank" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-question-circle"></i> Hilfe: Wie erstelle ich einen Webhook?
+                    <i class="fas fa-question-circle"></i> Hilfe
                 </a>
             </div>
 
-            {{-- Erfolgsmeldung --}}
+            {{-- Erfolgsmeldungen --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+
+            {{-- Fehlermeldungen --}}
             @if(session('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-            {{-- Das Formular --}}
+
+            {{-- ======================================================= --}}
+            {{-- HAUPTFORMULAR: Zum Speichern der Einstellungen --}}
+            {{-- ======================================================= --}}
             <form action="{{ route('admin.discord.update') }}" method="POST">
                 @csrf
                 @method('PUT')
 
                 <div class="card shadow-sm border-0">
-                    <div class="card-header py-3">
+                    <div class="card-header bg-white py-3">
                         <h6 class="m-0 font-weight-bold text-primary">Konfiguration der Ereignisse</h6>
                     </div>
                     
                     <div class="card-body">
-                        <div class="alert alert-info">
-                            Hier kannst du festlegen, welche System-Ereignisse an welche Discord-Channel gesendet werden sollen.
-                            Lasse das URL-Feld leer oder deaktiviere den Schalter, um ein Ereignis stummzuschalten.
-                        </div>
-
-                        {{-- Schleife durch alle Settings aus der Datenbank --}}
+                        
                         @foreach($settings as $setting)
                             <div class="setting-item p-3 mb-3 border rounded bg-light">
                                 <div class="row align-items-center">
                                     
-                                    {{-- Linke Spalte: Infos --}}
+                                    {{-- Linke Spalte: Infos & Switch --}}
                                     <div class="col-md-4">
                                         <div class="form-check form-switch">
-                                            {{-- Der versteckte Input stellt sicher, dass "0" gesendet wird, wenn Checkbox aus ist --}}
+                                            {{-- Hidden Input sorgt dafür, dass '0' gesendet wird, wenn unchecked --}}
                                             <input type="hidden" name="settings[{{ $setting->id }}][active]" value="0">
+                                            
                                             <input class="form-check-input" type="checkbox" 
                                                    id="switch_{{ $setting->id }}" 
                                                    name="settings[{{ $setting->id }}][active]" 
@@ -67,56 +68,46 @@
                                                 {{ $setting->friendly_name }}
                                             </label>
                                         </div>
+                                        
                                         <small class="text-muted d-block mt-1 ms-4">
                                             {{ $setting->description }}
                                         </small>
-                                        <div class="ms-4 mt-1 badge" style="font-size: 0.7em;">
-                                            Internal Key: {{ $setting->action }}
+                                        
+                                        {{-- Kleiner technischer Key zur Orientierung --}}
+                                        <div class="ms-4 mt-1 badge bg-secondary text-white" style="font-size: 0.65em; opacity: 0.7;">
+                                            Key: {{ $setting->action }}
                                         </div>
                                     </div>
 
-                                    {{-- Rechte Spalte: Webhook URL und Test Button --}}
+                                    {{-- Rechte Spalte: URL Input & Test Button --}}
                                     <div class="col-md-8">
                                         <div class="input-group">
                                             <span class="input-group-text bg-white text-muted">URL</span>
                                             
-                                            {{-- Das Eingabefeld --}}
                                             <input type="url" 
-                                                class="form-control" 
-                                                id="input_{{ $setting->id }}"
-                                                name="settings[{{ $setting->id }}][webhook_url]" 
-                                                value="{{ old("settings.{$setting->id}.webhook_url", $setting->webhook_url) }}"
-                                                placeholder="https://discord.com/api/webhooks/..."
-                                                {{ !$setting->active ? 'disabled' : '' }}>
+                                                   class="form-control" 
+                                                   id="input_{{ $setting->id }}"
+                                                   name="settings[{{ $setting->id }}][webhook_url]" 
+                                                   value="{{ old("settings.{$setting->id}.webhook_url", $setting->webhook_url) }}"
+                                                   placeholder="https://discord.com/api/webhooks/..."
+                                                   {{ !$setting->active ? 'disabled' : '' }}>
 
-                                            {{-- Der Test Button (Nur sichtbar, wenn URL gespeichert ist) --}}
-                                            @if($setting->webhook_url)
+                                            {{-- Der Test-Button wird nur angezeigt, wenn eine URL existiert --}}
+                                            @if(!empty($setting->webhook_url))
                                                 <button type="button" 
                                                         class="btn btn-outline-secondary" 
-                                                        onclick="document.getElementById('test-form-{{ $setting->id }}').submit();"
+                                                        onclick="submitTest({{ $setting->id }})"
                                                         title="Testnachricht senden">
                                                     <i class="fas fa-paper-plane"></i> Test
                                                 </button>
                                             @endif
                                         </div>
-                                        
+
+                                        {{-- Validierungsfehler unter dem Feld anzeigen --}}
                                         @error("settings.{$setting->id}.webhook_url")
                                             <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
-
-                                        {{-- Hinweis wenn URL geändert wurde aber noch nicht gespeichert --}}
-                                        <div class="form-text small text-muted">
-                                            Zuerst speichern, dann testen.
-                                        </div>
                                     </div>
-
-                                    {{-- Verstecktes Formular für den Test-Button (außerhalb der inneren divs, aber in der Loop) --}}
-                                    <form id="test-form-{{ $setting->id }}" 
-                                        action="{{ route('admin.discord.test', $setting->id) }}" 
-                                        method="POST" 
-                                        style="display: none;">
-                                        @csrf
-                                    </form>
 
                                 </div>
                             </div>
@@ -124,30 +115,61 @@
 
                     </div>
 
-                    <div class="card-footer text-end py-3">
+                    <div class="card-footer bg-white text-end py-3">
                         <button type="submit" class="btn btn-primary px-4">
                             <i class="fas fa-save"></i> Einstellungen speichern
                         </button>
                     </div>
                 </div>
             </form>
-            
+            {{-- ENDE HAUPTFORMULAR --}}
+
         </div>
     </div>
 </div>
 
-{{-- Kleines Script für UX (Input ausgrauen wenn inaktiv) --}}
+{{-- ======================================================= --}}
+{{-- UNSICHTBARE FORMULARE FÜR DEN TEST-BUTTON --}}
+{{-- ======================================================= --}}
+@foreach($settings as $setting)
+    @if(!empty($setting->webhook_url))
+        <form id="test-form-{{ $setting->id }}" 
+              action="{{ route('admin.discord.test', $setting->id) }}" 
+              method="POST" 
+              style="display: none;">
+            @csrf
+        </form>
+    @endif
+@endforeach
+
+{{-- ======================================================= --}}
+{{-- JAVASCRIPT LOGIK --}}
+{{-- ======================================================= --}}
 <script>
-function toggleInput(id) {
-    const checkbox = document.getElementById('switch_' + id);
-    const input = document.getElementById('input_' + id);
-    
-    if (checkbox.checked) {
-        input.disabled = false;
-        input.focus();
-    } else {
-        input.disabled = true;
+    /**
+     * Aktiviert/Deaktiviert das URL-Feld basierend auf dem Switch
+     */
+    function toggleInput(id) {
+        const checkbox = document.getElementById('switch_' + id);
+        const input = document.getElementById('input_' + id);
+        
+        if (checkbox && input) {
+            input.disabled = !checkbox.checked;
+        }
     }
-}
+
+    /**
+     * Sendet das versteckte Test-Formular ab
+     */
+    function submitTest(id) {
+        const form = document.getElementById('test-form-' + id);
+        
+        if (form) {
+            // Optional: Button Feedback geben (z.B. Spinner), hier einfach absenden
+            form.submit();
+        } else {
+            alert('Bitte speichere die URL zuerst ab, bevor du testen kannst.');
+        }
+    }
 </script>
 @endsection
