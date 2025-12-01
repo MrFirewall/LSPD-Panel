@@ -657,38 +657,63 @@ class UserController extends Controller
             ]
         );
 
-        // --- DISCORD LOGIK START ---    
-        // Wir definieren ein Mapping zwischen deinem $recordType und den DB-Keys
+        // --- DISCORD LOGIK START ---
+
+        // 1. Mapping definieren (Muss exakt mit den 'action' Namen im Seeder übereinstimmen!)
         $discordActionMap = [
-            'Beförderung'  => 'promotion',
-            'Degradierung' => 'demotion',
-            // 'Rangänderung' => 'change', // Optional, falls du das auch willst
+            'Beförderung'  => 'rank.promotion',
+            'Degradierung' => 'rank.demotion',
+            // 'Rangänderung' => 'rank.change', // Falls du das im Seeder hinzugefügt hast
         ];
 
+        // 2. Prüfen, ob wir für diesen Typ eine Aktion definiert haben
         if (array_key_exists($recordType, $discordActionMap)) {
             $actionKey = $discordActionMap[$recordType];
             
-            // Farbe: Grün für Beförderung, Rot für Degradierung
+            // 3. Farbe festlegen (5763719 = Grün, 15548997 = Rot)
             $color = ($recordType === 'Beförderung') ? 5763719 : 15548997; 
 
-            $embed = [
+            // 4. Embed zusammenbauen
+            $embeds = [
                 [
-                    'title' => "Neue " . $recordType,
-                    'description' => "**{$user->name}** hat einen neuen Rang erhalten.",
+                    'title' => "📢 Neue " . $recordType,
+                    'description' => "Der Benutzer **{$user->name}** hat einen neuen Rang erhalten.",
                     'color' => $color,
                     'fields' => [
-                        ['name' => 'Alter Rang', 'value' => $oldValues['rank'], 'inline' => true],
-                        ['name' => 'Neuer Rang', 'value' => $newRank, 'inline' => true],
-                        ['name' => 'Ausgeführt von', 'value' => Auth::user()->name, 'inline' => false],
+                        [
+                            'name' => 'Alte Position', 
+                            'value' => $oldValues['rank'] ?? 'Unbekannt', 
+                            'inline' => true
+                        ],
+                        [
+                            'name' => 'Neue Position', 
+                            'value' => $newRank, 
+                            'inline' => true
+                        ],
+                        [
+                            'name' => 'Ausgeführt von', 
+                            // Fallback, falls mal kein User eingeloggt ist (z.B. System-Cronjob)
+                            'value' => Auth::check() ? Auth::user()->name : 'System', 
+                            'inline' => false
+                        ],
+                    ],
+                    'footer' => [
+                        'text' => config('app.name') . ' System Log',
                     ],
                     'timestamp' => now()->toIso8601String()
                 ]
             ];
 
-            // Leerer Content, dafür Embeds
-            (new DiscordService())->send($actionKey, "", $embed);
+            // 5. Service aufrufen (Sicher verpackt, damit der Controller nicht crasht bei Discord-Fehlern)
+            try {
+                // Wir nutzen "fire & forget". Der Content ist leer "", da wir Embeds nutzen.
+                (new \App\Services\DiscordService())->send($actionKey, "", $embeds);
+            } catch (\Exception $e) {
+                // Nur ins Log schreiben, User nicht mit Fehler nerven
+                \Log::error("Discord Webhook Fehler: " . $e->getMessage());
+            }
         }
-        
+
         // --- DISCORD LOGIK ENDE ---
 
         return redirect()->route('admin.users.index'); // Ohne success
