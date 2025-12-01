@@ -3,57 +3,51 @@
 @section('title', 'Benachrichtigungen')
 
 @push('styles')
-
 <style>
-    /* Aktiv-Status für unsere neuen Filter-Links */
-    .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
-        background-color: #007bff;
-        color: #fff !important;
-    }
-    /* Stellt sicher, dass die Checkboxen in der Tabelle korrekt angezeigt werden */
-    .mailbox-messages .icheck-primary>label {
-        padding-left: 5px !important;
-    }
-    .mailbox-messages tr>td:first-child {
-        width: 30px;
-        text-align: center;
-    }
-    /* NEU: Stil für die Detailliste */
-    .notification-details-list {
-        list-style-type: none;
-        padding-left: 1.75rem; /* Einrücken unter dem Icon */
-        margin-top: 5px;
-        margin-bottom: 0;
-        font-size: 0.85rem;
-    }
-    .notification-details-list li {
-        position: relative;
-    }
-    .notification-details-list li .fa-arrow-right {
-        position: absolute;
-        left: -1.25rem;
-        top: 0.3em;
-        font-size: 0.7rem;
-    }
+    /* Überschreibt DataTables Styles für saubereren Look */
+    table.dataTable.no-footer { border-bottom: none; }
+    .mailbox-messages tr td { vertical-align: middle; }
+    
+    /* Gelesen/Ungelesen Styling */
+    .msg-unread { background-color: #fff; font-weight: 600; }
+    .msg-read { background-color: #f9f9f9; opacity: 0.9; }
+
+    /* Detail-Liste unter dem Text */
+    .notification-details { font-size: 0.85em; margin-top: 4px; color: #666; }
+    .notification-details ul { list-style: none; padding-left: 0; margin-bottom: 0; }
+    .notification-details li::before { content: "•"; color: #007bff; display: inline-block; width: 1em; margin-left: -1em; }
 </style>
 @endpush
 
 @section('content')
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Benachrichtigungen</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Benachrichtigungen</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
 
 <section class="content">
     <div class="row">
-
-        {{-- ================================================= --}}
-        {{-- LINKE SPALTE (Filter) --}}
-        {{-- ================================================= --}}
+        
+        {{-- LINKE SPALTE (Navigation) --}}
         <div class="col-md-3">
+            <a href="{{ route('notifications.index') }}" class="btn btn-primary btn-block mb-3">Aktualisieren</a>
+
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Filter</h3>
+                    <h3 class="card-title">Ordner</h3>
                     <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -66,46 +60,39 @@
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link" id="filter-unread">
-                                <i class="fas fa-envelope"></i> Ungelesene
+                                <i class="far fa-envelope"></i> Ungelesene
                                 <span class="badge bg-primary float-right">{{ $unreadCount }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link" id="filter-read">
-                                <i class="fas fa-envelope-open"></i> Gelesene
-                                <span class="badge bg-light float-right text-dark">{{ $readCount }}</span>
+                                <i class="far fa-envelope-open"></i> Gelesene
+                                <span class="badge bg-light text-dark float-right">{{ $readCount }}</span>
                             </a>
                         </li>
                     </ul>
                 </div>
             </div>
-            
+
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Aktionen</h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                            <i class="fas fa-minus"></i>
-                        </button>
-                    </div>
+                    <h3 class="card-title">Schnellaktionen</h3>
                 </div>
                 <div class="card-body p-0">
                     <ul class="nav nav-pills flex-column">
                         <li class="nav-item">
-                            {{-- Formular für "Alle als gelesen markieren" --}}
-                            <form action="{{ route('notifications.markAllRead') }}" method="POST" class="d-inline">
+                            <form action="{{ route('notifications.markAllRead') }}" method="POST">
                                 @csrf
-                                <button type="submit" class="btn btn-link nav-link text-left" {{ $unreadCount == 0 ? 'disabled' : '' }}>
-                                    <i class="fas fa-check-double text-success"></i> Alle als gelesen markieren
+                                <button type="submit" class="btn btn-link nav-link text-left text-success" {{ $unreadCount == 0 ? 'disabled' : '' }}>
+                                    <i class="fas fa-check-double"></i> Alle als gelesen markieren
                                 </button>
                             </form>
                         </li>
                         <li class="nav-item">
-                             {{-- Formular für "Alle gelesenen löschen" --}}
-                            <form action="{{ route('notifications.clearRead') }}" method="POST" class="d-inline" onsubmit="return confirm('Möchten Sie wirklich ALLE gelesenen Benachrichtigungen löschen?');">
+                            <form action="{{ route('notifications.clearRead') }}" method="POST" onsubmit="return confirm('Wirklich alle gelesenen löschen?');">
                                 @csrf
                                 <button type="submit" class="btn btn-link nav-link text-left text-danger" {{ $readCount == 0 ? 'disabled' : '' }}>
-                                    <i class="far fa-trash-alt"></i> Alle Gelesenen löschen
+                                    <i class="far fa-trash-alt"></i> Gelesene löschen
                                 </button>
                             </form>
                         </li>
@@ -113,313 +100,207 @@
                 </div>
             </div>
         </div>
-        
-        {{-- ================================================= --}}
-        {{-- RECHTE SPALTE (Tabelle)
-        {{-- ================================================= --}}
-        <div class="col-md-9">
-            {{-- HINWEIS: Das <form> Tag wurde von hier entfernt --}}
-                
-            {{-- Die Hauptkarte im Stil der Mailbox --}}
-            <div class="card card-primary card-outline">
-                
-                {{-- HINWEIS: Feedback-Meldungen --}}
-                @if (session('success'))
-                <div class="m-3">
-                    <div class="alert alert-success alert-dismissible">
-                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                        {{ session('success') }}
-                    </div>
-                </div>
-                @endif
 
-                {{-- OBERE STEUERLEISTE (Mailbox-Controls) --}}
+        {{-- RECHTE SPALTE (Liste) --}}
+        <div class="col-md-9">
+            <div class="card card-primary card-outline">
                 <div class="card-header">
-                    <div class="mailbox-controls">
-                        <button type="button" class="btn btn-default btn-sm checkbox-toggle" title="Alle auswählen/abwählen">
-                            <i class="far fa-square"></i>
-                        </button>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default btn-sm" id="bulk-destroy" title="Auswahl löschen">
-                                <i class="far fa-trash-alt"></i>
-                            </button>
-                            <button type="button" class="btn btn-default btn-sm" id="bulk-mark-read" title="Auswahl als gelesen markieren">
-                                <i class="far fa-envelope-open"></i>
-                            </button>
-                        </div>
-                        
-                        {{-- DataTables Paginierungs-Info (wird von JS hierher verschoben) --}}
-                        <div class="float-right" id="datatable-info-platzhalter">
+                    <h3 class="card-title">Posteingang</h3>
+                    {{-- Suchfeld oben rechts --}}
+                    <div class="card-tools">
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="customSearchInput" placeholder="Suchen...">
+                            <div class="input-group-append">
+                                <div class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body p-0">
-                    {{-- Die Tabelle im Mailbox-Stil --}}
-                    <div class="table-responsive mailbox-messages">
+                    <div class="mailbox-controls">
+                        <button type="button" class="btn btn-default btn-sm checkbox-toggle"><i class="far fa-square"></i></button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default btn-sm" id="bulk-destroy" title="Löschen"><i class="far fa-trash-alt"></i></button>
+                            <button type="button" class="btn btn-default btn-sm" id="bulk-mark-read" title="Als gelesen markieren"><i class="far fa-envelope-open"></i></button>
+                        </div>
+                        <button type="button" class="btn btn-default btn-sm" onclick="window.location.reload()"><i class="fas fa-sync-alt"></i></button>
                         
-                        <table id="notificationsTable" class="table table-hover table-striped dt-responsive nowrap" style="width:100%">
+                        {{-- DataTables Info Platzhalter --}}
+                        <div class="float-right text-muted text-sm" id="dt-info-box"></div>
+                    </div>
+
+                    <div class="table-responsive mailbox-messages">
+                        <table id="notificationsTable" class="table table-hover table-striped">
                             <thead>
                                 <tr>
-                                    {{-- 0. Checkbox --}}
-                                    <th class="no-sort no-search"></th>
-                                    {{-- 1. Status (versteckt, nur zum Filtern) --}}
-                                    <th>Status</th> 
-                                    {{-- 2. Benachrichtigung --}}
-                                    <th>Benachrichtigung</th>
-                                    {{-- 3. Zeitpunkt --}}
-                                    <th style="width: 170px;">Zeitpunkt</th>
-                                    {{-- 4. Aktion --}}
-                                    <th class="no-sort no-search" style="width: 50px;">Aktion</th>
+                                    <th class="no-sort" style="width: 40px;"></th> <th class="d-none">Status</th> <th style="width: 200px;">Von</th>
+                                    <th>Nachricht</th>
+                                    <th>Zeit</th>
+                                    <th class="no-sort text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($allNotifications as $notification)
-                                <tr class="{{ $notification->read_at ? '' : 'font-weight-bold' }}">
-                                    <td>
-                                        <div class="icheck-primary">
-                                            <input type="checkbox" class="row-checkbox" name="notification_ids[]" value="{{ $notification->id }}" id="check_{{ $notification->id }}">
-                                            <label for="check_{{ $notification->id }}"></label>
-                                        </div>
-                                    </td>
-                                    <td class="mailbox-status">
-                                        {{ $notification->read_at ? 'Gelesen' : 'Neu' }}
-                                    </td>
-                                    <td class="mailbox-name">
-                                        {{-- NEU: Logik zum Aufteilen der Beschreibung --}}
-                                        @php
-                                            $fullText = $notification->data['text'] ?? '...';
-                                            $parts = str_contains($fullText, 'Änderungen: ') ? explode('Änderungen: ', $fullText, 2) : [$fullText, null];
-                                            $mainText = $parts[0];
-                                            $changes = $parts[1] ? explode('. ', $parts[1]) : [];
-                                        @endphp
-
-                                        <a href="{{ $notification->data['url'] ?? '#' }}" class="text-dark">
-                                            <i class="{{ $notification->data['icon'] ?? 'fas fa-bell' }} text-muted mr-2"></i>
-                                            {{-- Zeige den Haupttext (z.B. "Profil von... aktualisiert.") --}}
-                                            <span>{!! $mainText !!}</span>
-                                        </a>
-
-                                        {{-- Zeige die Liste der Änderungen, falls vorhanden --}}
-                                        @if (!empty($changes))
-                                            <ul class="notification-details-list">
-                                            @foreach ($changes as $change)
-                                                @if (!empty(trim($change, '.')))
-                                                    <li><i class="fas fa-xs fa-arrow-right mr-1"></i> {{ rtrim($change, '.') }}</li>
+                                @foreach ($allNotifications as $n)
+                                    @php
+                                        // Text Parsen
+                                        $fullText = $n->data['text'] ?? '';
+                                        $parts = str_contains($fullText, 'Änderungen: ') ? explode('Änderungen: ', $fullText, 2) : [$fullText, null];
+                                        $mainText = $parts[0];
+                                        $changes = $parts[1] ? explode('. ', $parts[1]) : [];
+                                        
+                                        // Klassen für Gelesen/Ungelesen
+                                        $rowClass = $n->read_at ? 'msg-read' : 'msg-unread';
+                                    @endphp
+                                    <tr class="{{ $rowClass }}">
+                                        <td>
+                                            <div class="icheck-primary">
+                                                <input type="checkbox" class="row-checkbox" value="{{ $n->id }}" id="check_{{ $n->id }}">
+                                                <label for="check_{{ $n->id }}"></label>
+                                            </div>
+                                        </td>
+                                        <td class="d-none">{{ $n->read_at ? 'Gelesen' : 'Neu' }}</td>
+                                        
+                                        <td class="mailbox-name">
+                                            <a href="{{ $n->data['url'] ?? '#' }}" class="text-dark">
+                                                <i class="{{ $n->data['icon'] ?? 'fas fa-info' }} mr-1"></i> System
+                                            </a>
+                                        </td>
+                                        
+                                        <td class="mailbox-subject">
+                                            <a href="{{ $n->data['url'] ?? '#' }}" class="text-dark" style="display: block; text-decoration: none;">
+                                                <b>{{ Str::limit(strip_tags($mainText), 50) }}</b> - 
+                                                <span class="text-muted">{{ Str::limit(strip_tags($mainText), 100) }}</span>
+                                                
+                                                @if(!empty($changes))
+                                                    <div class="notification-details">
+                                                        <i class="fas fa-angle-right text-xs mr-1"></i> Details: {{ implode(', ', array_map(fn($c) => rtrim($c, '.'), $changes)) }}
+                                                    </div>
                                                 @endif
-                                            @endforeach
-                                            </ul>
-                                        @endif
-                                    </td>
-                                    <td class="mailbox-date" data-order="{{ $notification->created_at->timestamp }}">
-                                        {{ $notification->created_at->diffForHumans() }}
-                                        <small class="d-block text-muted">{{ $notification->created_at->format('d.m.Y H:i') }}</small>
-                                    </td>
-                                    <td>
-                                        <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST" onsubmit="return confirm('Möchten Sie diese Benachrichtigung wirklich löschen?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-xs btn-default text-danger" title="Löschen">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @empty
-
-                                @endforelse
+                                            </a>
+                                        </td>
+                                        
+                                        <td class="mailbox-date" data-order="{{ $n->created_at->timestamp }}">
+                                            {{ $n->created_at->diffForHumans() }}
+                                        </td>
+                                        
+                                        <td class="text-right">
+                                            <form action="{{ route('notifications.destroy', $n->id) }}" method="POST" class="d-inline">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="btn btn-default btn-sm"><i class="fas fa-trash-alt"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
                 
-                {{-- UNTERE STEUERLEISTE (Mailbox-Controls) --}}
                 <div class="card-footer p-0">
-                     <div class="mailbox-controls p-3">
-                        <button type="button" class="btn btn-default btn-sm checkbox-toggle" title="Alle auswählen/abwählen">
-                            <i class="far fa-square"></i>
-                        </button>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default btn-sm" id="bulk-destroy-footer" title="Auswahl löschen">
-                                <i class="far fa-trash-alt"></i>
-                            </button>
-                            <button type="button" class="btn btn-default btn-sm" id="bulk-mark-read-footer" title="Auswahl als gelesen markieren">
-                                <i class="far fa-envelope-open"></i>
-                            </button>
-                        </div>
-                        
-                        {{-- DataTables Paginierung (wird von JS hierher verschoben) --}}
-                        <div class="float-right" id="datatable-pagination-platzhalter">
-                        </div>
-                    </div>
+                     {{-- Paginierung Platzhalter --}}
+                     <div class="mailbox-controls">
+                        <div class="float-right" id="dt-paginate-box"></div>
+                     </div>
                 </div>
-
-            </div> {{-- /.card --}}
-            {{-- HINWEIS: Das schließende </form> Tag wurde von hier entfernt --}}
-        </div> {{-- /.col-md-9 --}}
-    </div> {{-- /.row --}}
+            </div>
+        </div>
+    </div>
 </section>
 @endsection
 
 @push('scripts')
-{{-- DataTables & Abhängigkeiten (werden bereits in app.blade.php geladen) --}}
-{{-- <script src="{{ asset('plugins/datatables/jquery.dataTables.min.js') }}"></script> ... --}}
-
 <script>
-    $(function () {
-      
-      var notificationsTable = $("#notificationsTable").DataTable({
-        "language": {
-            "url": "{{ asset('js/i18n/de-DE.json') }}" 
-        },
-        "order": [[3, 'desc']] , 
-        "responsive": {
-            details: {
-                display: DataTable.Responsive.display.modal({
-                    header: function (row) {
-                        var data = row.data();
-                        return 'Details für: ' + $(data[2]).find('span').text(); 
-                    }
-                }),
-                renderer: DataTable.Responsive.renderer.tableAll({
-                    tableClass: 'table'
-                })
-            }
-        },
-        "autoWidth": true,
+$(function () {
+    // DataTables Initialisierung
+    var table = $('#notificationsTable').DataTable({
         "paging": true,
+        "lengthChange": false,
+        "searching": true,
         "ordering": true,
-        "info": true,        
-        "searching": true,        
-        "lengthChange": false, 
-        "lengthMenu": [25, 50, -1],
-        "pageLength": 25,
-        "columnDefs": [ 
-          { "targets": 'no-sort', "orderable": false },
-          { "targets": 'no-search', "searchable": false },
-          { "responsivePriority": 1, "targets": 0 }, // Checkbox (Index 0)
-          { "responsivePriority": 2, "targets": 2 }, // Benachrichtigung (Index 2)
-          { "responsivePriority": 3, "targets": 4 }, // Aktion (Index 4)
-          { "responsivePriority": 4, "targets": 3 }  // Zeitpunkt (Index 3)
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
+        "order": [[ 4, "desc" ]], // Nach Zeit sortieren
+        "language": { "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/German.json" },
+        "columnDefs": [
+            { "orderable": false, "targets": [0, 5] } // Checkbox & Action nicht sortierbar
         ],
-        "infoCallback": function( settings, start, end, max, total, pre ) {
-             $('#datatable-info-platzhalter').html(pre);
+        // Verschiebe DT Elemente in AdminLTE Layout
+        "dom": 'rt<"bottom">', 
+        "initComplete": function() {
+            // Paginierung verschieben
+            $("#notificationsTable_paginate").appendTo("#dt-paginate-box");
+            $("#notificationsTable_info").appendTo("#dt-info-box");
         }
-      }); 
-
-      $('#notificationsTable_paginate').appendTo('#datatable-pagination-platzhalter');
-
-      // Optional: Globale Suche in den Header verschieben, wenn du sie brauchst
-      // $('#notificationsTable_filter').find('label').addClass('m-0');
-      // $('#notificationsTable_filter').find('input').attr('placeholder', 'Suche...').addClass('form-control-sm');
-      // $('#notificationsTable_filter').appendTo('#datatable-search-platzhalter'); 
-      // Aktuell ist die globale Suche aktiv, aber nicht sichtbar (da "dom" sie entfernt hat)
-
-      // ======================================================
-      // JS für LINKE FILTER-SPALTE
-      // ======================================================
-      var $filterLinks = $('.nav-pills a[id^="filter-"]');
-      
-      $filterLinks.on('click', function(e) {
-          e.preventDefault();
-          $filterLinks.removeClass('active');
-          $(this).addClass('active');
-
-          var filterValue = '';
-          var column = notificationsTable.column(1); // Spalte 1 = Status
-
-          if (this.id === 'filter-unread') {
-              filterValue = '^Neu$'; 
-          } else if (this.id === 'filter-read') {
-              filterValue = '^Gelesen$';
-          }
-          
-          column.search(filterValue, true, false).draw();
-      });
-
-      // ======================================================
-      // JS für BULK-AKTIONEN (NEUE VERSION OHNE FORM-TAG)
-      // ======================================================
-      
-      var $table = $('#notificationsTable');
-
-      // 1. "Alle auswählen" Button
-      $('.checkbox-toggle').click(function () {
-            var clicks = $(this).data('clicks');
-            var $icon = $(this).find('i');
-            // WICHTIG: .rows({ search: 'applied' }) stellt sicher, dass nur die
-            // Zeilen ausgewählt werden, die dem aktuellen Filter (z.B. "Ungelesene") entsprechen
-            var $checkboxes = notificationsTable.rows({ search: 'applied' }).nodes().to$().find('.row-checkbox');
-            
-            if (clicks) {
-                $checkboxes.prop('checked', false);
-                $icon.removeClass('fa-check-square').addClass('fa-square');
-            } else {
-                $checkboxes.prop('checked', true);
-                $icon.removeClass('fa-square').addClass('fa-check-square');
-            }
-            $(this).data('clicks', !clicks);
-      });
-      
-      // 2. Klick-Handler für die Bulk-Buttons
-      $('#bulk-destroy, #bulk-mark-read, #bulk-destroy-footer, #bulk-mark-read-footer').on('click', function(e) {
-          e.preventDefault();
-          var action = this.id.includes('destroy') ? 'destroy' : 'mark_read';
-
-          // Finde alle gecheckten Checkboxen
-          var selectedIds = notificationsTable.rows({ search: 'applied' }).nodes().to$().find('.row-checkbox:checked')
-              .map(function() { return $(this).val(); })
-              .get();
-
-          if (selectedIds.length === 0) {
-              alert('Bitte wählen Sie zuerst eine oder mehrere Benachrichtigungen aus.');
-              return;
-          }
-
-          var url = (action === 'destroy') 
-              ? '{{ route('notifications.bulkDestroy') }}' 
-              : '{{ route('notifications.bulkMarkRead') }}';
-          
-          var confirmation = (action === 'destroy')
-              ? 'Möchten Sie die ' + selectedIds.length + ' ausgewählten Benachrichtigungen wirklich löschen?'
-              : 'Möchten Sie die ' + selectedIds.length + ' ausgewählten Benachrichtigungen als gelesen markieren?';
-
-          if (!confirm(confirmation)) {
-              return;
-          }
-
-          // Dynamisch ein Formular erstellen, absenden und entfernen
-          var $tempForm = $('<form>', {
-              'method': 'POST',
-              'action': url
-          }).appendTo('body');
-
-          // CSRF-Token hinzufügen
-          $tempForm.append($('<input>', {
-              'type': 'hidden',
-              'name': '_token',
-              'value': '{{ csrf_token() }}'
-          }));
-
-          // Alle IDs hinzufügen
-          $.each(selectedIds, function(index, id) {
-              $tempForm.append($('<input>', {
-                  'type': 'hidden',
-                  'name': 'notification_ids[]',
-                  'value': id
-              }));
-          });
-
-          // Absenden
-          $tempForm.submit();
-      });
-      
-      // 3. Status des "Alle auswählen"-Buttons zurücksetzen, wenn Tabelle neu gezeichnet wird
-      notificationsTable.on('draw.dt', function() {
-            $('.checkbox-toggle').data('clicks', false);
-            $('.checkbox-toggle').find('i').removeClass('fa-check-square').addClass('fa-square');
-      });
-
     });
+
+    // Custom Suche
+    $('#customSearchInput').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+
+    // Filter Navigation (Links)
+    $('.nav-pills a[id^="filter-"]').on('click', function(e) {
+        e.preventDefault();
+        $('.nav-pills a').removeClass('active');
+        $(this).addClass('active');
+
+        var val = '';
+        if(this.id === 'filter-unread') val = 'Neu';
+        if(this.id === 'filter-read') val = 'Gelesen';
+
+        // Filter auf Spalte 1 (versteckter Status)
+        table.column(1).search(val ? '^'+val+'$' : '', true, false).draw();
+    });
+
+    // Checkbox Toggle (AdminLTE Style)
+    $('.checkbox-toggle').click(function () {
+        var clicks = $(this).data('clicks');
+        if (clicks) {
+            // Uncheck all
+            $('.mailbox-messages input[type=\'checkbox\']').prop('checked', false);
+            $('.checkbox-toggle .far.fa-check-square').removeClass('fa-check-square').addClass('fa-square');
+        } else {
+            // Check all
+            $('.mailbox-messages input[type=\'checkbox\']').prop('checked', true);
+            $('.checkbox-toggle .far.fa-square').removeClass('fa-square').addClass('fa-check-square');
+        }
+        $(this).data('clicks', !clicks);
+    });
+
+    // Bulk Action Logic
+    function runBulkAction(action) {
+        var ids = [];
+        $('.row-checkbox:checked').each(function() {
+            ids.push($(this).val());
+        });
+
+        if(ids.length === 0) {
+            alert('Bitte wählen Sie mindestens eine Nachricht aus.');
+            return;
+        }
+
+        if(!confirm('Aktion für ' + ids.length + ' Elemente ausführen?')) return;
+
+        var url = (action === 'destroy') 
+            ? '{{ route('notifications.bulkDestroy') }}' 
+            : '{{ route('notifications.bulkMarkRead') }}';
+
+        // Erstelle temporäres Formular
+        var form = $('<form action="' + url + '" method="POST"></form>');
+        form.append('<input type="hidden" name="_token" value="{{ csrf_token() }}">');
+        $.each(ids, function(i, val) {
+            form.append('<input type="hidden" name="notification_ids[]" value="' + val + '">');
+        });
+        $('body').append(form);
+        form.submit();
+    }
+
+    $('#bulk-destroy').click(function() { runBulkAction('destroy'); });
+    $('#bulk-mark-read').click(function() { runBulkAction('mark_read'); });
+});
 </script>
 @endpush

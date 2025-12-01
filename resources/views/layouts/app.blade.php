@@ -94,13 +94,14 @@
 
             {{-- Notification Dropdown --}}
             <li class="nav-item dropdown" id="notification-dropdown">
-                <a class="nav-link" data-toggle="dropdown" href="#">
+                <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
                     <i class="far fa-bell"></i>
-                    <span class="badge badge-warning navbar-badge" id="notification-count" style="display: none;"></span>
+                    {{-- Die Badge wird via JS eingeblendet, wenn count > 0 --}}
+                    <span class="badge badge-warning navbar-badge" id="notification-count" style="display: none;">0</span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="notification-list">
-                    {{-- Content is loaded via JavaScript --}}
-                    <div class="dropdown-item">Lade Benachrichtigungen...</div>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="notification-list" style="left: inherit; right: 0px;">
+                    {{-- Lade-Indikator --}}
+                    <span class="dropdown-item dropdown-header">Lade Benachrichtigungen...</span>
                 </div>
             </li>
 
