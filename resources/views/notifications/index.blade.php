@@ -163,13 +163,13 @@
                                         <td class="d-none">{{ $n->read_at ? 'Gelesen' : 'Neu' }}</td>
                                         
                                         <td class="mailbox-name">
-                                            <a href="{{ $n->data['url'] ?? '#' }}">
+                                            <a href="{{ $n->data['url'] ?? '#' }}" class="text-dark">
                                                 <i class="{{ $n->data['icon'] ?? 'fas fa-info' }} mr-1"></i> System
                                             </a>
                                         </td>
                                         
                                         <td class="mailbox-subject">
-                                            <a href="{{ $n->data['url'] ?? '#' }}">
+                                            <a href="{{ $n->data['url'] ?? '#' }}" style="display: block; text-decoration: none;">
                                                 <b>{{ Str::limit(strip_tags($mainText), 50) }}</b> - 
                                                 <span class="text-muted">{{ Str::limit(strip_tags($mainText), 100) }}</span>
                                                 
