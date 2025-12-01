@@ -37,4 +37,23 @@ class DiscordService
             \Log::error("Discord Webhook Error: " . $e->getMessage());
         }
     }
+    /**
+     * Sendet eine Testnachricht an eine spezifische URL.
+     */
+    public function sendTest(string $webhookUrl)
+    {
+        if (empty($webhookUrl)) {
+            throw new \Exception("Keine Webhook URL angegeben.");
+        }
+
+        $payload = [
+            'content' => "👋 **Webhook Test erfolgreich!**\nDies ist eine Testnachricht von deinem Laravel Panel.",
+        ];
+
+        $response = Http::post($webhookUrl, $payload);
+
+        if ($response->failed()) {
+            throw new \Exception("Discord hat den Webhook abgelehnt. Status: " . $response->status());
+        }
+    }
 }

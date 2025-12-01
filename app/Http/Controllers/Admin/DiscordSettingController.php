@@ -34,4 +34,20 @@ class DiscordSettingController extends Controller
 
         return back()->with('success', 'Discord Einstellungen gespeichert.');
     }
+    public function test(DiscordSetting $discordSetting)
+    {
+        // Sicherheitscheck: Hat dieser Eintrag überhaupt eine URL?
+        if (empty($discordSetting->webhook_url)) {
+            return back()->with('error', 'Bitte erst eine URL speichern, bevor du testest.');
+        }
+
+        try {
+            // Service aufrufen
+            (new DiscordService())->sendTest($discordSetting->webhook_url);
+            
+            return back()->with('success', 'Testnachricht wurde erfolgreich an Discord gesendet!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Fehler beim Senden: ' . $e->getMessage());
+        }
+    }
 }

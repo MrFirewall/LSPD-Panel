@@ -249,6 +249,9 @@ Route::middleware(['auth.cfx', 'can:admin.access'])->prefix('admin')->name('admi
     // Route zum Speichern der Daten
     Route::put('/discord-settings', [DiscordSettingController::class, 'update'])
         ->name('discord.update');
+        
+    Route::post('/discord-settings/{discordSetting}/test', [DiscordSettingController::class, 'test'])
+    ->name('discord.test');
 });
 
 

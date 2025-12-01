@@ -24,7 +24,12 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
-
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             {{-- Das Formular --}}
             <form action="{{ route('admin.discord.update') }}" method="POST">
                 @csrf
@@ -70,22 +75,48 @@
                                         </div>
                                     </div>
 
-                                    {{-- Rechte Spalte: Webhook URL Input --}}
+                                    {{-- Rechte Spalte: Webhook URL und Test Button --}}
                                     <div class="col-md-8">
                                         <div class="input-group">
-                                            <span class="input-group-text text-muted">URL</span>
+                                            <span class="input-group-text bg-white text-muted">URL</span>
+                                            
+                                            {{-- Das Eingabefeld --}}
                                             <input type="url" 
-                                                   class="form-control" 
-                                                   id="input_{{ $setting->id }}"
-                                                   name="settings[{{ $setting->id }}][webhook_url]" 
-                                                   value="{{ old("settings.{$setting->id}.webhook_url", $setting->webhook_url) }}"
-                                                   placeholder="https://discord.com/api/webhooks/..."
-                                                   {{ !$setting->active ? 'disabled' : '' }}>
+                                                class="form-control" 
+                                                id="input_{{ $setting->id }}"
+                                                name="settings[{{ $setting->id }}][webhook_url]" 
+                                                value="{{ old("settings.{$setting->id}.webhook_url", $setting->webhook_url) }}"
+                                                placeholder="https://discord.com/api/webhooks/..."
+                                                {{ !$setting->active ? 'disabled' : '' }}>
+
+                                            {{-- Der Test Button (Nur sichtbar, wenn URL gespeichert ist) --}}
+                                            @if($setting->webhook_url)
+                                                <button type="button" 
+                                                        class="btn btn-outline-secondary" 
+                                                        onclick="document.getElementById('test-form-{{ $setting->id }}').submit();"
+                                                        title="Testnachricht senden">
+                                                    <i class="fas fa-paper-plane"></i> Test
+                                                </button>
+                                            @endif
                                         </div>
+                                        
                                         @error("settings.{$setting->id}.webhook_url")
                                             <div class="text-danger small mt-1">{{ $message }}</div>
                                         @enderror
+
+                                        {{-- Hinweis wenn URL geändert wurde aber noch nicht gespeichert --}}
+                                        <div class="form-text small text-muted">
+                                            Zuerst speichern, dann testen.
+                                        </div>
                                     </div>
+
+                                    {{-- Verstecktes Formular für den Test-Button (außerhalb der inneren divs, aber in der Loop) --}}
+                                    <form id="test-form-{{ $setting->id }}" 
+                                        action="{{ route('admin.discord.test', $setting->id) }}" 
+                                        method="POST" 
+                                        style="display: none;">
+                                        @csrf
+                                    </form>
 
                                 </div>
                             </div>
