@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DiscordSetting;
-use App\Models\ActivityLog; // <--- WICHTIG
-use App\Events\PotentiallyNotifiableActionOccurred; // <--- WICHTIG
+use App\Models\ActivityLog;
+use App\Events\PotentiallyNotifiableActionOccurred;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // <--- WICHTIG
+use Illuminate\Support\Facades\Auth;
 
 class DiscordSettingController extends Controller
 {
@@ -24,7 +24,7 @@ class DiscordSettingController extends Controller
         $data = $request->validate([
             'settings' => 'required|array',
             'settings.*.webhook_url' => 'nullable|url',
-            'settings.*.active' => 'nullable', // "nullable" reicht hier, da wir unten casten
+            'settings.*.active' => 'nullable',
         ]);
 
         $changesCount = 0;
@@ -64,19 +64,20 @@ class DiscordSettingController extends Controller
 
                 ActivityLog::create([
                     'user_id' => Auth::id(),
-                    'log_type' => 'SYSTEM', // Oder 'SETTINGS' je nach deinem Enum
+                    'log_type' => 'SYSTEM',
                     'action' => 'UPDATED',
                     'target_id' => $setting->id,
                     'description' => $description,
                 ]);
 
-                // --- B) EVENT AUSLÖSEN ---
+                // --- B) EVENT AUSLÖSEN (KORRIGIERT) ---
+                // Reihenfolge: ActionName, TriggeringUser, RelatedModel, ActorUser, Data
                 PotentiallyNotifiableActionOccurred::dispatch(
-                    'Admin\DiscordSettingController@update',
-                    $setting, // relatedModel
-                    null,     // targetModel (kein spezifischer User als Ziel)
-                    Auth::user(),
-                    [
+                    'Admin\DiscordSettingController@update', // 1. Action Name
+                    Auth::user(),                            // 2. Triggering User (HIER WAR DER FEHLER)
+                    $setting,                                // 3. Related Model (Das Setting)
+                    Auth::user(),                            // 4. Actor User (Der Admin)
+                    [                                        // 5. Additional Data
                         'description' => $description,
                         'setting_name' => $setting->friendly_name,
                         'changes' => $changes
@@ -94,13 +95,11 @@ class DiscordSettingController extends Controller
 
     public function test(DiscordSetting $discordSetting)
     {
-        // Sicherheitscheck: Hat dieser Eintrag überhaupt eine URL?
         if (empty($discordSetting->webhook_url)) {
             return back()->with('error', 'Bitte erst eine URL speichern, bevor du testest.');
         }
 
         try {
-            // Service aufrufen (Pfad ggf. anpassen, falls du imports nutzt)
             (new \App\Services\DiscordService())->sendTest($discordSetting->webhook_url);
             
             return back()->with('success', 'Testnachricht wurde erfolgreich an Discord gesendet!');
