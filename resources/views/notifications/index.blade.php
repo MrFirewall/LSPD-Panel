@@ -105,8 +105,7 @@
         <div class="col-md-9">
             <div class="card card-primary card-outline">
                 <div class="card-header">
-                    <h3 class="card-title">Posteingang</h3>
-                    {{-- Suchfeld oben rechts --}}
+                    <h3 class="card-title">Benachrichtigungen</h3>
                     <div class="card-tools">
                         <div class="input-group input-group-sm">
                             <input type="text" class="form-control" id="customSearchInput" placeholder="Suchen...">
@@ -164,13 +163,13 @@
                                         <td class="d-none">{{ $n->read_at ? 'Gelesen' : 'Neu' }}</td>
                                         
                                         <td class="mailbox-name">
-                                            <a href="{{ $n->data['url'] ?? '#' }}" class="text-dark">
+                                            <a href="{{ $n->data['url'] ?? '#' }}">
                                                 <i class="{{ $n->data['icon'] ?? 'fas fa-info' }} mr-1"></i> System
                                             </a>
                                         </td>
                                         
                                         <td class="mailbox-subject">
-                                            <a href="{{ $n->data['url'] ?? '#' }}" class="text-dark" style="display: block; text-decoration: none;">
+                                            <a href="{{ $n->data['url'] ?? '#' }}">
                                                 <b>{{ Str::limit(strip_tags($mainText), 50) }}</b> - 
                                                 <span class="text-muted">{{ Str::limit(strip_tags($mainText), 100) }}</span>
                                                 
