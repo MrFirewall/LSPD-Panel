@@ -119,8 +119,19 @@
 </div>
 
 {{-- 3. FOOTER --}}
-<a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer text-center border-top">
-    Alle Benachrichtigungen anzeigen
-</a>
-<button id="enable-push" class="btn btn-sm btn-info float-left mr-3" style="display: none;">Desktop-Benachrichtigungen aktivieren</button>
-<button id="disable-push" class="btn btn-sm btn-danger float-left mr-3" style="display: none;">Desktop-Benachrichtigungen deaktivieren</button>
+<div class="dropdown-footer border-top bg-light p-0">
+    {{-- Link zu allen Benachrichtigungen --}}
+    <a href="{{ route('notifications.index') }}" class="dropdown-item text-center py-2 text-primary font-weight-bold">
+        Alle anzeigen
+    </a>
+    
+    {{-- PUSH BUTTONS CONTAINER --}}
+    <div class="text-center pb-2">
+        <button type="button" id="enable-push" class="btn btn-xs btn-info shadow-sm" style="display: none;">
+            <i class="fas fa-bell mr-1"></i> Desktop-Benachrichtigungen aktivieren
+        </button>
+        <button type="button" id="disable-push" class="btn btn-xs btn-secondary shadow-sm" style="display: none;">
+            <i class="fas fa-bell-slash mr-1"></i>Desktop-Benachrichtigungen deaktivieren
+        </button>
+    </div>
+</div>

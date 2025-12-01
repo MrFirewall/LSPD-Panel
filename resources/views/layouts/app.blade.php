@@ -200,12 +200,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.0/echo.iife.min.js"></script>
 
 {{-- ===================================================================== --}}
-{{-- === HAUPT-SKRIPTBLOCK (inkl. Theme, Swal, Echo, Notifications) === --}}
+{{-- === HAUPT-SKRIPTBLOCK (Theme, Notifications & Push Logic Combined) === --}}
 {{-- ===================================================================== --}}
 <script>
     $(document).ready(function() {
 
-        // --- THEME-LOGIK ---
+        // ==========================================
+        // 1. THEME LOGIK
+        // ==========================================
         (() => {
             'use strict'
             const getStoredTheme = () => localStorage.getItem('theme')
@@ -221,9 +223,7 @@
                 const sidebar = document.getElementById('mainSidebar');
                 const toggleIcon = document.getElementById('darkModeToggle')?.querySelector('i');
 
-                if (!navbar || !sidebar || !toggleIcon) {
-                    return;
-                }
+                if (!navbar || !sidebar || !toggleIcon) return;
 
                 if (theme === 'dark') {
                     body.classList.add('dark-mode');
@@ -242,18 +242,17 @@
                 }
             }
             applyTheme(getPreferredTheme());
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            if (darkModeToggle) {
-                darkModeToggle.addEventListener('click', (e) => {
-                     e.preventDefault();
-                     const currentTheme = getStoredTheme() === 'dark' ? 'light' : 'dark';
-                     setStoredTheme(currentTheme);
-                     applyTheme(currentTheme);
-                });
-            }
+            $('#darkModeToggle').on('click', function(e) {
+                e.preventDefault();
+                const currentTheme = getStoredTheme() === 'dark' ? 'light' : 'dark';
+                setStoredTheme(currentTheme);
+                applyTheme(currentTheme);
+            });
         })();
 
-        // --- SWEETALERT2 INTEGRATION ---
+        // ==========================================
+        // 2. HELPER: SWEETALERT
+        // ==========================================
         function decodeHtml(str) {
              if (!str) return '';
              const doc = new DOMParser().parseFromString(str, "text/html");
@@ -261,61 +260,37 @@
         }
         function showSweetAlert(type, message) {
             setTimeout(() => {
-                if (typeof Swal === 'undefined') {
-                    console.error("Swal (SweetAlert2) ist nicht definiert!");
-                    return;
-                }
+                if (typeof Swal === 'undefined') return;
                 let title = type === 'success' ? 'Erfolg!' : 'Fehler!';
-                let timer = type === 'success' ? 3000 : 5000;
-                const decodedMessage = decodeHtml(message);
                 Swal.fire({
                     toast: true, position: 'top-end', icon: type,
-                    title: title, text: decodedMessage,
-                    showConfirmButton: false, timer: timer
+                    title: title, text: decodeHtml(message),
+                    showConfirmButton: false, timer: 3000
                 });
             }, 50);
         }
+        // Flash Messages anzeigen
         const successMessage = ('{{ session("success") }}' || '').trim();
         const errorMessage = ('{{ session("error") }}' || '').trim();
-        const validationErrors = @json($errors->all() ?? []);
-        if (successMessage.length > 0) { showSweetAlert('success', successMessage); }
-        else if (errorMessage.length > 0) { showSweetAlert('error', errorMessage); }
-        if (validationErrors.length > 0) {
-            const errorHtml = validationErrors.map(err => `<li>${decodeHtml(err)}</li>`).join('');
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error', title: 'Validierungsfehler!',
-                    html: `Bitte korrigiere die folgenden Fehler:<ul>${errorHtml}</ul>`,
-                    showConfirmButton: true, confirmButtonText: 'Verstanden'
-                });
-            } else {
-                 console.error("Swal nicht definiert, kann Validierungsfehler nicht anzeigen.");
-            }
-        }
+        if (successMessage.length > 0) showSweetAlert('success', successMessage);
+        else if (errorMessage.length > 0) showSweetAlert('error', errorMessage);
 
-        // --- ECHO INITIALISIERUNG ---
+        // ==========================================
+        // 3. ECHO / WEBSOCKET SETUP
+        // ==========================================
         if (typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
             window.Pusher = Pusher;
-            
-            // Wir prüfen explizit auf HTTPS oder nutzen die Config
             const useTls = window.location.protocol === 'https:' || '{{ env("VITE_REVERB_SCHEME") }}' === 'https';
 
             window.Echo = new Echo({
                 broadcaster: 'pusher',
                 key: '{{ env("REVERB_APP_KEY") }}',
-                
-                // Hier nutzen wir die ÖFFENTLICHEN (VITE) Variablen oder Hardcodes für Nginx
                 wsHost: '{{ env("VITE_REVERB_HOST", "lspd.geeknetz.de") }}',
-                
-                // WICHTIG: Der Browser muss immer an 443 (HTTPS) oder 80 (HTTP) senden, 
-                // weil Nginx davor steht. NICHT an 8080 senden!
                 wsPort: {{ env("VITE_REVERB_PORT") ?? 80 }},
                 wssPort: {{ env("VITE_REVERB_PORT") ?? 443 }},
-                
                 forceTLS: useTls,
                 disableStats: true,
-                enabledTransports: ['ws', 'wss'], // Erzwinge WebSockets, kein Polling Fallback
-                
+                enabledTransports: ['ws', 'wss'],
                 authorizer: (channel, options) => {
                     return {
                         authorize: (socketId, callback) => {
@@ -325,36 +300,126 @@
                                 channel_name: channel.name
                             })
                             .done(response => { callback(false, response); })
-                            .fail(error => {
-                                console.error('Auth Fehler:', error);
-                                callback(true, error);
-                            });
+                            .fail(error => { callback(true, error); });
                         }
                     };
                 },
             });
-
-            window.Echo.connector.pusher.connection.bind('state_change', function(states) {
-                // Hilft beim Debuggen in der Konsole
-                //console.log("Reverb Verbindung: " + states.current);
-            });
-            
-            window.Echo.connector.pusher.connection.bind('error', function(err) { 
-                console.error("WebSocket Fehler detail:", err); 
-            });
-
-        } else {
-            console.error("Pusher/Echo nicht geladen.");
         }
 
-        // --- BENACHRICHTIGUNGEN START ---
-        
-        // 1. Laden der Benachrichtigungen
+        // ==========================================
+        // 4. PUSH NOTIFICATION LOGIK (VAPID)
+        // ==========================================
+        const VAPID_PUBLIC_KEY = '{{ config('webpush.vapid.public_key') }}';
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
+            return outputArray;
+        }
+
+        // Diese Funktion prüft den Status und zeigt die Buttons im Dropdown an
+        // Sie MUSS aufgerufen werden, NACHDEM das Dropdown-HTML geladen wurde!
+        function checkPushStatus() {
+            if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+            const $enableBtn = $('#enable-push');
+            const $disableBtn = $('#disable-push');
+
+            // Reset
+            $enableBtn.hide(); 
+            $disableBtn.hide();
+
+            if (Notification.permission === 'denied') {
+                // Wenn blockiert, zeigen wir vielleicht gar nichts oder einen Hinweis
+                return;
+            }
+
+            navigator.serviceWorker.ready.then(reg => {
+                reg.pushManager.getSubscription().then(sub => {
+                    if (sub) {
+                        // User ist abonniert -> Zeige "Deaktivieren"
+                        $disableBtn.show();
+                    } else {
+                        // User ist nicht abonniert -> Zeige "Aktivieren"
+                        $enableBtn.show();
+                    }
+                }).catch(err => console.error('Push Subscription Error:', err));
+            });
+        }
+
+        // Click Handler (Event Delegation für dynamische Buttons)
+        $(document).on('click', '#enable-push', function(e) {
+            e.stopPropagation(); // Dropdown offen lassen
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    navigator.serviceWorker.ready.then(reg => {
+                        const subscribeOptions = {
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                        };
+                        return reg.pushManager.subscribe(subscribeOptions);
+                    }).then(sub => {
+                        // Abo an Server senden
+                        $.ajax({
+                            url: '{{ route('push.subscribe') }}',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(sub),
+                            success: function() {
+                                showSweetAlert('success', 'Desktop-Benachrichtigungen aktiviert!');
+                                checkPushStatus(); // Buttons aktualisieren
+                            }
+                        });
+                    }).catch(err => {
+                        console.error(err);
+                        alert('Fehler bei der Aktivierung.');
+                    });
+                }
+            });
+        });
+
+        $(document).on('click', '#disable-push', function(e) {
+            e.stopPropagation(); // Dropdown offen lassen
+            navigator.serviceWorker.ready.then(reg => {
+                reg.pushManager.getSubscription().then(sub => {
+                    if (sub) {
+                        sub.unsubscribe().then(() => {
+                            // Server informieren
+                            $.ajax({
+                                url: '{{ route('push.unsubscribe') }}',
+                                method: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({ endpoint: sub.endpoint }),
+                                success: function() {
+                                    showSweetAlert('success', 'Deaktiviert.');
+                                    checkPushStatus(); // Buttons aktualisieren
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+        });
+
+        // Service Worker registrieren (einmalig)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js');
+        }
+
+
+        // ==========================================
+        // 5. BENACHRICHTIGUNGEN LADEN
+        // ==========================================
         function fetchNotifications() {
             const notificationCount = $('#notification-count');
             const notificationList = $('#notification-list');
             const fetchUrl = '{{ route("api.notifications.fetch") }}';
 
+            // Merken, welche Gruppen offen waren
             let openGroups = [];
             $('#notification-list .collapse.show').each(function() {
                 openGroups.push($(this).attr('id'));
@@ -364,93 +429,79 @@
                 url: fetchUrl, method: 'GET', dataType: 'json',
                 success: function(response) {
                     const htmlContent = response.items_html;
+                    
+                    // Counter Update
                     if (response.count > 0) { notificationCount.text(response.count).show(); }
                     else { notificationCount.hide(); }
+
+                    // HTML Inject
                     if (htmlContent) {
                         notificationList.html(htmlContent);
+                        // Offene Gruppen wiederherstellen
                         openGroups.forEach(function(id) { $(`#${id}`).collapse('show'); });
+                        
+                        // WICHTIG: JETZT PRÜFEN WIR DEN PUSH STATUS, 
+                        // WEIL DIE BUTTONS JETZT ERST EXISTIEREN!
+                        checkPushStatus();
                     } else {
-                       notificationList.html('<a href="#" class="dropdown-item"><span class="text-muted">Keine neuen Meldungen.</span></a>');
+                        notificationList.html('<a href="#" class="dropdown-item"><span class="text-muted">Keine Meldungen.</span></a>');
                     }
                 },
-                error: function(xhr, status, error) {
-                    console.error('Fehler beim Laden der Benachrichtigungen via AJAX:', status, error, xhr.responseText);
-                    notificationList.html('<a href="#" class="dropdown-item"><i class="fas fa-exclamation-triangle text-danger mr-2"></i> Fehler beim Laden.</a>');
+                error: function(xhr) {
+                    console.error('Notification Load Error:', xhr);
                 }
             });
         }
+        
+        // Initial laden
         fetchNotifications();
 
-        // 2. Echo Listener (Live Updates)
+        // Echo Listener für neue Notifications
         @auth
         if (typeof window.Echo !== 'undefined') {
              window.Echo.private(`users.{{ Auth::id() }}`)
-                .listen('.new.notification', (e) => {
+                .listen('.new.ems.notification', (e) => {
                      fetchNotifications();
                      $('#notification-dropdown .fa-bell').addClass('text-warning').delay(500).queue(function(next){ $(this).removeClass('text-warning'); next(); });
-                })
-                .error((error) => { console.error('Echo Kanal-Fehler:', error); });
+                });
         }
         @endauth
 
-        // 3. Dropdown offen halten beim Klicken (wichtig für Accordion)
+        // Dropdown Click-Handling (Offen halten)
         $(document).on('click', '#notification-dropdown .dropdown-menu', function (e) {
             const isToggle = $(e.target).closest('a[data-toggle="collapse"]').length > 0;
-            const isContent = $(e.target).closest('.collapse').length > 0;
-            const isFormElement = $(e.target).closest('form, button').length > 0; // "button" hinzugefügt
+            const isButton = $(e.target).closest('button').length > 0;
+            const isForm = $(e.target).closest('form').length > 0;
             
-            // Wenn auf Toggle, Content oder Button geklickt wird -> Dropdown offen lassen
-            if (isToggle || isContent || isFormElement) { e.stopPropagation(); }
+            if (isToggle || isButton || isForm) { e.stopPropagation(); }
         });
 
-        // 4. AJAX: "Als gelesen markieren" (Der Haken-Button)
-        // <--- NEU EINGEFÜGT & INTEGRIERT --->
+        // AJAX Mark Read Handler
         $(document).on('click', '.mark-read-ajax-btn', function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Verhindert Schließen des Dropdowns
-
+            e.preventDefault(); e.stopPropagation();
             var $btn = $(this);
             var url = $btn.data('url');
-            var rowId = '#notif-row-' + $btn.data('id');
-            var $row = $(rowId);
-
-            // Feedback: Lade-Icon anzeigen
+            var $row = $('#notif-row-' + $btn.data('id'));
             var originalContent = $btn.html();
             $btn.html('<i class="fas fa-spinner fa-spin text-muted"></i>').prop('disabled', true);
 
             $.ajax({
-                url: url,
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Zeile sanft entfernen
-                        $row.slideUp(200, function() {
-                            $(this).remove();
-                        });
-
-                        // Badge Counter oben aktualisieren
-                        if (response.remaining_count !== undefined) {
-                            var $badge = $('#notification-count');
-                            $badge.text(response.remaining_count);
-                            if (response.remaining_count <= 0) {
-                                $badge.hide();
-                                // Optional: Wenn leer, Dropdown neu laden um "Keine Meldungen" anzuzeigen
-                                // fetchNotifications(); 
-                            }
+                url: url, type: 'POST',
+                data: { _token: $('meta[name="csrf-token"]').attr('content') },
+                success: function(res) {
+                    if (res.success) {
+                        $row.slideUp(200, function() { $(this).remove(); });
+                        if (res.remaining_count !== undefined) {
+                            $('#notification-count').text(res.remaining_count);
+                            if (res.remaining_count <= 0) $('#notification-count').hide();
                         }
                     }
                 },
-                error: function(xhr) {
-                    console.error("Fehler beim Markieren:", xhr);
-                    // Reset Button bei Fehler
+                error: function() {
                     $btn.html(originalContent).prop('disabled', false);
                 }
             });
         });
-        // --- BENACHRICHTIGUNGEN ENDE ---
 
     });
 </script>
