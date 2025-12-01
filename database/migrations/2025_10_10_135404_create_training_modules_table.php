@@ -9,13 +9,23 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void {
+    public function up(): void
+    {
         Schema::create('training_modules', function (Blueprint $table) {
             $table->id();
+
+            // Verknüpfung zum User (aus Datei 1)
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->date('date');
-            $table->string('module_name');
-            $table->string('instructor_name');
+
+            // Modul-Details (aus Datei 2 + 'module_name' aus Datei 1 zusammengeführt)
+            $table->string('name'); // z.B. "BLS Zertifizierung"
+            $table->string('category')->nullable(); // z.B. "Medizinisch", "Taktisch"
+            $table->text('description')->nullable(); // Beschreibung des Inhalts
+
+            // Durchführungsinformationen (aus Datei 1)
+            $table->string('instructor_name'); // Wer hat es unterrichtet?
+            $table->date('date'); // Wann fand es statt?
+
             $table->timestamps();
         });
     }
