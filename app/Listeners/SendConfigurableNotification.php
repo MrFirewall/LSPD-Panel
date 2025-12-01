@@ -15,6 +15,7 @@ use App\Models\Prescription;
 use App\Models\Report;
 use App\Models\Vacation;
 use App\Models\ServiceRecord;
+use App\Models\DiscordSetting;
 use App\Notifications\GeneralNotification;
 use Illuminate\Contracts\Queue\ShouldQueue; // Optional, für asynchrone Listener
 use Illuminate\Support\Collection;
@@ -187,13 +188,13 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              /** @var Announcement $announcement */ $announcement = $event->relatedModel; $ersteller = $event->actorUser;
              $pushTitle = "Neue Ankündigung";
              $notificationText = "Neue Ankündigung '{$announcement->title}' wurde von {$ersteller->name} veröffentlicht.";
-             $notificationIcon = 'fas fa-bullhorn text-primary'; $notificationUrl = route('dashboard');
+             $notificationIcon = 'fas fa-bullhorn text-primary'; $notificationUrl = route('admin.announcements.index');
         }
         elseif ($event->controllerAction === 'AnnouncementController@update' && $event->relatedModel instanceof Announcement) {
              /** @var Announcement $announcement */ $announcement = $event->relatedModel; $editor = $event->actorUser;
              $pushTitle = "Ankündigung bearbeitet";
              $notificationText = "Ankündigung '{$announcement->title}' wurde von {$editor->name} bearbeitet.";
-             $notificationIcon = 'fas fa-edit text-info'; $notificationUrl = route('dashboard');
+             $notificationIcon = 'fas fa-edit text-info'; $notificationUrl = route('admin.announcements.index');
         }
         elseif ($event->controllerAction === 'AnnouncementController@destroy') {
              $title = $event->additionalData['title'] ?? ($event->relatedModel->title ?? 'Unbekannt'); $deleter = $event->actorUser;
@@ -561,7 +562,18 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              }
              return;
         }
-
+        // ZZ) Discord Einstellungen (DiscordSettingController)
+        elseif ($event->controllerAction === 'Admin\DiscordSettingController@update' && $event->relatedModel instanceof DiscordSetting) {
+             /** @var DiscordSetting $setting */ $setting = $event->relatedModel; 
+             /** @var User $editor */ $editor = $event->actorUser;
+             
+             $pushTitle = "Discord Einstellung geändert";
+             // Wir nutzen die formatierte Beschreibung aus dem Controller oder einen Fallback
+             $notificationText = $event->additionalData['description'] ?? "Webhook '{$setting->friendly_name}' wurde von {$editor->name} bearbeitet.";
+             
+             $notificationIcon = 'fab fa-discord text-primary'; // Discord Icon in Blau/Lila
+             $notificationUrl = route('admin.discord.index'); // Link zurück zu den Settings
+        }
 
         // =====================================================================
         // === 6. FINALES SENDEN (FALLBACK) ===

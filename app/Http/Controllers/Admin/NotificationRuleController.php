@@ -210,6 +210,9 @@ class NotificationRuleController extends Controller
             // Urlaubsanträge
             'VacationController@store' => 'Urlaubsantrag gestellt',
             'VacationController@updateStatus' => '[Admin] Urlaubsantrag bearbeitet (Genehmigt/Abgelehnt)',
+
+            //Discord Einstellungen
+            'Admin\DiscordSettingController@update' => '[Admin] Discord Einstellungen aktualisiert',
         ];
     }
 
