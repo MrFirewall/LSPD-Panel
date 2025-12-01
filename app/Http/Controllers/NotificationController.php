@@ -137,22 +137,25 @@ class NotificationController extends Controller
      * @param string $id The ID of the notification to mark.
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function markAsRead($id)
+    public function markAsRead(Request $request, $id)
     {
-        // Find the notification by ID and ensure it belongs to the logged-in user
+        // Benachrichtigung suchen (Fail safe)
         $notification = Auth::user()->notifications()->where('id', $id)->first();
 
-        if ($notification && $notification->unread()) {
+        if ($notification) {
+            // Immer als gelesen markieren
             $notification->markAsRead();
             
-            // If a URL was provided, redirect there
-            if (isset($notification->data['url']) && $notification->data['url'] !== '#') {
+            // LOGIK ÄNDERUNG:
+            // Nur weiterleiten, wenn das Formular explizit "redirect_to_target" sendet
+            // UND eine gültige URL vorhanden ist.
+            if ($request->has('redirect_to_target') && !empty($notification->data['url']) && $notification->data['url'] !== '#') {
                 return redirect($notification->data['url']);
             }
         }
         
-        // If no URL or notification not found/read, redirect back
-        return redirect()->back(); 
+        // Sonst einfach auf der aktuellen Seite bleiben
+        return back(); 
     }
 
     /**

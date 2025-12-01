@@ -1,29 +1,44 @@
 {{-- Style Block --}}
 <style>
-    /* Begrenzt die Höhe und erlaubt Scrollen */
     .notification-list-scroll {
         max-height: 350px;
         overflow-y: auto;
         overflow-x: hidden;
     }
     
-    /* Scrollbar Styling */
-    .notification-list-scroll::-webkit-scrollbar { width: 5px; }
-    .notification-list-scroll::-webkit-scrollbar-track { background: transparent; }
-    .notification-list-scroll::-webkit-scrollbar-thumb { background-color: rgba(150,150,150,0.3); border-radius: 3px; }
+    /* Scrollbar Styling (dezent) */
+    .notification-list-scroll::-webkit-scrollbar { width: 4px; }
+    .notification-list-scroll::-webkit-scrollbar-thumb { background-color: rgba(128,128,128,0.3); border-radius: 2px; }
 
     /* Text-Wrap Logik */
     .notification-content {
         white-space: normal;
         overflow-wrap: break-word;
         line-height: 1.3;
-        color: inherit; /* WICHTIG für Dark Mode */
+        color: inherit; 
     }
     
-    /* Hover-Effekt für den Haken-Button */
+    /* Hover-Effekt für den Haken */
     .mark-read-btn:hover {
-        color: #28a745 !important; /* Grün beim Hover */
+        color: #28a745 !important; 
         background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    /* Damit der Button wie normaler Text aussieht */
+    .btn-text-wrapper {
+        text-align: left;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: inherit;
+    }
+    .btn-text-wrapper:hover {
+        background-color: rgba(0,0,0,0.05); /* Leichter Hover Effekt */
+    }
+    /* Dark Mode Hover Anpassung */
+    .dark-mode .btn-text-wrapper:hover {
+        background-color: rgba(255,255,255,0.05);
     }
 </style>
 
@@ -48,7 +63,6 @@
         @php
             $collapseId = 'group-collapse-' . $loop->index;
             
-            // Icon Farbe (angepasst an Bootstrap Standard)
             $iconColor = match($group['group_title']) {
                 'System' => 'text-danger',
                 'Anträge' => 'text-warning',
@@ -57,12 +71,11 @@
         @endphp
 
         {{-- GRUPPEN TITEL --}}
-        {{-- Wir nutzen dropdown-header für Styling, aber machen es klickbar --}}
         <a href="#{{ $collapseId }}" 
            class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom"
            data-toggle="collapse" 
            role="button" 
-           aria-expanded="true" {{-- Standardmäßig aufgeklappt --}}
+           aria-expanded="true" 
            onclick="event.stopPropagation();">
             <span>
                 <i class="{{ $group['group_icon'] }} {{ $iconColor }} mr-2"></i> 
@@ -75,25 +88,24 @@
         <div class="collapse show" id="{{ $collapseId }}">
             @foreach ($group['items'] as $notification)
                 
-                {{-- Container für die Zweiteilung (Flexbox) --}}
-                <div class="dropdown-item p-0 d-flex border-bottom align-items-stretch">
+                <div class="d-flex border-bottom">
                     
-                    {{-- TEIL A: Button zum NUR als gelesen markieren (Linke Seite) --}}
+                    {{-- A) BUTTON: NUR GELESEN MARKIEREN (Kein Redirect) --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="d-flex">
                         @csrf
-                        {{-- Kein Redirect Input -> Controller bleibt auf der Seite --}}
-                        <button type="submit" class="btn btn-link text-muted mark-read-btn d-flex align-items-center justify-content-center px-3 border-right h-100" style="text-decoration: none;" title="Als gelesen markieren">
+                        {{-- HIER KEIN HIDDEN INPUT "redirect_to_target" --}}
+                        <button type="submit" class="btn btn-link text-muted mark-read-btn d-flex align-items-center justify-content-center px-3 border-right h-100" style="text-decoration: none; border-radius: 0;" title="Als gelesen markieren">
                             <i class="fas fa-check"></i>
                         </button>
                     </form>
 
-                    {{-- TEIL B: Der Text-Inhalt (Rechte Seite) -> Redirect + Mark Read --}}
+                    {{-- B) BUTTON: TEXT KLICKEN (Gelesen + Redirect) --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
                         @csrf
-                        {{-- WICHTIG: Dieses Feld muss im Controller abgefragt werden für den Redirect! --}}
+                        {{-- HIER IST DER SCHLÜSSEL: --}}
                         <input type="hidden" name="redirect_to_target" value="1">
                         
-                        <button type="submit" class="btn btn-link text-left w-100 h-100 p-2 d-block" style="text-decoration: none; color: inherit;">
+                        <button type="submit" class="btn-text-wrapper p-2 h-100">
                             <div class="d-flex flex-column">
                                 <span class="notification-content text-sm">
                                     {{ $notification['text'] ?? '...' }}
