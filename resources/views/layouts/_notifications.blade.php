@@ -52,7 +52,6 @@
     @forelse ($groupedNotifications as $group)
         @php
             $collapseId = 'group-collapse-' . $loop->index;
-            
             $iconColor = match($group['group_title']) {
                 'System' => 'text-danger',
                 'Anträge' => 'text-warning',
@@ -60,37 +59,36 @@
             };
         @endphp
 
-        {{-- GRUPPEN TITEL --}}
+        {{-- GRUPPEN TITEL (Bleibt gleich) --}}
         <a href="#" 
-           class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom"
-           
-           {{-- WICHTIG: Manuelles Togglen, da stopPropagation das normale Bootstrap-Verhalten blockiert --}}
+           class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom bg-light"
            onclick="event.preventDefault(); event.stopPropagation(); $('#{{ $collapseId }}').collapse('toggle'); return false;">
-           
             <span>
                 <i class="{{ $group['group_icon'] }} {{ $iconColor }} mr-2"></i> 
                 {{ $group['group_title'] }}
             </span>
-            {{-- Kleiner Pfeil, der sich optional per CSS drehen könnte (hier statisch) --}}
             <i class="fas fa-chevron-down text-xs opacity-50"></i>
         </a>
 
         {{-- ITEMS IN GRUPPE --}}
-        {{-- ÄNDERUNG: Klasse 'show' entfernt, damit es standardmäßig ZU ist --}}
         <div class="collapse" id="{{ $collapseId }}">
             @foreach ($group['items'] as $notification)
                 
-                <div class="d-flex border-bottom">
+                {{-- WICHTIG: Klasse 'notification-row' hinzugefügt --}}
+                <div class="d-flex border-bottom bg-white notification-row" id="notif-row-{{ $notification['id'] }}">
                     
-                    {{-- A) BUTTON: NUR GELESEN MARKIEREN --}}
-                    <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="d-flex">
-                        @csrf
-                        <button type="submit" class="btn btn-link text-muted mark-read-btn d-flex align-items-center justify-content-center px-3 border-right h-100" style="text-decoration: none; border-radius: 0;" title="Als gelesen markieren">
-                            <i class="fas fa-check"></i>
-                        </button>
-                    </form>
+                    {{-- A) BUTTON: AJAX MARK AS READ --}}
+                    {{-- Kein Formular mehr! Nur ein Button mit data-Attributen --}}
+                    <button type="button" 
+                            class="btn btn-link text-muted mark-read-ajax-btn d-flex align-items-center justify-content-center px-3 border-right h-100" 
+                            style="text-decoration: none; border-radius: 0;" 
+                            title="Als gelesen markieren"
+                            data-url="{{ route('notifications.markAsRead', $notification['id']) }}"
+                            data-id="{{ $notification['id'] }}">
+                        <i class="fas fa-check"></i>
+                    </button>
 
-                    {{-- B) BUTTON: TEXT KLICKEN (Redirect) --}}
+                    {{-- B) BUTTON: TEXT KLICKEN (Redirect bleibt wie gehabt) --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
                         @csrf
                         <input type="hidden" name="redirect_to_target" value="1">

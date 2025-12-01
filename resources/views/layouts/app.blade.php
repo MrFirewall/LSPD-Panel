@@ -332,7 +332,9 @@
             console.error("Pusher oder Echo (CDN) konnte nicht geladen werden.");
         }
 
-        // --- BENACHRICHTIGUNGEN ---
+        // --- BENACHRICHTIGUNGEN START ---
+        
+        // 1. Laden der Benachrichtigungen
         function fetchNotifications() {
             const notificationCount = $('#notification-count');
             const notificationList = $('#notification-list');
@@ -364,6 +366,7 @@
         }
         fetchNotifications();
 
+        // 2. Echo Listener (Live Updates)
         @auth
         if (typeof window.Echo !== 'undefined') {
              window.Echo.private(`users.{{ Auth::id() }}`)
@@ -375,12 +378,64 @@
         }
         @endauth
 
+        // 3. Dropdown offen halten beim Klicken (wichtig für Accordion)
         $(document).on('click', '#notification-dropdown .dropdown-menu', function (e) {
             const isToggle = $(e.target).closest('a[data-toggle="collapse"]').length > 0;
             const isContent = $(e.target).closest('.collapse').length > 0;
-            const isFormElement = $(e.target).closest('form, button[type="submit"]').length > 0;
+            const isFormElement = $(e.target).closest('form, button').length > 0; // "button" hinzugefügt
+            
+            // Wenn auf Toggle, Content oder Button geklickt wird -> Dropdown offen lassen
             if (isToggle || isContent || isFormElement) { e.stopPropagation(); }
         });
+
+        // 4. AJAX: "Als gelesen markieren" (Der Haken-Button)
+        // <--- NEU EINGEFÜGT & INTEGRIERT --->
+        $(document).on('click', '.mark-read-ajax-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Verhindert Schließen des Dropdowns
+
+            var $btn = $(this);
+            var url = $btn.data('url');
+            var rowId = '#notif-row-' + $btn.data('id');
+            var $row = $(rowId);
+
+            // Feedback: Lade-Icon anzeigen
+            var originalContent = $btn.html();
+            $btn.html('<i class="fas fa-spinner fa-spin text-muted"></i>').prop('disabled', true);
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Zeile sanft entfernen
+                        $row.slideUp(200, function() {
+                            $(this).remove();
+                        });
+
+                        // Badge Counter oben aktualisieren
+                        if (response.remaining_count !== undefined) {
+                            var $badge = $('#notification-count');
+                            $badge.text(response.remaining_count);
+                            if (response.remaining_count <= 0) {
+                                $badge.hide();
+                                // Optional: Wenn leer, Dropdown neu laden um "Keine Meldungen" anzuzeigen
+                                // fetchNotifications(); 
+                            }
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Fehler beim Markieren:", xhr);
+                    // Reset Button bei Fehler
+                    $btn.html(originalContent).prop('disabled', false);
+                }
+            });
+        });
+        // --- BENACHRICHTIGUNGEN ENDE ---
 
     });
 </script>
@@ -561,6 +616,7 @@
 
     });
 </script>
+
 {{-- FINALER SESSION-TIMER (SERVER-GESTEUERT MIT PING-RESET & DEBUGGING) --}}
 @if(session('is_remembered') === false)
 <script>

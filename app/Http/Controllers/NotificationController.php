@@ -139,23 +139,33 @@ class NotificationController extends Controller
      */
     public function markAsRead(Request $request, $id)
     {
-        // Benachrichtigung suchen (Fail safe)
         $notification = Auth::user()->notifications()->where('id', $id)->first();
 
         if ($notification) {
-            // Immer als gelesen markieren
             $notification->markAsRead();
             
-            // LOGIK ÄNDERUNG:
-            // Nur weiterleiten, wenn das Formular explizit "redirect_to_target" sendet
-            // UND eine gültige URL vorhanden ist.
+            // --- NEU: AJAX Check ---
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'id' => $id,
+                    'remaining_count' => Auth::user()->unreadNotifications()->count()
+                ]);
+            }
+
+            // --- ALTE LOGIK (Redirect für Text-Klick) ---
             if ($request->has('redirect_to_target') && !empty($notification->data['url']) && $notification->data['url'] !== '#') {
                 return redirect($notification->data['url']);
             }
         }
         
-        // Sonst einfach auf der aktuellen Seite bleiben
-        return back(); 
+        // Fallback
+        if ($request->ajax()) {
+            // Falls Notification nicht gefunden wurde, trotzdem success senden um UI zu bereinigen
+            return response()->json(['success' => true]); 
+        }
+
+        return redirect()->back(); 
     }
 
     /**
