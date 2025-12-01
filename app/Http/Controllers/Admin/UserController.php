@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use App\Models\ActivityLog;
 use App\Events\PotentiallyNotifiableActionOccurred;
+use App\Services\DiscordService;
 
 // --- ANGEPASSTE USE-STATEMENTS ---
 use App\Models\Role; // Benutzt dein eigenes Role-Modell
@@ -655,6 +656,40 @@ class UserController extends Controller
                 'added_permissions' => $addedPermissions, 'removed_permissions' => $removedPermissions
             ]
         );
+
+        // --- DISCORD LOGIK START ---    
+        // Wir definieren ein Mapping zwischen deinem $recordType und den DB-Keys
+        $discordActionMap = [
+            'Beförderung'  => 'promotion',
+            'Degradierung' => 'demotion',
+            // 'Rangänderung' => 'change', // Optional, falls du das auch willst
+        ];
+
+        if (array_key_exists($recordType, $discordActionMap)) {
+            $actionKey = $discordActionMap[$recordType];
+            
+            // Farbe: Grün für Beförderung, Rot für Degradierung
+            $color = ($recordType === 'Beförderung') ? 5763719 : 15548997; 
+
+            $embed = [
+                [
+                    'title' => "Neue " . $recordType,
+                    'description' => "**{$user->name}** hat einen neuen Rang erhalten.",
+                    'color' => $color,
+                    'fields' => [
+                        ['name' => 'Alter Rang', 'value' => $oldValues['rank'], 'inline' => true],
+                        ['name' => 'Neuer Rang', 'value' => $newRank, 'inline' => true],
+                        ['name' => 'Ausgeführt von', 'value' => Auth::user()->name, 'inline' => false],
+                    ],
+                    'timestamp' => now()->toIso8601String()
+                ]
+            ];
+
+            // Leerer Content, dafür Embeds
+            (new DiscordService())->send($actionKey, "", $embed);
+        }
+        
+        // --- DISCORD LOGIK ENDE ---
 
         return redirect()->route('admin.users.index'); // Ohne success
     }
