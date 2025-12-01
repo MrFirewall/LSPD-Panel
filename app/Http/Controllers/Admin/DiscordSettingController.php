@@ -43,7 +43,7 @@ class DiscordSettingController extends Controller
 
         try {
             // Service aufrufen
-            (new DiscordService())->sendTest($discordSetting->webhook_url);
+            (new \App\Services\DiscordService())->sendTest($discordSetting->webhook_url);
             
             return back()->with('success', 'Testnachricht wurde erfolgreich an Discord gesendet!');
         } catch (\Exception $e) {
