@@ -91,7 +91,7 @@ class GeneralNotification extends Notification implements ShouldBroadcastNow, Sh
      */
     public function broadcastAs(): string
     {
-        return 'new.ems.notification';
+        return 'new.notification';
     }
     
     /**

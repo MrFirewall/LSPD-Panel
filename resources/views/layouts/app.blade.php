@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'EMS Panel')</title>
+    <title>@yield('title', 'LSPD Panel')</title>
 
     {{-- AdminLTE & FONT DEPENDENCIES --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
@@ -140,9 +140,10 @@
 
     {{-- MAIN SIDEBAR --}}
     <aside class="main-sidebar sidebar-dark-primary elevation-4" id="mainSidebar">
-        <a href="{{ route('dashboard') }}" class="brand-link">
-            <i class="fas fa-ambulance brand-image img-circle elevation-3" style="opacity: .8"></i>
-            <span class="brand-text font-weight-light">EMS Panel</span>
+        {{-- 'd-flex align-items-center' sorgt für die vertikale Zentrierung --}}
+        <a href="{{ route('dashboard') }}" class="brand-link d-flex align-items-center justify-content-center">
+            <i class="fas fa-user-shield fa-lg elevation-3 mr-3" style="opacity: .8"></i>            
+            <span class="brand-text font-weight-light">LSPD Panel</span>
         </a>
 
         <div class="sidebar">
@@ -168,7 +169,7 @@
         <button id="disable-push" class="btn btn-sm btn-danger float-left mr-3" style="display: none;">Desktop-Benachrichtigungen deaktivieren</button>
 
         <div class="float-right d-none d-sm-inline">Version 1.0</div>
-        <strong>Copyright &copy; 2025 EMS Panel.</strong> All rights reserved.
+        <strong>Copyright &copy; 2025 LSPD Panel.</strong> All rights reserved.
     </footer>
 </div>
 
@@ -388,7 +389,7 @@
         @auth
         if (typeof window.Echo !== 'undefined') {
              window.Echo.private(`users.{{ Auth::id() }}`)
-                .listen('.new.ems.notification', (e) => {
+                .listen('.new.notification', (e) => {
                      fetchNotifications();
                      $('#notification-dropdown .fa-bell').addClass('text-warning').delay(500).queue(function(next){ $(this).removeClass('text-warning'); next(); });
                 })

@@ -8,7 +8,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12 text-center">
-                    <h1 class="m-0">Verwaltung des Los Santos Medical Center (LSMC)</h1>
+                    <h1 class="m-0">Verwaltung der Landespolizei | Hansestadt Hamburg</h1>
                     <p class="lead">Herzlich Willkommen, {{ Auth::user()->name }}!</p>
                 </div>
             </div>
