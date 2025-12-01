@@ -339,7 +339,7 @@
 
             window.Echo.connector.pusher.connection.bind('state_change', function(states) {
                 // Hilft beim Debuggen in der Konsole
-                console.log("Reverb Verbindung: " + states.current);
+                //console.log("Reverb Verbindung: " + states.current);
             });
             
             window.Echo.connector.pusher.connection.bind('error', function(err) { 
