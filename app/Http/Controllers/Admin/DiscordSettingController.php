@@ -12,7 +12,7 @@ class DiscordSettingController extends Controller
     public function index()
     {
         $settings = DiscordSetting::all();
-        return view('admin.discord.index', compact('settings'));
+        return view('admin.discord-settings.index', compact('settings'));
     }
 
     // Speichert alle Änderungen auf einmal
