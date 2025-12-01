@@ -61,7 +61,7 @@
 
         {{-- GRUPPEN TITEL (Bleibt gleich) --}}
         <a href="#" 
-           class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom bg-light"
+           class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom"
            onclick="event.preventDefault(); event.stopPropagation(); $('#{{ $collapseId }}').collapse('toggle'); return false;">
             <span>
                 <i class="{{ $group['group_icon'] }} {{ $iconColor }} mr-2"></i> 
@@ -75,7 +75,7 @@
             @foreach ($group['items'] as $notification)
                 
                 {{-- WICHTIG: Klasse 'notification-row' hinzugefügt --}}
-                <div class="d-flex border-bottom bg-white notification-row" id="notif-row-{{ $notification['id'] }}">
+                <div class="d-flex border-bottom notification-row" id="notif-row-{{ $notification['id'] }}">
                     
                     {{-- A) BUTTON: AJAX MARK AS READ --}}
                     {{-- Kein Formular mehr! Nur ein Button mit data-Attributen --}}

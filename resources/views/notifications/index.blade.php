@@ -223,8 +223,8 @@ $(function () {
         "info": true,
         "autoWidth": false,
         "responsive": true,
-        "order": [[ 4, "desc" ]], // Nach Zeit sortieren
-        "language": { "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/German.json" },
+        "order": [[ 4, "desc" ]],        
+        "language": { "url": "{{ asset('js/i18n/de-DE.json') }}"},
         "columnDefs": [
             { "orderable": false, "targets": [0, 5] } // Checkbox & Action nicht sortierbar
         ],
