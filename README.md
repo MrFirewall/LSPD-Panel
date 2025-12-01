@@ -99,20 +99,15 @@ Basierend auf dem Entwicklungsverlauf umfasst das Panel folgende Kernmodule:
    composer install
    npm install
    ```
-3. Frontend kompilieren
 
-   ```bash
-   npm run dev   # Entwicklung
-   npm run build # Produktion
-   ```
-4. Umgebungsdatei einrichten
+3. Umgebungsdatei einrichten
 
    ```bash
    cp .env.example .env
    php artisan key:generate
    php artisan cfx:keys   
    ```
-5. Datenbank konfigurieren
+4. Datenbank konfigurieren
    ⚠️ *Ersetze Benutzername und Passwort durch reale Werte.*
 
    ```env
@@ -123,10 +118,16 @@ Basierend auf dem Entwicklungsverlauf umfasst das Panel folgende Kernmodule:
    DB_USERNAME=<user>
    DB_PASSWORD=<password>
    ```
-6. Migrationen ausführen
+5. Migrationen ausführen
 
    ```bash
    php artisan migrate
+   ```
+6. Frontend kompilieren
+
+   ```bash
+   npm run dev   # Entwicklung
+   npm run build # Produktion
    ```
 7. (Optional) Seeders & Vorlagen importieren
 
