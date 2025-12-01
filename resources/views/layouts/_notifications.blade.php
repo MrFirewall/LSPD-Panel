@@ -1,4 +1,4 @@
-{{-- Style direkt für das Dropdown (kann auch in CSS Datei) --}}
+{{-- Style Block --}}
 <style>
     /* Begrenzt die Höhe und erlaubt Scrollen */
     .notification-list-scroll {
@@ -6,26 +6,35 @@
         overflow-y: auto;
         overflow-x: hidden;
     }
-    /* Verschönert die Scrollbar (optional, wirkt moderner) */
-    .notification-list-scroll::-webkit-scrollbar { width: 6px; }
-    .notification-list-scroll::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.2); border-radius: 3px; }
+    
+    /* Scrollbar Styling */
+    .notification-list-scroll::-webkit-scrollbar { width: 5px; }
+    .notification-list-scroll::-webkit-scrollbar-track { background: transparent; }
+    .notification-list-scroll::-webkit-scrollbar-thumb { background-color: rgba(150,150,150,0.3); border-radius: 3px; }
 
     /* Text-Wrap Logik */
     .notification-content {
         white-space: normal;
         overflow-wrap: break-word;
         line-height: 1.3;
+        color: inherit; /* WICHTIG für Dark Mode */
+    }
+    
+    /* Hover-Effekt für den Haken-Button */
+    .mark-read-btn:hover {
+        color: #28a745 !important; /* Grün beim Hover */
+        background-color: rgba(40, 167, 69, 0.1);
     }
 </style>
 
 {{-- 1. HEADER --}}
-<span class="dropdown-item dropdown-header d-flex justify-content-between align-items-center">
-    <span>{{ $totalCount ?? 0 }} Benachrichtigungen</span>
+<span class="dropdown-item dropdown-header d-flex justify-content-between align-items-center border-bottom">
+    <span class="font-weight-bold">{{ $totalCount ?? 0 }} Benachrichtigungen</span>
     
     @if(($totalCount ?? 0) > 0)
         <form action="{{ route('notifications.markAllRead') }}" method="POST" class="m-0">
             @csrf
-            <button type="submit" class="btn btn-xs btn-outline-success" title="Alle als gelesen markieren">
+            <button type="submit" class="btn btn-xs btn-outline-primary" title="Alle als gelesen markieren">
                 Alle lesen
             </button>
         </form>
@@ -38,8 +47,8 @@
     @forelse ($groupedNotifications as $group)
         @php
             $collapseId = 'group-collapse-' . $loop->index;
-        
-            // Farbe basierend auf Gruppe (Optional, passt sich AdminLTE an)
+            
+            // Icon Farbe (angepasst an Bootstrap Standard)
             $iconColor = match($group['group_title']) {
                 'System' => 'text-danger',
                 'Anträge' => 'text-warning',
@@ -47,62 +56,69 @@
             };
         @endphp
 
-        <div class="dropdown-divider"></div>
-
         {{-- GRUPPEN TITEL --}}
-        {{-- WICHTIG: onclick="event.stopPropagation()" verhindert, dass das Dropdown schließt beim Klicken --}}
+        {{-- Wir nutzen dropdown-header für Styling, aber machen es klickbar --}}
         <a href="#{{ $collapseId }}" 
-           class="dropdown-item font-weight-bold bg-light d-flex justify-content-between align-items-center"
+           class="dropdown-item dropdown-header font-weight-bold d-flex justify-content-between align-items-center border-bottom"
            data-toggle="collapse" 
            role="button" 
-           aria-expanded="false"
+           aria-expanded="true" {{-- Standardmäßig aufgeklappt --}}
            onclick="event.stopPropagation();">
             <span>
                 <i class="{{ $group['group_icon'] }} {{ $iconColor }} mr-2"></i> 
                 {{ $group['group_title'] }}
             </span>
-            <i class="fas fa-chevron-down text-muted text-xs"></i>
+            <i class="fas fa-chevron-down text-xs opacity-50"></i>
         </a>
 
         {{-- ITEMS IN GRUPPE --}}
-        <div class="collapse show" id="{{ $collapseId }}"> {{-- 'show' entfernen, wenn standardmäßig zugeklappt sein soll --}}
+        <div class="collapse show" id="{{ $collapseId }}">
             @foreach ($group['items'] as $notification)
-                <div class="dropdown-divider my-0"></div>
+                
+                {{-- Container für die Zweiteilung (Flexbox) --}}
+                <div class="dropdown-item p-0 d-flex border-bottom align-items-stretch">
+                    
+                    {{-- TEIL A: Button zum NUR als gelesen markieren (Linke Seite) --}}
+                    <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="d-flex">
+                        @csrf
+                        {{-- Kein Redirect Input -> Controller bleibt auf der Seite --}}
+                        <button type="submit" class="btn btn-link text-muted mark-read-btn d-flex align-items-center justify-content-center px-3 border-right h-100" style="text-decoration: none;" title="Als gelesen markieren">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </form>
 
-                <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="m-0 p-0">
-                    @csrf
-                    <button type="submit" class="dropdown-item p-2 d-flex align-items-start text-left bg-white" style="border: none; width: 100%;">
+                    {{-- TEIL B: Der Text-Inhalt (Rechte Seite) -> Redirect + Mark Read --}}
+                    <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
+                        @csrf
+                        {{-- WICHTIG: Dieses Feld muss im Controller abgefragt werden für den Redirect! --}}
+                        <input type="hidden" name="redirect_to_target" value="1">
                         
-                        {{-- Icon --}}
-                        <div class="mr-2 mt-1">
-                             <i class="far fa-circle text-xs text-secondary"></i>
-                        </div>
-
-                        {{-- Text Content --}}
-                        <div class="flex-grow-1 overflow-hidden">
-                            <div class="notification-content text-sm text-dark">
-                                {{ $notification['text'] ?? '...' }}
+                        <button type="submit" class="btn btn-link text-left w-100 h-100 p-2 d-block" style="text-decoration: none; color: inherit;">
+                            <div class="d-flex flex-column">
+                                <span class="notification-content text-sm">
+                                    {{ $notification['text'] ?? '...' }}
+                                </span>
+                                <small class="text-muted mt-1">
+                                    <i class="far fa-clock mr-1"></i> {{ $notification['time'] }}
+                                </small>
                             </div>
-                            <small class="text-muted float-right mt-1">
-                                <i class="far fa-clock mr-1"></i> {{ $notification['time'] }}
-                            </small>
-                        </div>
-                    </button>
-                </form>
+                        </button>
+                    </form>
+                </div>
+
             @endforeach
         </div>
 
     @empty
-        <div class="dropdown-divider"></div>
-        <a href="#" class="dropdown-item dropdown-footer text-center text-muted">
+        <div class="p-4 text-center text-muted">
+            <i class="far fa-bell-slash mb-2" style="font-size: 2rem;"></i><br>
             Keine neuen Meldungen
-        </a>
+        </div>
     @endforelse
 
 </div>
 
 {{-- 3. FOOTER --}}
-<div class="dropdown-divider"></div>
-<a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer text-center">
-    <strong>Alle Benachrichtigungen anzeigen</strong>
+<a href="{{ route('notifications.index') }}" class="dropdown-item dropdown-footer text-center border-top">
+    Alle Benachrichtigungen anzeigen
 </a>
