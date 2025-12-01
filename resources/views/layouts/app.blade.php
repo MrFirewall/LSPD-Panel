@@ -299,15 +299,26 @@
         // --- ECHO INITIALISIERUNG ---
         if (typeof Pusher !== 'undefined' && typeof Echo !== 'undefined') {
             window.Pusher = Pusher;
-            const isHttps = window.location.protocol === 'https:';
+            
+            // Wir prüfen explizit auf HTTPS oder nutzen die Config
+            const useTls = window.location.protocol === 'https:' || '{{ env("VITE_REVERB_SCHEME") }}' === 'https';
+
             window.Echo = new Echo({
                 broadcaster: 'pusher',
-                key: '{{ env("REVERB_APP_KEY", env("PUSHER_APP_KEY")) }}',
-                wsHost: window.location.hostname,
-                wsPort: {{ env("REVERB_PORT") ?? 6001 }},
-                wssPort: {{ env("REVERB_PORT") ?? 443 }},
-                forceTLS: isHttps || ('{{ env("REVERB_SCHEME", env("PUSHER_SCHEME")) }}' === 'https'),
+                key: '{{ env("REVERB_APP_KEY") }}',
+                
+                // Hier nutzen wir die ÖFFENTLICHEN (VITE) Variablen oder Hardcodes für Nginx
+                wsHost: '{{ env("VITE_REVERB_HOST", "lspd.geeknetz.de") }}',
+                
+                // WICHTIG: Der Browser muss immer an 443 (HTTPS) oder 80 (HTTP) senden, 
+                // weil Nginx davor steht. NICHT an 8080 senden!
+                wsPort: {{ env("VITE_REVERB_PORT") ?? 80 }},
+                wssPort: {{ env("VITE_REVERB_PORT") ?? 443 }},
+                
+                forceTLS: useTls,
                 disableStats: true,
+                enabledTransports: ['ws', 'wss'], // Erzwinge WebSockets, kein Polling Fallback
+                
                 authorizer: (channel, options) => {
                     return {
                         authorize: (socketId, callback) => {
@@ -318,7 +329,7 @@
                             })
                             .done(response => { callback(false, response); })
                             .fail(error => {
-                                console.error('Laravel Echo Authorisierung fehlgeschlagen:', error.responseJSON || error);
+                                console.error('Auth Fehler:', error);
                                 callback(true, error);
                             });
                         }
@@ -326,10 +337,17 @@
                 },
             });
 
-            window.Echo.connector.pusher.connection.bind('error', function(err) { console.error("WebSocket Verbindungsfehler:", err); });
+            window.Echo.connector.pusher.connection.bind('state_change', function(states) {
+                // Hilft beim Debuggen in der Konsole
+                console.log("Reverb Verbindung: " + states.current);
+            });
+            
+            window.Echo.connector.pusher.connection.bind('error', function(err) { 
+                console.error("WebSocket Fehler detail:", err); 
+            });
 
         } else {
-            console.error("Pusher oder Echo (CDN) konnte nicht geladen werden.");
+            console.error("Pusher/Echo nicht geladen.");
         }
 
         // --- BENACHRICHTIGUNGEN START ---
