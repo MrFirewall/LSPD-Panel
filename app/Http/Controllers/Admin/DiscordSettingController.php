@@ -59,7 +59,7 @@ class DiscordSettingController extends Controller
                 $changesCount++;
 
                 // --- A) LOGGING ---
-                $description = "Discord-Einstellung '{$setting->friendly_name}' aktualisiert. ";
+                $description = 'Discord-Webhook "' . $setting->friendly_name . '" aktualisiert.';
                 $description .= "Änderungen: " . implode(', ', $changes) . ".";
 
                 ActivityLog::create([
