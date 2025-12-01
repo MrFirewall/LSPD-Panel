@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class DiscordSetting extends Model
 {
-    protected $fillable = ['action', 'webhook_url', 'active'];
+    protected $fillable = ['action', 'friendly_name', 'webhook_url', 'active', 'description'];
+
+    // Füge das hier hinzu:
+    protected $casts = [
+        'active' => 'boolean',
+    ];
 }

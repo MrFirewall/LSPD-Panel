@@ -28,7 +28,7 @@ class DiscordSettingController extends Controller
             $setting = DiscordSetting::findOrFail($id);
             $setting->update([
                 'webhook_url' => $values['webhook_url'] ?? null,
-                'active' => isset($values['active']), // Checkbox-Logik
+                'active' => (bool) ($values['active'] ?? 0),
             ]);
         }
 
