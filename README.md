@@ -1,4 +1,4 @@
-# EMS Panel / Verwaltung
+# LSPD Panel / Verwaltung (im Umbau)
 
 Ein umfassendes Verwaltungs-Panel (Admin-Panel) für Rettungsdienste (EMS), entwickelt mit dem Laravel-Framework. Es dient zur Verwaltung von Personal, Ausbildung, Prüfungen, Einsätzen und Patientenakten.
 
