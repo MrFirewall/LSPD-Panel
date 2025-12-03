@@ -17,10 +17,8 @@ class Rank extends Model
      */
     protected $fillable = [
         'name',
-        'label', // <--- NEU
-        'guard_name',
-        'updated_at',
-        'created_at'
+        'level',
+        'label',
     ];
 
     /**
@@ -31,9 +29,9 @@ class Rank extends Model
         // Dies ist die Umkehr-Beziehung zu User::belongsTo(Rank::class)
         return $this->hasMany(User::class);
     }
-    public function getLabelAttribute()
+    // Hilfsfunktion: Gibt Label zurück, wenn vorhanden, sonst den Namen (erster Buchstabe groß)
+    public function getLabelAttribute($value)
     {
-        // Wenn in der DB ein Label steht, nimm das. Sonst nimm den Namen.
-        return $this->attributes['label'] ?? $this->name;
+        return $value ?? ucfirst($this->name);
     }
 }

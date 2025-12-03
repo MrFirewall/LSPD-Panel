@@ -624,37 +624,36 @@ class UserController extends Controller
         
         // --- ENDE: DETAILLIERTES LOGGING (Generation) ---
 
-        
         if ($oldValues['rank'] !== $newRank) {
             
-            // Lade die Ränge/Rollen neu, um an das 'label' zu kommen
-            // Wir holen uns Name UND Label
-            $rankInfo = Role::whereIn('name', [$oldValues['rank'], $newRank])->get()->keyBy('name');
+            // 1. Wir laden die Rank-Informationen aus der 'ranks' Tabelle
+            // Wir brauchen Level UND Label
+            $rankInfo = Rank::whereIn('name', [$oldValues['rank'], $newRank])->get()->keyBy('name');
 
-            // Helper um den schönen Namen zu bekommen (Fallback auf internen Namen)
-            $getPrettyName = function($internalName) use ($rankInfo) {
-                return $rankInfo[$internalName]->label ?? $internalName;
-            };
+            $currentRankData = $rankInfo->get($newRank);
+            $oldRankData = $rankInfo->get($oldValues['rank']);
 
-            $oldRankLabel = $getPrettyName($oldValues['rank']);
-            $newRankLabel = $getPrettyName($newRank);
+            // Level ermitteln (Fallback auf 0 falls nicht gefunden)
+            $currentRankLevel = $currentRankData ? $currentRankData->level : 0;
+            $oldRankLevel = $oldRankData ? $oldRankData->level : 0;
 
-            // Level Logik (Bleibt wie vorher, nutzt technische Namen für die Berechnung)
-            $changedRankLevels = Rank::whereIn('name', [$oldValues['rank'], $newRank])->pluck('level', 'name');
-            $currentRankLevel = $changedRankLevels->get($newRank, 0);
-            $oldRankLevel = $changedRankLevels->get($oldValues['rank'], 0);
+            // Labels ermitteln (Fallback auf technischen Namen)
+            $newRankLabel = $currentRankData ? $currentRankData->label : ucfirst($newRank);
+            $oldRankLabel = $oldRankData ? $oldRankData->label : ucfirst($oldValues['rank']);
 
+            // Entscheidung: Beförderung oder Degradierung?
             $recordType = $currentRankLevel > $oldRankLevel ? 'Beförderung' : ($currentRankLevel < $oldRankLevel ? 'Degradierung' : 'Rangänderung');
             
-            // DB Eintrag (Hier nutzen wir jetzt den schönen Namen für den Text!)
+            // 2. Service Record Eintrag
             ServiceRecord::create([
                 'user_id' => $user->id,
                 'author_id' => Auth::id(),
                 'type' => $recordType,
+                // Hier nutzen wir jetzt die schönen Labels aus der Ranks-Tabelle
                 'content' => "Rang geändert von '{$oldRankLabel}' zu '{$newRankLabel}'."
             ]);
 
-            // --- DISCORD LOGIK ---
+            // --- DISCORD LOGIK START ---
             $discordActionMap = [
                 'Beförderung'  => 'rank.promotion',
                 'Degradierung' => 'rank.demotion',
@@ -672,17 +671,16 @@ class UserController extends Controller
                         'fields' => [
                             [
                                 'name' => 'Alte Position', 
-                                'value' => $oldRankLabel, // <--- Schöner Name
+                                'value' => $oldRankLabel, // <--- Schönes Label aus Ranks
                                 'inline' => true
                             ],
                             [
                                 'name' => 'Neue Position', 
-                                'value' => $newRankLabel, // <--- Schöner Name
+                                'value' => $newRankLabel, // <--- Schönes Label aus Ranks
                                 'inline' => true
                             ],
                             [
                                 'name' => 'Ausgeführt von', 
-                                // Fallback, falls mal kein User eingeloggt ist (z.B. System-Cronjob)
                                 'value' => Auth::check() ? Auth::user()->name : 'System', 
                                 'inline' => false
                             ],
@@ -694,12 +692,9 @@ class UserController extends Controller
                     ]
                 ];
 
-                // 5. Service aufrufen (Sicher verpackt, damit der Controller nicht crasht bei Discord-Fehlern)
                 try {
-                    // Wir nutzen "fire & forget". Der Content ist leer "", da wir Embeds nutzen.
                     (new \App\Services\DiscordService())->send($actionKey, "", $embeds);
                 } catch (\Exception $e) {
-                    // Nur ins Log schreiben, User nicht mit Fehler nerven
                     \Log::error("Discord Webhook Fehler: " . $e->getMessage());
                 }
             }
