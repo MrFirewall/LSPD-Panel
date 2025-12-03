@@ -179,46 +179,47 @@
         </div>
 
         {{-- Rechte Spalte: Berechtigungsdetails --}}
-        <div class="col-lg-8">
-            <div class="card">
+<div class="col-lg-8">
+    <div class="card">
+        @if(isset($currentRole))
+            <div class="card-header bg-info">
+                {{-- Controller hat Label bereits korrekt gesetzt, egal ob Rank oder Role --}}
+                <h3 class="card-title">Berechtigungen für: {{ $currentRole->label }}</h3>
+            </div>
+            <form id="editRoleForm" action="{{ route('admin.roles.update', $currentRole) }}" method="POST">
+                @csrf
+                @method('PUT')
                 
-                @if(isset($currentRole))
-                    {{-- Formular zum Bearbeiten der Rolle --}}
-                    <div class="card-header bg-info">
-                        {{-- ÄNDERUNG: Titel zeigt Label --}}
-                        <h3 class="card-title">Berechtigungen für: {{ $currentRole->label }}</h3>
-                    </div>
-                    <form id="editRoleForm" action="{{ route('admin.roles.update', $currentRole) }}" method="POST">
-                        @csrf
-                        @method('PUT')
+                <fieldset @cannot('roles.edit') disabled @endcannot>
+                    <div class="card-body">
                         
-                        <fieldset @cannot('roles.edit') disabled @endcannot>
-                            <div class="card-body">
-                                
-                                {{-- NEU: Eingabefeld für Anzeigename (Label) --}}
-                                <div class="form-group">
-                                    <label for="role_label">Anzeigename (Öffentlich)</label>
-                                    <input type="text" 
-                                           class="form-control @error('label') is-invalid @enderror" 
-                                           id="role_label" 
-                                           name="label" 
-                                           {{-- Wir greifen direkt auf das Attribut zu, um zu sehen was in der DB steht, oder fallback auf name --}}
-                                           value="{{ old('label', $currentRole->getAttributes()['label'] ?? $currentRole->name) }}" 
-                                           required>
-                                    @error('label') <div class="text-danger small">{{ $message }}</div> @enderror
-                                </div>
+                        {{-- Anzeige Name (Label) Input --}}
+                        <div class="form-group">
+                            <label for="role_label">Anzeigename (Öffentlich)</label>
+                            <input type="text" 
+                                   class="form-control @error('label') is-invalid @enderror" 
+                                   id="role_label" 
+                                   name="label" 
+                                   {{-- 
+                                      Hier nutzen wir einfach das Attribut, da der Controller 
+                                      es in der index()-Methode bereits korrekt befüllt hat 
+                                      (entweder aus ranks-Tabelle oder roles-Tabelle).
+                                   --}}
+                                   value="{{ old('label', $currentRole->label) }}" 
+                                   required>
+                            @error('label') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
 
-                                {{-- Eingabefeld für Rollenname (Technisch) --}}
-                                <div class="form-group">
-                                    <label for="role_name">Technischer Name (Slug)</label>
-                                    <input type="text" 
-                                           class="form-control @error('name') is-invalid @enderror" 
-                                           id="role_name" 
-                                           name="name" 
-                                           value="{{ old('name', $currentRole->name) }}" 
-                                           required 
-                                           @if($currentRole->name === 'chief') disabled @endif>
-                                    @if($currentRole->name === 'chief')
+                        {{-- Technischer Name (Slug) --}}
+                        <div class="form-group">
+                            <label for="role_name">Technischer Name (Slug)</label>
+                            <input type="text" 
+                                   class="form-control @error('name') is-invalid @enderror" 
+                                   id="role_name" 
+                                   name="name" 
+                                   value="{{ old('name', $currentRole->name) }}" 
+                                   required 
+                                   @if($currentRole->name === 'chief') disabled @endif>
                                         <small class="text-danger">Der Name der Super-Admin-Rolle kann nicht geändert werden.</small>
                                     @endif
                                     @error('name') <div class="text-danger small">{{ $message }}</div> @enderror

@@ -42,10 +42,9 @@ class RoleController extends Controller
      * Zeigt die Rollenliste (kategorisiert) und die Bearbeitungsansicht an.
      * Übergibt alle Departments, Rollennamen, Ränge und den Typ der aktuellen Rolle
      */
-    public function index(Request $request)
+public function index(Request $request)
     {
-        // 1. Alle Daten laden (Super-Admin herausfiltern)
-        // GEÄNDERT: 'Super-Admin' wird von Anfang an ausgeschlossen.
+        // 1. Rollen laden
         $allRolesCollection = Role::where('name', '!=', $this->superAdminRole)
                                  ->withCount('users')
                                  ->get(); 
@@ -54,26 +53,26 @@ class RoleController extends Controller
         $ranks = Rank::orderBy('level', 'desc')->get();
         $allDepartments = Department::orderBy('name')->get();
 
-        // NEU: Hole alle Rollennamen und Ränge für Dropdowns
-        // (Diese Liste ist dank der obigen Änderung bereits gefiltert)
         $allRoleNames = $allRolesCollection->pluck('name'); 
-        $allRanks = Rank::orderBy('level', 'desc')->pluck('level', 'name'); // Format: ['chief' => 11, 'deputy chief' => 10, ...]
+        $allRanks = Rank::orderBy('level', 'desc')->pluck('level', 'name');
 
-
-        // 2. Kategorien initialisieren
         $categorizedRoles = ['Ranks' => [], 'Departments' => [], 'Other' => []];
 
-        // 3. Ränge zuordnen
+        // 2. Ränge zuordnen & LABEL AUS RANKS TABELLE HOLEN
         foreach ($ranks as $rank) {
             $rankNameLower = strtolower($rank->name);
             if ($allRoles->has($rankNameLower)) {
                 $roleModel = $allRoles->pull($rankNameLower);
                 $roleModel->rank_id = $rank->id;
+                
+                // WICHTIG: Überschreibe das Role-Label mit dem Rank-Label für die Anzeige
+                $roleModel->label = $rank->label ?? ucfirst($roleModel->name); 
+                
                 $categorizedRoles['Ranks'][] = $roleModel;
             }
         }
 
-        // 4. Abteilungen zuordnen
+        // 3. Abteilungen zuordnen (Label kommt hier aus roles Tabelle, passiert automatisch)
         foreach ($allDepartments as $dept) {
             $dept->loadMissing('roles');
             $categorizedRoles['Departments'][$dept->name] = [];
@@ -90,10 +89,10 @@ class RoleController extends Controller
             }
         }
 
-        // 5. Andere Rollen
+        // 4. Andere Rollen
         $categorizedRoles['Other'] = $allRoles->values();
 
-        // 6. Rechte Spalte Logik
+        // 5. Edit-Logik vorbereiten
         $permissions = Permission::all()->sortBy('name')->groupBy(fn($item) => explode('.', $item->name, 2)[0]);
         $currentRole = null;
         $currentRolePermissions = [];
@@ -103,7 +102,6 @@ class RoleController extends Controller
         if ($request->has('role')) {
             $currentRole = Role::findById($request->query('role'));
             
-            // NEU: Verhindern, dass die Super-Admin-Rolle (falls ID bekannt) angezeigt wird.
             if ($currentRole && $currentRole->name === $this->superAdminRole) {
                 return redirect()->route('admin.roles.index')->with('error', 'Diese Rolle kann nicht angezeigt werden.');
             }
@@ -111,26 +109,25 @@ class RoleController extends Controller
             if ($currentRole) {
                 $currentRolePermissions = $currentRole->permissions->pluck('name')->toArray();
                 $currentRoleNameLower = strtolower($currentRole->name);
-                if (Rank::whereRaw('LOWER(name) = ?', [$currentRoleNameLower])->exists()) {
+                
+                // Prüfen ob es ein Rank ist
+                $rankEntry = Rank::whereRaw('LOWER(name) = ?', [$currentRoleNameLower])->first();
+
+                if ($rankEntry) {
                     $currentRoleType = 'rank';
+                    // WICHTIG: Für das Edit-Formular das Label aus der Rank-Tabelle setzen
+                    $currentRole->label = $rankEntry->label; 
                 } elseif ($deptRole = DB::table('department_role')->where('role_id', $currentRole->id)->first()) {
                     $currentRoleType = 'department';
                     $currentDepartmentId = $deptRole->department_id;
+                    // Bei Department kommt das Label bereits aus der roles Tabelle ($currentRole->label)
                 }
             }
         }
 
-        // 7. Daten an die View übergeben
         return view('admin.roles.index', compact(
-            'categorizedRoles',
-            'permissions',
-            'currentRole',
-            'currentRolePermissions',
-            'allDepartments',
-            'allRoleNames', // NEU für Modals
-            'allRanks',     // NEU für Modals
-            'currentRoleType',
-            'currentDepartmentId'
+            'categorizedRoles', 'permissions', 'currentRole', 'currentRolePermissions',
+            'allDepartments', 'allRoleNames', 'allRanks', 'currentRoleType', 'currentDepartmentId'
         ));
     }
 
@@ -178,68 +175,58 @@ class RoleController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:roles,name',
+            'label' => 'required|string|max:255', // Label ist Pflicht
             'role_type' => 'required|in:rank,department,other',
             'department_id' => 'required_if:role_type,department|nullable|exists:departments,id',
-        ], [
-            'name.unique' => 'Dieser Rollenname ist bereits vergeben.',
-            'role_type.required' => 'Bitte wählen Sie einen Rollentyp.',
-            'department_id.required_if' => 'Bitte wählen Sie eine Abteilung.',
-            'department_id.exists' => 'Die ausgewählte Abteilung ist ungültig.',
         ]);
 
         if ($validator->fails()) {
-            return back()->withErrors($validator, 'createRole')
-                         ->withInput()
-                         ->with('open_modal', 'createRoleModal');
+            return back()->withErrors($validator, 'createRole')->withInput()->with('open_modal', 'createRoleModal');
         }
 
         $roleName = strtolower(trim($request->name));
-
-        // NEU: Verhindern, dass eine Rolle mit dem reservierten Namen erstellt wird.
         if ($roleName === strtolower($this->superAdminRole)) {
-            return back()->withErrors(['name' => 'Dieser Rollenname ist reserviert.'], 'createRole')
-                         ->withInput()
-                         ->with('open_modal', 'createRoleModal');
+            return back()->withErrors(['name' => 'Name reserviert.'], 'createRole')->withInput();
         }
         
         $roleType = $request->role_type;
-        $departmentId = $request->department_id;
-        $role = null;
+        $label = $request->label;
 
         try {
             DB::beginTransaction();
 
-            $role = Role::create(['name' => $roleName]);
+            // LOGIK: Wo speichern wir das Label?
+            // Wenn Rank: Label in Rank-Tabelle, Role-Tabelle Label = null
+            // Wenn Sonst: Label in Role-Tabelle
+            
+            $roleData = ['name' => $roleName];
+            if ($roleType !== 'rank') {
+                $roleData['label'] = $label;
+            }
+
+            $role = Role::create($roleData);
+
             $department = null;
             if ($roleType === 'rank') {
-                Rank::create(['name' => $roleName, 'level' => 0]);
+                // Hier Label in Rank speichern
+                Rank::create(['name' => $roleName, 'level' => 0, 'label' => $label]);
             } elseif ($roleType === 'department') {
-                $department = Department::find($departmentId);
-                if ($department) {
-                    $department->roles()->attach($role->id);
-                } else {
-                    throw new \Exception("Ausgewählte Abteilung nicht gefunden.");
-                }
+                $department = Department::find($request->department_id);
+                $department->roles()->attach($role->id);
             }
             DB::commit();
 
-            // Logging & Event
-            $logDescription = "Neue Rolle '{$role->name}' (Typ: {$roleType}) erstellt.";
-            if ($roleType === 'department' && $department) {
-                $logDescription .= " Abteilung: {$department->name}.";
-            }
+            // Logging...
             ActivityLog::create([
                 'user_id' => Auth::id(), 'log_type' => 'ROLE', 'action' => 'CREATED',
-                'target_id' => $role->id, 'description' => $logDescription,
+                'target_id' => $role->id, 'description' => "Rolle '{$role->name}' ({$label}) erstellt.",
             ]);
-            PotentiallyNotifiableActionOccurred::dispatch('Admin\RoleController@store', Auth::user(), $role, Auth::user());
-
-            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('success', 'Rolle erfolgreich erstellt.');
+            
+            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('success', 'Rolle erstellt.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Fehler beim Erstellen der Rolle {$roleName}: " . $e->getMessage());
-            return back()->with('error', 'Fehler beim Erstellen der Rolle: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Fehler: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -248,108 +235,99 @@ class RoleController extends Controller
      */
     public function update(Request $request, Role $role)
     {
-        // GEÄNDERT: Verwendet die $superAdminRole Eigenschaft
         if ($role->name === $this->superAdminRole || $role->name === 'chief') {
-            return back()->with('error', 'Diese Standardrolle kann nicht geändert oder verschoben werden.');
+            return back()->with('error', 'Standardrolle kann nicht geändert werden.');
         }
-
-        // Hole alle Ranks für die Validierung des Levels
-        $allRankLevels = Rank::pluck('level')->toArray(); // Wird derzeit nicht direkt verwendet, aber gut zu haben
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'label' => 'required|string|max:255',
             'role_type' => 'required|in:rank,department,other',
             'department_id' => 'required_if:role_type,department|nullable|exists:departments,id',
             'permissions' => 'nullable|array',
-            'permissions.*' => 'string|exists:permissions,name',
-        ], [
-             'name.required' => 'Der Rollenname darf nicht leer sein.', // Explizitere Meldung
-             'name.unique' => 'Dieser Rollenname ist bereits vergeben.',
-             'role_type.required' => 'Bitte wählen Sie einen Rollentyp.',
-             'department_id.required_if' => 'Bitte wählen Sie eine Abteilung, wenn der Typ "Abteilungsrolle" ist.', // Explizitere Meldung
-             'department_id.exists' => 'Die ausgewählte Abteilung ist ungültig.',
-             'permissions.*.exists' => 'Eine der ausgewählten Berechtigungen ist ungültig.',
         ]);
 
          if ($validator->fails()) {
             return redirect()->route('admin.roles.index', ['role' => $role->id])
-                             ->withErrors($validator, 'updateRole')
-                             ->withInput();
+                             ->withErrors($validator, 'updateRole')->withInput();
         }
 
         $oldName = $role->name;
-        $oldPermissions = $role->permissions->pluck('name')->toArray();
         $newName = strtolower(trim($request->name));
         $newType = $request->role_type;
-        $newDepartmentId = $request->department_id;
+        $newLabel = $request->label;
         $permissionsToSync = $request->permissions ?? [];
 
         // Alten Typ bestimmen
         $oldType = 'other';
-        $oldDepartmentId = null;
         $rankEntry = Rank::whereRaw('LOWER(name) = ?', [strtolower($oldName)])->first();
         if ($rankEntry) { $oldType = 'rank'; }
-        elseif ($deptRole = DB::table('department_role')->where('role_id', $role->id)->first()) {
-            $oldType = 'department';
-            $oldDepartmentId = $deptRole->department_id;
-        }
+        elseif (DB::table('department_role')->where('role_id', $role->id)->exists()) { $oldType = 'department'; }
 
         try {
             DB::beginTransaction();
 
-            $role->update(['name' => $newName]);
+            // 1. Rolle updaten
+            // Wenn der NEUE Typ 'rank' ist, soll das Label in der Roles-Tabelle NULL sein (oder leer)
+            // Wenn der NEUE Typ NICHT 'rank' ist, soll das Label in der Roles-Tabelle stehen.
+            
+            $roleUpdateData = ['name' => $newName];
+            if ($newType !== 'rank') {
+                $roleUpdateData['label'] = $newLabel;
+            } else {
+                // Optional: Label in Role Tabelle leeren, wenn es nun ein Rank ist, um Redundanz zu vermeiden
+                $roleUpdateData['label'] = null; 
+            }
+            $role->update($roleUpdateData);
             $role->syncPermissions($permissionsToSync);
 
-            $department = null;
-            if ($oldType !== $newType || ($newType === 'department' && $oldDepartmentId != $newDepartmentId)) {
-                if ($oldType === 'rank' && $rankEntry) { $rankEntry->delete(); }
-                elseif ($oldType === 'department') { DB::table('department_role')->where('role_id', $role->id)->delete(); }
-
-                if ($newType === 'rank') {
-                     Rank::firstOrCreate(['name' => $newName], ['level' => 0]);
-                } elseif ($newType === 'department') {
-                    $department = Department::find($newDepartmentId);
-                    if ($department) { $department->roles()->attach($role->id); }
-                    else { throw new \Exception("Ausgewählte Abteilung nicht gefunden."); }
+            // 2. Typ-Wechsel und Rank/Department Logik
+            // Cleanup Old stuff
+            if ($oldType === 'rank' && $rankEntry) { 
+                // Wenn wir immer noch Rank sind, behalten wir den Eintrag, sonst löschen
+                if ($newType !== 'rank') {
+                    $rankEntry->delete(); 
                 }
             }
-            if ($oldName !== $newName && ($oldType === 'rank' || $newType === 'rank')) {
-                 Rank::whereRaw('LOWER(name) = ?', [strtolower($oldName)])
-                     ->update(['name' => $newName]);
-             }
+            if ($oldType === 'department') { 
+                DB::table('department_role')->where('role_id', $role->id)->delete(); 
+            }
+
+            // Create/Update New stuff
+            if ($newType === 'rank') {
+                // Rank Eintrag aktualisieren oder erstellen
+                Rank::updateOrCreate(
+                    ['name' => $oldName], // Suche nach altem Namen (falls er sich geändert hat, korrigieren wir gleich)
+                    [
+                        'name' => $newName, 
+                        'label' => $newLabel, // <--- Hier speichern wir das Label für Ranks
+                        // Level beibehalten oder 0 bei neu
+                        'level' => $rankEntry ? $rankEntry->level : 0 
+                    ]
+                );
+            } elseif ($newType === 'department') {
+                $department = Department::find($request->department_id);
+                $department->roles()->attach($role->id);
+            }
+
+            // Namensänderung im Rank korrigieren (falls wir Rank waren und Rank geblieben sind, hat updateOrCreate das erledigt. 
+            // Aber falls logic oben abweicht, hier sicherheitshalber:)
+            if ($oldName !== $newName && $newType === 'rank') {
+                 // Wurde durch updateOrCreate schon behandelt
+            }
 
             DB::commit();
 
-            // Logging & Event
-            $newPermissions = $role->permissions->pluck('name')->toArray();
-            $addedPermissions = array_diff($newPermissions, $oldPermissions);
-            $removedPermissions = array_diff($oldPermissions, $newPermissions);
-
-            $logDescription = "Rolle '{$oldName}' aktualisiert.";
-             if ($oldName !== $newName) $logDescription .= " Neuer Name: '{$newName}'.";
-             if ($oldType !== $newType) $logDescription .= " Typ geändert: {$oldType} -> {$newType}.";
-             if ($newType === 'department') {
-                 $currentDepartmentName = $department->name ?? Department::find($newDepartmentId)->name ?? 'Unbekannt';
-                 $logDescription .= " Abteilung: {$currentDepartmentName}.";
-             } elseif ($oldType === 'department' && $newType !== 'department') {
-                 $oldDepartmentName = Department::find($oldDepartmentId)->name ?? 'Unbekannt (ID: ' . $oldDepartmentId . ')';
-                 $logDescription .= " Aus Abteilung '{$oldDepartmentName}' entfernt.";
-             }
-             if (!empty($addedPermissions)) $logDescription .= " Perms hinzugefügt: " . implode(', ', $addedPermissions) . ".";
-             if (!empty($removedPermissions)) $logDescription .= " Perms entfernt: " . implode(', ', $removedPermissions) . ".";
-
             ActivityLog::create([
                 'user_id' => Auth::id(), 'log_type' => 'ROLE', 'action' => 'UPDATED',
-                'target_id' => $role->id, 'description' => $logDescription,
+                'target_id' => $role->id, 'description' => "Rolle '{$oldName}' aktualisiert zu '{$newName}'.",
             ]);
-            PotentiallyNotifiableActionOccurred::dispatch('Admin\RoleController@update', Auth::user(), $role, Auth::user());
 
-            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('success', 'Rolle erfolgreich aktualisiert.');
+            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('success', 'Rolle aktualisiert.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Fehler beim Aktualisieren der Rolle {$role->id}: " . $e->getMessage());
-            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('error', 'Fehler beim Aktualisieren: ' . $e->getMessage())->withInput();
+            return redirect()->route('admin.roles.index', ['role' => $role->id])->with('error', 'Fehler: ' . $e->getMessage())->withInput();
         }
     }
 

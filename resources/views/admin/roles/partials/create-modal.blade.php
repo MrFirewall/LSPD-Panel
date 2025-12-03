@@ -20,20 +20,17 @@
                             Erstellen Sie hier eine neue Rolle. Der <b>Anzeigename</b> ist für Nutzer sichtbar, der <b>Technische Name</b> wird im Code verwendet.
                         </p>
                         
-                        {{-- NEU: Anzeigename (Label) --}}
+                        {{-- Ausschnitt: Label Input --}}
                         <div class="form-group">
                             <label for="new_role_label">Anzeigename (Öffentlich)</label>
                             <input type="text" 
-                                   class="form-control {{ $modalErrors->has('label') ? 'is-invalid' : '' }}" 
-                                   id="new_role_label" 
-                                   name="label" 
-                                   value="{{ old('label') }}" 
-                                   placeholder="z.B. Polizeipräsident/in">
-                            @if ($modalErrors->has('label'))
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $modalErrors->first('label') }}</strong>
-                                </span>
-                            @endif
+                                class="form-control {{ $modalErrors->has('label') ? 'is-invalid' : '' }}" 
+                                id="new_role_label" 
+                                name="label" 
+                                value="{{ old('label') }}" 
+                                required {{-- Hinzugefügt --}}
+                                placeholder="z.B. Polizeipräsident/in">
+                            {{-- Error Block --}}
                         </div>
 
                         {{-- Rollenname (Slug) --}}
