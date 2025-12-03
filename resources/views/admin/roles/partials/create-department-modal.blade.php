@@ -1,5 +1,4 @@
 @php
-    // Fehler-Bag für dieses Modal prüfen
     $modalErrors = $errors->createDepartment ?? new \Illuminate\Support\MessageBag;
 @endphp
 <div class="modal fade" id="createDepartmentModal" tabindex="-1" role="dialog" aria-labelledby="createDepartmentModalLabel" aria-hidden="true">
@@ -25,15 +24,16 @@
                              @endif
                         </div>
 
-                        {{-- NEU: Leitungsrolle auswählen --}}
+                        {{-- Leitungsrolle auswählen --}}
                         <div class="form-group">
                             <label for="create_leitung_role_name">Leitungsrolle (Optional)</label>
                             <select class="form-control select2 {{ $modalErrors->has('leitung_role_name') ? 'is-invalid' : '' }}"
                                     id="create_leitung_role_name" name="leitung_role_name" style="width: 100%;">
                                 <option value="">Keine spezielle Leitungsrolle</option>
-                                @foreach($allRoleNames ?? [] as $roleName)
-                                    <option value="{{ $roleName }}" {{ old('leitung_role_name') == $roleName ? 'selected' : '' }}>
-                                        {{ ucfirst($roleName) }}
+                                {{-- KORREKTUR: Key ist der technische Name (Slug), Value ist das Label --}}
+                                @foreach($allRolesForSelect ?? [] as $roleSlug => $roleLabel)
+                                    <option value="{{ $roleSlug }}" {{ old('leitung_role_name') == $roleSlug ? 'selected' : '' }}>
+                                        {{ $roleLabel }}
                                     </option>
                                 @endforeach
                             </select>
@@ -43,13 +43,12 @@
                             @endif
                         </div>
 
-                         {{-- NEU: Minimales Rang-Level auswählen --}}
+                         {{-- Minimales Rang-Level auswählen --}}
                         <div class="form-group">
                             <label for="create_min_rank_level">Min. Rang-Level für Leitungszuweisung (Optional)</label>
                             <select class="form-control select2 {{ $modalErrors->has('min_rank_level_to_assign_leitung') ? 'is-invalid' : '' }}"
                                     id="create_min_rank_level" name="min_rank_level_to_assign_leitung" style="width: 100%;">
                                 <option value="">Kein minimales Level</option>
-                                {{-- $allRanks ist ['rank_name' => level] --}}
                                 @foreach($allRanks ?? [] as $rankName => $rankLevel)
                                     <option value="{{ $rankLevel }}" {{ old('min_rank_level_to_assign_leitung') == $rankLevel ? 'selected' : '' }}>
                                         {{ $rankLevel }} - {{ ucfirst($rankName) }}

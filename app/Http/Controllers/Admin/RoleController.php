@@ -42,7 +42,7 @@ class RoleController extends Controller
      * Zeigt die Rollenliste (kategorisiert) und die Bearbeitungsansicht an.
      * Übergibt alle Departments, Rollennamen, Ränge und den Typ der aktuellen Rolle
      */
-public function index(Request $request)
+    public function index(Request $request)
     {
         // 1. Rollen laden
         $allRolesCollection = Role::where('name', '!=', $this->superAdminRole)
@@ -53,26 +53,25 @@ public function index(Request $request)
         $ranks = Rank::orderBy('level', 'desc')->get();
         $allDepartments = Department::orderBy('name')->get();
 
-        $allRoleNames = $allRolesCollection->pluck('label'); 
+        // --- KORREKTUR START ---
+        // Wir brauchen 'name' als Schlüssel (für value="") und 'label' als Wert (für Anzeige)
+        // Das erzeugt ein Array: ['leitung_personalabteilung' => 'Leitung Personalabteilung', ...]
+        $allRolesForSelect = $allRolesCollection->pluck('label', 'name'); 
+        // --- KORREKTUR ENDE ---
+
         $allRanks = Rank::orderBy('level', 'desc')->pluck('level', 'label');
 
+        // ... (Rest der categorize Logik bleibt gleich) ...
         $categorizedRoles = ['Ranks' => [], 'Departments' => [], 'Other' => []];
-
-        // 2. Ränge zuordnen & LABEL AUS RANKS TABELLE HOLEN
         foreach ($ranks as $rank) {
-            $rankNameLower = strtolower($rank->name);
-            if ($allRoles->has($rankNameLower)) {
-                $roleModel = $allRoles->pull($rankNameLower);
-                $roleModel->rank_id = $rank->id;
-                
-                // WICHTIG: Überschreibe das Role-Label mit dem Rank-Label für die Anzeige
-                $roleModel->label = $rank->label ?? ucfirst($roleModel->name); 
-                
-                $categorizedRoles['Ranks'][] = $roleModel;
-            }
+             $rankNameLower = strtolower($rank->name);
+             if ($allRoles->has($rankNameLower)) {
+                 $roleModel = $allRoles->pull($rankNameLower);
+                 $roleModel->rank_id = $rank->id;
+                 $roleModel->label = $rank->label ?? ucfirst($roleModel->name); 
+                 $categorizedRoles['Ranks'][] = $roleModel;
+             }
         }
-
-        // 3. Abteilungen zuordnen (Label kommt hier aus roles Tabelle, passiert automatisch)
         foreach ($allDepartments as $dept) {
             $dept->loadMissing('roles');
             $categorizedRoles['Departments'][$dept->name] = [];
@@ -88,11 +87,10 @@ public function index(Request $request)
                 unset($categorizedRoles['Departments'][$dept->name]);
             }
         }
-
-        // 4. Andere Rollen
         $categorizedRoles['Other'] = $allRoles->values();
 
-        // 5. Edit-Logik vorbereiten
+
+        // ... (Edit-Logik bleibt gleich) ...
         $permissions = Permission::all()->sortBy('name')->groupBy(fn($item) => explode('.', $item->name, 2)[0]);
         $currentRole = null;
         $currentRolePermissions = [];
@@ -101,33 +99,29 @@ public function index(Request $request)
 
         if ($request->has('role')) {
             $currentRole = Role::findById($request->query('role'));
-            
             if ($currentRole && $currentRole->name === $this->superAdminRole) {
                 return redirect()->route('admin.roles.index')->with('error', 'Diese Rolle kann nicht angezeigt werden.');
             }
-
             if ($currentRole) {
                 $currentRolePermissions = $currentRole->permissions->pluck('name')->toArray();
                 $currentRoleNameLower = strtolower($currentRole->name);
-                
-                // Prüfen ob es ein Rank ist
                 $rankEntry = Rank::whereRaw('LOWER(name) = ?', [$currentRoleNameLower])->first();
 
                 if ($rankEntry) {
                     $currentRoleType = 'rank';
-                    // WICHTIG: Für das Edit-Formular das Label aus der Rank-Tabelle setzen
                     $currentRole->label = $rankEntry->label; 
                 } elseif ($deptRole = DB::table('department_role')->where('role_id', $currentRole->id)->first()) {
                     $currentRoleType = 'department';
                     $currentDepartmentId = $deptRole->department_id;
-                    // Bei Department kommt das Label bereits aus der roles Tabelle ($currentRole->label)
                 }
             }
         }
 
         return view('admin.roles.index', compact(
             'categorizedRoles', 'permissions', 'currentRole', 'currentRolePermissions',
-            'allDepartments', 'allRoleNames', 'allRanks', 'currentRoleType', 'currentDepartmentId'
+            'allDepartments', 
+            'allRolesForSelect', // <--- Variable umbenannt für Klarheit
+            'allRanks', 'currentRoleType', 'currentDepartmentId'
         ));
     }
 
