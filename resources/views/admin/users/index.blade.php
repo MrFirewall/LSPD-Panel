@@ -21,9 +21,7 @@
     </div>
 
     <div class="card">
-        {{-- KORREKTUR: card-body hat jetzt ein normales Padding --}}
         <div class="card-body">
-            {{-- HINWEIS: table-responsive wird von DataTables nicht mehr benötigt --}}
             <table id="usersTable" class="table table-hover nowrap">
                 <thead>
                     <tr>
@@ -41,37 +39,36 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-                                <img src="{{ $user->avatar ?? 'https://placehold.co/32x32/6c757d/FFFFFF?text=' . substr($user->name, 0, 1) }}" alt="{{ $user->name }}" width="32" height="32" class="img-circle me-2 elevation-1">
+                                {{-- Avatar Fallback Logik --}}
+                                <img src="{{ $user->avatar ?? 'https://placehold.co/32x32/6c757d/FFFFFF?text=' . substr($user->name, 0, 1) }}" 
+                                     alt="{{ $user->name }}" 
+                                     width="32" height="32" 
+                                     class="img-circle me-2 elevation-1">
                                 <span>{{ $user->name }}</span>
                             </div>
                         </td>
                         <td>{{ $user->personal_number ?? '-' }}</td>        
                         <td>{{ $user->employee_id ?? '-' }}</td>
                         <td>
-                            @if($user->status == 'Aktiv')
-                                <span class="badge bg-success">Aktiv</span>
-                            @elseif($user->status == 'Probezeit')
-                                <span class="badge bg-info">Probezeit</span>
-                            @elseif($user->status == 'Beobachtung')
-                                <span class="badge bg-info">Beobachtung</span>
-                            @elseif($user->status == 'Beurlaubt')
-                                <span class="badge bg-warning">Beurlaubt</span>
-                            @elseif($user->status == 'Krankgeschrieben')
-                                <span class="badge bg-warning">Krankgeschrieben</span>
-                            @elseif($user->status == 'Suspendiert')
-                                <span class="badge bg-danger">Suspendiert</span>
-                            @elseif($user->status == 'Ausgetreten')
-                                <span class="badge bg-secondary">Ausgetreten</span>
-                            @elseif($user->status == 'Bewerbungsphase')
-                                <span class="badge bg-light text-dark">Bewerbungsphase</span>
-                            @else
-                                <span class="badge bg-dark">{{ $user->status }}</span>
-                            @endif
+                            @php
+                                $statusColors = [
+                                    'Aktiv' => 'success',
+                                    'Probezeit' => 'info',
+                                    'Beobachtung' => 'info',
+                                    'Beurlaubt' => 'warning',
+                                    'Krankgeschrieben' => 'warning',
+                                    'Suspendiert' => 'danger',
+                                    'Ausgetreten' => 'secondary',
+                                    'Bewerbungsphase' => 'light text-dark'
+                                ];
+                                $color = $statusColors[$user->status] ?? 'dark';
+                            @endphp
+                            <span class="badge bg-{{ $color }}">{{ $user->status }}</span>
                         </td>
                         <td>
-                            {{-- Verwendung von getRoleNames() aus dem User-Modell --}}
-                            @forelse($user->getRoleNames() as $role)
-                                <span class="badge bg-primary">{{ $role }}</span>
+                            @forelse($user->roles as $role)
+                                {{-- Wir zeigen das Label (falls vorhanden) oder den Namen --}}
+                                <span class="badge bg-primary">{{ $role->label ?? ucfirst($role->name) }}</span>
                             @empty
                                 <span class="badge bg-light text-dark">Keine</span>
                             @endforelse
@@ -96,7 +93,7 @@
                         </td>
                     </tr>
                     @empty
-                    {{-- Dieser Teil wird bei DataTables serverseitig leer gelassen --}}
+                    {{-- DataTables füllt das, aber für Blade lassen wir es leer --}}
                     @endforelse
                 </tbody>
             </table>
@@ -111,13 +108,13 @@
         "language": {
             "url": "{{ asset('js/i18n/de-DE.json') }}"
         },
-        "order": [[1, 'asc']] , // Standardmäßig nach Personalnummer absteigend sortieren
+        "order": [[1, 'asc']] , 
         "responsive": {
             details: {
                 display: DataTable.Responsive.display.modal({
                     header: function (row) {
                         var data = row.data();
-                        return 'Details für ' + data[0] + ' ' + data[1];
+                        return 'Details für ' + data[0]; // Nur Name im Modal Header
                     }
                 }),
                 renderer: DataTable.Responsive.renderer.tableAll({
@@ -129,12 +126,9 @@
         "paging": true,
         "ordering": true,
         "info": true,        
-        // WICHTIG: Suche aktivieren
         "searching": true,         
-        // "Zeige X Einträge" deaktivieren (optional, nach Wunsch)
         "lengthChange": true,
         "lengthMenu": [10, 25, 50, -1],
-        // Spezifische Spalten vom Sortieren/Suchen ausschließen
         "columnDefs": [ {
             "targets": 'no-sort',
             "orderable": false

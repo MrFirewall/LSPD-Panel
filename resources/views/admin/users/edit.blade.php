@@ -17,11 +17,13 @@
         @csrf
         @method('PUT')
 
-        {{-- Stammdaten-Karte (Keine Änderungen) --}}
+        {{-- Stammdaten-Karte (Bleibt unverändert) --}}
         <div class="card card-outline card-primary mb-4">
             <div class="card-header"><h3 class="card-title">Stammdaten</h3></div>
             <div class="card-body">
                 <div class="row">
+                    {{-- ... (Deine Stammdaten Felder hier wie gehabt) ... --}}
+                    {{-- Ich kürze diesen Teil ab, da du ihn nicht ändern wolltest --}}
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="name">Mitarbeiter Name</label>
@@ -129,51 +131,67 @@
                 <div class="card card-outline card-info">
                     <div class="card-header"><h3 class="card-title">Gruppen / Rang Zuweisung</h3></div>
                     <div class="card-body">
-                        <p class="text-muted small">Der höchste hier ausgewählte Rang wird automatisch als Haupt-Rang des Mitarbeiters festgelegt.</p>
+                        <p class="text-muted small">Bitte wählen Sie <strong>einen</strong> Rang und optional weitere Zusatzrollen/Abteilungen.</p>
                         @error('roles')<div class="alert alert-danger">{{ $message }}</div>@enderror
                         @error('roles.*')<div class="alert alert-danger">{{ $message }}</div>@enderror
                         
+                        {{-- 1. RÄNGE (Radio Buttons - Single Select) --}}
                         @if (!empty($categorizedRoles['Ranks']))
-                            <h6 class="text-primary mt-3">Ränge</h6>
-                            <div class="row">
+                            <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
+                            <div class="form-group">
                                 @foreach($categorizedRoles['Ranks'] as $role)
-                                    <div class="col-md-6"> {{-- 6 statt 4 für bessere Lesbarkeit --}}
-                                        <div class="icheck-primary">
-                                            <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
-                                            <label for="role_{{ $role->id }}">{{ $role->name }}</label>
-                                        </div>
+                                    <div class="icheck-primary mb-2"> {{-- mb-2 für Abstand untereinander --}}
+                                        {{-- WICHTIG: type="radio" und gleicher Name "roles[]" --}}
+                                        <input type="radio" 
+                                               name="roles[]" 
+                                               value="{{ $role->name }}" 
+                                               id="rank_{{ $role->id }}" 
+                                               {{-- Prüft, ob dieser Rang im Array der User-Rollen ist --}}
+                                               @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
+                                        <label for="rank_{{ $role->id }}" class="font-weight-normal">
+                                            {{ $role->label }}
+                                        </label>
                                     </div>
                                 @endforeach
                             </div>
-                            <hr>
                         @endif
 
+                        {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
-                            <h6 class="text-primary mt-3">Abteilungen</h6>
+                            <h6 class="text-primary mt-4 border-bottom pb-2">Abteilungen & Zusatzrollen</h6>
                             @foreach($categorizedRoles['Departments'] as $deptName => $deptRoles)
-                                <h7 class="text-muted mt-2 mb-1 d-block"><strong>{{ $deptName }}</strong></h7>
+                                <h7 class="text-muted mt-3 mb-2 d-block"><strong>{{ $deptName }}</strong></h7>
                                 <div class="row">
                                     @foreach($deptRoles as $role)
-                                        <div class="col-md-6"> {{-- 6 statt 4 --}}
-                                            <div class="icheck-primary">
-                                                <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
-                                                <label for="role_{{ $role->id }}">{{ $role->name }}</label>
+                                        <div class="col-md-6">
+                                            <div class="icheck-info"> {{-- Info Farbe zur Unterscheidung --}}
+                                                {{-- WICHTIG: type="checkbox" --}}
+                                                <input type="checkbox" 
+                                                       name="roles[]" 
+                                                       value="{{ $role->name }}" 
+                                                       id="dept_role_{{ $role->id }}" 
+                                                       @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
+                                                <label for="dept_role_{{ $role->id }}">{{ $role->label }}</label>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @endforeach
-                            <hr>
                         @endif
                         
+                        {{-- 3. ANDERE (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Other']))
-                            <h6 class="text-primary mt-3">Andere</h6>
+                            <h6 class="text-primary mt-4 border-bottom pb-2">Sonstige Rollen</h6>
                             <div class="row">
                                 @foreach($categorizedRoles['Other'] as $role)
-                                    <div class="col-md-6"> {{-- 6 statt 4 --}}
-                                        <div class="icheck-primary">
-                                            <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
-                                            <label for="role_{{ $role->id }}">{{ $role->name }}</label>
+                                    <div class="col-md-6">
+                                        <div class="icheck-secondary">
+                                            <input type="checkbox" 
+                                                   name="roles[]" 
+                                                   value="{{ $role->name }}" 
+                                                   id="other_role_{{ $role->id }}" 
+                                                   @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
+                                            <label for="other_role_{{ $role->id }}">{{ $role->label }}</label>
                                         </div>
                                     </div>
                                 @endforeach
@@ -200,8 +218,8 @@
                         @error('modules.*')<div class="alert alert-danger">{{ $message }}</div>@enderror
                         <div class="row">
                             @forelse($allModules as $module)
-                                <div class="col-md-6"> {{-- 6 statt 4 --}}
-                                    <div class="icheck-primary">
+                                <div class="col-md-6">
+                                    <div class="icheck-success">
                                         <input type="checkbox"
                                                name="modules[]"
                                                value="{{ $module->id }}"
@@ -239,7 +257,7 @@
                                         <h6 class="text-warning text-capitalize mb-3">{{ $module }} Modul</h6>
                                         
                                         @foreach($modulePermissions as $permission)
-                                            <div class="icheck-primary">
+                                            <div class="icheck-warning">
                                                 <input type="checkbox" name="permissions[]" 
                                                        value="{{ $permission->name }}" id="perm_{{ $permission->id }}"
                                                        {{ in_array($permission->name, old('permissions', $userDirectPermissions)) ? 'checked' : '' }}>

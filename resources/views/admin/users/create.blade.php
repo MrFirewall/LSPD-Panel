@@ -16,11 +16,12 @@
     <form method="POST" action="{{ route('admin.users.store') }}">
         @csrf
 
-        {{-- Stammdaten-Karte (Keine Änderungen hier) --}}
+        {{-- Stammdaten-Karte --}}
         <div class="card card-outline card-primary mb-4">
             <div class="card-header"><h3 class="card-title">Stammdaten des Mitarbeiters</h3></div>
             <div class="card-body">
                 <div class="row">
+                    {{-- ... (Deine Stammdaten Felder - hier gekürzt, da unverändert) ... --}}
                     <div class="col-md-4">
                         <div class="form-group">
                             <label for="name">Mitarbeiter Name</label>
@@ -101,49 +102,62 @@
                 <h3 class="card-title">Gruppen / Rang Zuweisung</h3>
             </div>
             <div class="card-body">
-                <p class="text-muted small">Wähle die Gruppen aus, die der Benutzer haben soll. Der höchste Rang wird automatisch als Haupt-Rang festgelegt.</p>
+                <p class="text-muted small">Bitte wählen Sie <strong>einen</strong> Rang und optional weitere Zusatzrollen/Abteilungen.</p>
                 
+                {{-- 1. RÄNGE (Radio Buttons - Single Select) --}}
                 @if (!empty($categorizedRoles['Ranks']))
-                    <h6 class="text-primary mt-3">Ränge</h6>
-                    <div class="row">
+                    <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
+                    <div class="form-group">
                         @foreach($categorizedRoles['Ranks'] as $role)
-                            <div class="col-md-4">
-                                <div class="icheck-primary">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
-                                    <label for="role_{{ $role->id }}">{{ $role->name }}</label>
-                                </div>
+                            <div class="icheck-primary mb-2"> {{-- mb-2 für Abstand --}}
+                                <input type="radio" 
+                                       name="roles[]" 
+                                       value="{{ $role->name }}" 
+                                       id="rank_{{ $role->id }}" 
+                                       {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
+                                <label for="rank_{{ $role->id }}" class="font-weight-normal">
+                                    {{ $role->label }}
+                                </label>
                             </div>
                         @endforeach
                     </div>
-                    <hr>
                 @endif
 
+                {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                 @if (!empty($categorizedRoles['Departments']))
-                    <h6 class="text-primary mt-3">Abteilungen</h6>
+                    <h6 class="text-primary mt-4 border-bottom pb-2">Abteilungen & Zusatzrollen</h6>
                     @foreach($categorizedRoles['Departments'] as $deptName => $deptRoles)
-                        <h7 class="text-muted mt-2 mb-1 d-block"><strong>{{ $deptName }}</strong></h7>
+                        <h7 class="text-muted mt-3 mb-2 d-block"><strong>{{ $deptName }}</strong></h7>
                         <div class="row">
                             @foreach($deptRoles as $role)
                                 <div class="col-md-4">
-                                    <div class="icheck-primary">
-                                        <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
-                                        <label for="role_{{ $role->id }}">{{ $role->name }}</label>
+                                    <div class="icheck-info">
+                                        <input type="checkbox" 
+                                               name="roles[]" 
+                                               value="{{ $role->name }}" 
+                                               id="dept_role_{{ $role->id }}" 
+                                               {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
+                                        <label for="dept_role_{{ $role->id }}">{{ $role->label }}</label>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     @endforeach
-                    <hr>
                 @endif
                 
+                {{-- 3. ANDERE (Checkboxen - Multi Select) --}}
                 @if (!empty($categorizedRoles['Other']))
-                    <h6 class="text-primary mt-3">Andere</h6>
+                    <h6 class="text-primary mt-4 border-bottom pb-2">Sonstige Rollen</h6>
                     <div class="row">
                         @foreach($categorizedRoles['Other'] as $role)
                             <div class="col-md-4">
-                                <div class="icheck-primary">
-                                    <input type="checkbox" name="roles[]" value="{{ $role->name }}" id="role_{{ $role->id }}" {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
-                                    <label for="role_{{ $role->id }}">{{ $role->name }}</label>
+                                <div class="icheck-secondary">
+                                    <input type="checkbox" 
+                                           name="roles[]" 
+                                           value="{{ $role->name }}" 
+                                           id="other_role_{{ $role->id }}" 
+                                           {{ in_array($role->name, old('roles', [])) ? 'checked' : '' }}>
+                                    <label for="other_role_{{ $role->id }}">{{ $role->label }}</label>
                                 </div>
                             </div>
                         @endforeach
