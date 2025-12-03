@@ -384,8 +384,9 @@ class RoleController extends Controller
 
         $validator = Validator::make($request->all(), [
             'department_name' => 'required|string|max:255|unique:departments,name',
-             'leitung_role_name' => ['nullable','string', Rule::in($allRoleNames)], // Prüft gegen existierende Rollen
-             'min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)], // Prüft gegen existierende Level
+            'leitung_role_name' => 'nullable|array', 
+            'leitung_role_name.*' => ['string', Rule::in($allRoleNames)], // Jeder Eintrag im Array muss gültig sein
+            'min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)], // Prüft gegen existierende Level
         ], [
             'department_name.required' => 'Der Abteilungsname ist erforderlich.',
             'department_name.unique' => 'Eine Abteilung mit diesem Namen existiert bereits.',
@@ -403,7 +404,7 @@ class RoleController extends Controller
         try {
             $department = Department::create([
                 'name' => $request->department_name,
-                 'leitung_role_name' => $request->leitung_role_name ?? '', // Speichere leeren String wenn null
+                 'leitung_role_name' => $request->leitung_role_name ?? [],
                  'min_rank_level_to_assign_leitung' => $request->min_rank_level_to_assign_leitung ?? 0, // Speichere 0 wenn null
             ]);
 
@@ -434,7 +435,8 @@ class RoleController extends Controller
 
          $validator = Validator::make($request->all(), [
              'edit_department_name' => 'required|string|max:255|unique:departments,name,' . $department->id,
-             'edit_leitung_role_name' => ['nullable','string', Rule::in($allRoleNames)],
+             'edit_leitung_role_name' => 'nullable|array',
+             'edit_leitung_role_name.*' => ['string', Rule::in($allRoleNames)],
              'edit_min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)],
          ], [
              'edit_department_name.required' => 'Der Abteilungsname darf nicht leer sein.',
@@ -459,7 +461,7 @@ class RoleController extends Controller
 
             $department->update([
                 'name' => $request->edit_department_name,
-                'leitung_role_name' => $request->edit_leitung_role_name ?? '', // Setze auf leer wenn nicht vorhanden
+                'leitung_role_name' => $request->edit_leitung_role_name ?? [],
                 'min_rank_level_to_assign_leitung' => $request->edit_min_rank_level_to_assign_leitung ?? 0, // Setze auf 0 wenn nicht vorhanden
             ]);
 

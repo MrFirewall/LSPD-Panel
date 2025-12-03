@@ -27,21 +27,22 @@
 
                          {{-- Leitungsrolle auswählen --}}
                         <div class="form-group">
-                            <label for="edit_leitung_role_name_{{ $department->id }}">Leitungsrolle (Optional)</label>
+                            <label for="edit_leitung_role_name_{{ $department->id }}">Leitungsrollen (Mehrfachauswahl möglich)</label>
                             <select class="form-control select2 {{ $modalErrors->has('edit_leitung_role_name') ? 'is-invalid' : '' }}"
-                                    id="edit_leitung_role_name_{{ $department->id }}" name="edit_leitung_role_name" style="width: 100%;">
-                                <option value="">Keine spezielle Leitungsrolle</option>
-                                {{-- KORREKTUR: Key ist der technische Name (Slug), Value ist das Label --}}
+                                    id="edit_leitung_role_name_{{ $department->id }}" 
+                                    name="edit_leitung_role_name[]" 
+                                    multiple="multiple" 
+                                    style="width: 100%;">                        
                                 @foreach($allRolesForSelect ?? [] as $roleSlug => $roleLabel)
                                     <option value="{{ $roleSlug }}"
-                                            {{ old('edit_leitung_role_name', $department->leitung_role_name) == $roleSlug ? 'selected' : '' }}>
+                                        {{ in_array($roleSlug, old('edit_leitung_role_name', $department->leitung_role_name ?? [])) ? 'selected' : '' }}>
                                         {{ $roleLabel }}
                                     </option>
                                 @endforeach
                             </select>
-                             <small class="text-muted">Wähle die Rolle, die als Leitungsrolle für diese Abteilung gilt.</small>
+                            <small class="text-muted">Wähle eine oder mehrere Rollen, die diese Abteilung leiten.</small>                            
                             @if ($modalErrors->has('edit_leitung_role_name'))
-                                <span class="invalid-feedback"><strong>{{ $modalErrors->first('edit_leitung_role_name') }}</strong></span>
+                                <span class="invalid-feedback d-block"><strong>{{ $modalErrors->first('edit_leitung_role_name') }}</strong></span>
                             @endif
                         </div>
 

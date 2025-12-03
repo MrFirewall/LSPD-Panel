@@ -26,20 +26,24 @@
 
                         {{-- Leitungsrolle auswählen --}}
                         <div class="form-group">
-                            <label for="create_leitung_role_name">Leitungsrolle (Optional)</label>
+                            <label for="create_leitung_role_name">Leitungsrollen (Mehrfachauswahl möglich)</label>
                             <select class="form-control select2 {{ $modalErrors->has('leitung_role_name') ? 'is-invalid' : '' }}"
-                                    id="create_leitung_role_name" name="leitung_role_name" style="width: 100%;">
-                                <option value="">Keine spezielle Leitungsrolle</option>
-                                {{-- KORREKTUR: Key ist der technische Name (Slug), Value ist das Label --}}
+                                    id="create_leitung_role_name" 
+                                    name="leitung_role_name[]" 
+                                    multiple="multiple" 
+                                    style="width: 100%;">                                    
                                 @foreach($allRolesForSelect ?? [] as $roleSlug => $roleLabel)
-                                    <option value="{{ $roleSlug }}" {{ old('leitung_role_name') == $roleSlug ? 'selected' : '' }}>
+                                    <option value="{{ $roleSlug }}" 
+                                        {{-- Bei Create prüfen wir nur old() --}}
+                                        {{ in_array($roleSlug, old('leitung_role_name', [])) ? 'selected' : '' }}>
                                         {{ $roleLabel }}
                                     </option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Wähle die Rolle, die als Leitungsrolle für diese Abteilung gilt.</small>
+                            <small class="text-muted">Wähle eine oder mehrere Rollen, die diese Abteilung leiten.</small>
+                            
                             @if ($modalErrors->has('leitung_role_name'))
-                                <span class="invalid-feedback"><strong>{{ $modalErrors->first('leitung_role_name') }}</strong></span>
+                                <span class="invalid-feedback d-block"><strong>{{ $modalErrors->first('leitung_role_name') }}</strong></span>
                             @endif
                         </div>
 

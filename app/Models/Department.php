@@ -13,10 +13,15 @@ class Department extends Model
     use HasFactory; // Diese Zeile funktioniert jetzt
     
     // Mass-Assignment erlauben
-    protected $fillable = [
+protected $fillable = [
         'name', 
         'leitung_role_name', 
         'min_rank_level_to_assign_leitung'
+    ];
+
+    // DAS HIER HINZUFÜGEN:
+    protected $casts = [
+        'leitung_role_name' => 'array', // Wandelt JSON automatisch in PHP-Array um
     ];
 
     /**
