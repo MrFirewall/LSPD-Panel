@@ -377,22 +377,20 @@ class RoleController extends Controller
      */
     public function storeDepartment(Request $request)
     {
-        // Hole Rollen und Ranks für die Validierung
-        // GEÄNDERT: Filtert Super-Admin aus der Validierungsliste heraus.
         $allRoleNames = Role::where('name', '!=', $this->superAdminRole)->pluck('name')->toArray();
-        $allRankLevels = Rank::pluck('level')->toArray(); // Nur die Level-Werte
+        $allRankLevels = Rank::pluck('level')->toArray();
 
         $validator = Validator::make($request->all(), [
             'department_name' => 'required|string|max:255|unique:departments,name',
+            // WICHTIG: Validierung auf Array umgestellt
             'leitung_role_name' => 'nullable|array', 
-            'leitung_role_name.*' => ['string', Rule::in($allRoleNames)], // Jeder Eintrag im Array muss gültig sein
-            'min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)], // Prüft gegen existierende Level
+            'leitung_role_name.*' => ['string', Rule::in($allRoleNames)],
+            'min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)],
         ], [
             'department_name.required' => 'Der Abteilungsname ist erforderlich.',
             'department_name.unique' => 'Eine Abteilung mit diesem Namen existiert bereits.',
-            'leitung_role_name.in' => 'Die ausgewählte Leitungsrolle ist ungültig.',
-            'min_rank_level_to_assign_leitung.in' => 'Das ausgewählte minimale Rang-Level ist ungültig.',
-            'min_rank_level_to_assign_leitung.integer' => 'Das minimale Rang-Level muss eine Zahl sein.',
+            'leitung_role_name.array' => 'Die Leitungsrollen müssen eine Liste sein.',
+            'leitung_role_name.*.in' => 'Eine der ausgewählten Leitungsrollen ist ungültig.',
         ]);
 
         if ($validator->fails()) {
@@ -404,22 +402,26 @@ class RoleController extends Controller
         try {
             $department = Department::create([
                 'name' => $request->department_name,
-                 'leitung_role_name' => $request->leitung_role_name ?? [],
-                 'min_rank_level_to_assign_leitung' => $request->min_rank_level_to_assign_leitung ?? 0, // Speichere 0 wenn null
+                // WICHTIG: Array speichern (leeres Array als Fallback)
+                'leitung_role_name' => $request->leitung_role_name ?? [], 
+                'min_rank_level_to_assign_leitung' => $request->min_rank_level_to_assign_leitung ?? 0,
             ]);
 
-            // Logging & Event
             ActivityLog::create([
-                'user_id' => Auth::id(), 'log_type' => 'DEPARTMENT', 'action' => 'CREATED',
-                'target_id' => $department->id, 'description' => "Neue Abteilung '{$department->name}' erstellt.",
+                'user_id' => Auth::id(), 
+                'log_type' => 'DEPARTMENT', 
+                'action' => 'CREATED',
+                'target_id' => $department->id, 
+                'description' => "Neue Abteilung '{$department->name}' erstellt.",
             ]);
+            
             PotentiallyNotifiableActionOccurred::dispatch('Admin\RoleController@storeDepartment', Auth::user(), $department, Auth::user());
 
             return redirect()->route('admin.roles.index')->with('success', 'Abteilung erfolgreich erstellt.');
 
         } catch (\Exception $e) {
              Log::error("Fehler beim Erstellen der Abteilung: " . $e->getMessage());
-             return back()->with('error', 'Fehler beim Erstellen der Abteilung.')->withInput();
+             return back()->with('error', 'Fehler beim Erstellen der Abteilung: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -428,23 +430,19 @@ class RoleController extends Controller
      */
     public function updateDepartment(Request $request, Department $department)
     {
-         // Hole Rollen und Ranks für die Validierung
-         // GEÄNDERT: Filtert Super-Admin aus der Validierungsliste heraus.
         $allRoleNames = Role::where('name', '!=', $this->superAdminRole)->pluck('name')->toArray();
         $allRankLevels = Rank::pluck('level')->toArray();
 
          $validator = Validator::make($request->all(), [
              'edit_department_name' => 'required|string|max:255|unique:departments,name,' . $department->id,
+             // WICHTIG: Validierung auf Array umgestellt
              'edit_leitung_role_name' => 'nullable|array',
              'edit_leitung_role_name.*' => ['string', Rule::in($allRoleNames)],
              'edit_min_rank_level_to_assign_leitung' => ['nullable','integer', Rule::in($allRankLevels)],
          ], [
              'edit_department_name.required' => 'Der Abteilungsname darf nicht leer sein.',
              'edit_department_name.unique' => 'Eine Abteilung mit diesem Namen existiert bereits.',
-             'edit_leitung_role_name.in' => 'Die ausgewählte Leitungsrolle ist ungültig.',
-             'edit_min_rank_level_to_assign_leitung.in' => 'Das ausgewählte minimale Rang-Level ist ungültig.',
-             'edit_min_rank_level_to_assign_leitung.integer' => 'Das minimale Rang-Level muss eine Zahl sein.',
-             // 'edit_min_rank_level_to_assign_leitung.min' war redundant durch Rule::in, kann aber optional bleiben
+             'edit_leitung_role_name.array' => 'Das Format der Leitungsrollen ist ungültig.',
          ]);
 
          if ($validator->fails()) {
@@ -455,35 +453,57 @@ class RoleController extends Controller
 
         try {
             $oldName = $department->name;
-            $oldLeitungRole = $department->leitung_role_name;
+            // Sicherstellen, dass wir Arrays haben für den Vergleich
+            $oldLeitungRoles = $department->leitung_role_name ?? []; 
             $oldMinRankLevel = $department->min_rank_level_to_assign_leitung;
-            $oldData = $department->toArray();
 
             $department->update([
                 'name' => $request->edit_department_name,
-                'leitung_role_name' => $request->edit_leitung_role_name ?? [],
-                'min_rank_level_to_assign_leitung' => $request->edit_min_rank_level_to_assign_leitung ?? 0, // Setze auf 0 wenn nicht vorhanden
+                // WICHTIG: Fallback auf leeres Array []
+                'leitung_role_name' => $request->edit_leitung_role_name ?? [], 
+                'min_rank_level_to_assign_leitung' => $request->edit_min_rank_level_to_assign_leitung ?? 0, 
             ]);
 
-            // Logging
+            // Logging (Hier war der Fehler: Array-to-String Conversion)
             $logDescription = "Abteilung '{$oldName}' aktualisiert.";
-            if ($oldName !== $department->name) $logDescription .= " Neuer Name: '{$department->name}'.";
-            if ($oldLeitungRole !== $department->leitung_role_name) $logDescription .= " Leitungsrolle geändert: '{$oldLeitungRole}' -> '{$department->leitung_role_name}'.";
-            if ($oldMinRankLevel != $department->min_rank_level_to_assign_leitung) $logDescription .= " Min. Rang-Level geändert: {$oldMinRankLevel} -> {$department->min_rank_level_to_assign_leitung}.";
+            
+            if ($oldName !== $department->name) {
+                $logDescription .= " Neuer Name: '{$department->name}'.";
+            }
+
+            // Arrays vergleichen
+            $newLeitungRoles = $department->leitung_role_name ?? [];
+            // Sortieren für korrekten Vergleich
+            sort($oldLeitungRoles);
+            sort($newLeitungRoles);
+
+            if ($oldLeitungRoles != $newLeitungRoles) {
+                // HIER: Implode nutzen, um Array in String zu wandeln!
+                $oldStr = implode(', ', $oldLeitungRoles);
+                $newStr = implode(', ', $newLeitungRoles);
+                $logDescription .= " Leitungsrollen geändert: [{$oldStr}] -> [{$newStr}].";
+            }
+
+            if ($oldMinRankLevel != $department->min_rank_level_to_assign_leitung) {
+                $logDescription .= " Min. Rang-Level geändert: {$oldMinRankLevel} -> {$department->min_rank_level_to_assign_leitung}.";
+            }
 
             ActivityLog::create([
-                'user_id' => Auth::id(), 'log_type' => 'DEPARTMENT', 'action' => 'UPDATED',
-                'target_id' => $department->id, 'description' => $logDescription,
+                'user_id' => Auth::id(), 
+                'log_type' => 'DEPARTMENT', 
+                'action' => 'UPDATED',
+                'target_id' => $department->id, 
+                'description' => $logDescription,
             ]);
 
-            // Event
             PotentiallyNotifiableActionOccurred::dispatch('Admin\RoleController@updateDepartment', Auth::user(), $department, Auth::user());
 
             return redirect()->route('admin.roles.index')->with('success', 'Abteilung erfolgreich aktualisiert.');
 
         } catch (\Exception $e) {
              Log::error("Fehler beim Aktualisieren der Abteilung {$department->id}: " . $e->getMessage());
-             return back()->with('error', 'Fehler beim Aktualisieren der Abteilung.')->withInput();
+             // Gib die genaue Fehlermeldung aus, damit wir sehen was los ist
+             return back()->with('error', 'Fehler: ' . $e->getMessage())->withInput();
         }
     }
 
