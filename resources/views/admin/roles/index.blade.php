@@ -2,58 +2,29 @@
 
 @section('title', 'Rollen- und Berechtigungsverwaltung')
 
-{{-- Eigene Styles für den Drag-and-Drop-Modus --}}
 @push('styles')
-{{-- NEU: Toastr CSS hinzugefügt --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <style>
     /* Versteckt die normalen Links im Bearbeiten-Modus */
-    .rank-list.is-editing .rank-link {
-        display: none;
-    }
+    .rank-list.is-editing .rank-link { display: none; }
     /* Zeigt die Bearbeitungs-Items (mit Handle) nur im Bearbeiten-Modus an */
     .rank-edit-item {
-        display: none; /* Standardmäßig versteckt */
+        display: none; 
         align-items: center;
         width: 100%;
-        padding: 0.75rem 1.25rem; /* Gleiches Padding wie list-group-item */
+        padding: 0.75rem 1.25rem; 
     }
-    .rank-list.is-editing .rank-edit-item {
-        display: flex; 
-    }
-    /* Das list-group-item selbst wird zum Container */
-    .rank-list.is-editing .list-group-item {
-        cursor: grab;
-        padding: 0; /* Padding wird vom Kind-Element übernommen */
-    }
-    /* Styling für den Drag-Handle */
-    .rank-handle {
-        cursor: grab;
-        margin-right: 15px;
-        color: #999;
-    }
-    .rank-edit-item span:first-of-type {
-        flex-grow: 1; /* Sorgt dafür, dass der Name den Platz einnimmt */
-    }
-    /* Styling für den "Bearbeiten" Button, wenn aktiv */
-    #toggle-rank-edit.active {
-        color: #007bff; /* Blau, um Aktivität zu signalisieren */
-    }
-
-    /* Style für die Department Management Liste */
+    .rank-list.is-editing .rank-edit-item { display: flex; }
+    .rank-list.is-editing .list-group-item { cursor: grab; padding: 0; }
+    .rank-handle { cursor: grab; margin-right: 15px; color: #999; }
+    .rank-edit-item span:first-of-type { flex-grow: 1; }
+    #toggle-rank-edit.active { color: #007bff; }
     .department-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem 1rem;
-        border-bottom: 1px solid #eee;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.5rem 1rem; border-bottom: 1px solid #eee;
     }
-    .department-item:last-child {
-        border-bottom: none;
-    }
-    .department-actions .btn {
-        margin-left: 5px;
-    }
+    .department-item:last-child { border-bottom: none; }
+    .department-actions .btn { margin-left: 5px; }
 </style>
 @endpush
 
@@ -77,9 +48,7 @@
 
     <div class="row">
         
-        {{-- ======================================================= --}}
-        {{-- Linke Spalte: Rollenliste (STARK ANGEPASST)             --}}
-        {{-- ======================================================= --}}
+        {{-- Linke Spalte: Rollenliste --}}
         <div class="col-lg-4">
 
             <div class="card card-outline card-primary">
@@ -94,24 +63,23 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    {{-- Diese <ul> wird per JS sortierbar gemacht --}}
                     <ul class="list-group list-group-flush rank-list" id="rank-sort-list">
-                        {{-- KORREKTUR: Tippfehler in der Variable behoben --}}
                         @forelse($categorizedRoles['Ranks'] as $role)
-                            {{-- WICHTIG: data-id enthält die ID aus der 'ranks'-Tabelle --}}
                             <li class="list-group-item" data-id="{{ $role->rank_id }}">
                                 
-                                {{-- Ansicht 1: Normaler Link (Standard) --}}
+                                {{-- Ansicht 1: Normaler Link --}}
                                 <a href="{{ route('admin.roles.index', ['role' => $role->id]) }}"
                                    class="rank-link d-flex justify-content-between align-items-center @if(isset($currentRole) && $currentRole->id === $role->id) active @endif">
-                                    <span>{{ ucfirst($role->name) }}</span>
+                                    {{-- ÄNDERUNG: Hier wird nun das Label angezeigt --}}
+                                    <span>{{ $role->label }}</span>
                                     <span class="badge bg-secondary">{{ $role->users_count ?? 0 }} Nutzer</span>
                                 </a>
                                 
-                                {{-- Ansicht 2: Bearbeitungs-Item (Versteckt) --}}
+                                {{-- Ansicht 2: Bearbeitungs-Item --}}
                                 <div class="rank-edit-item">
                                     <i class="fas fa-grip-vertical rank-handle"></i>
-                                    <span>{{ ucfirst($role->name) }}</span>
+                                    {{-- ÄNDERUNG: Hier wird nun das Label angezeigt --}}
+                                    <span>{{ $role->label }}</span>
                                     <span class="badge bg-secondary">{{ $role->users_count ?? 0 }} Nutzer</span>
                                 </div>
                             </li>
@@ -119,7 +87,6 @@
                             <div class="list-group-item text-center text-muted">Keine Ränge in der 'ranks'-Tabelle definiert.</div>
                         @endforelse
                     </ul>
-                    {{-- Steuer-Buttons für den Bearbeiten-Modus --}}
                     <div class="p-2" id="rank-edit-controls" style="display: none;">
                         <button id="save-rank-order" class="btn btn-success btn-sm btn-flat">Speichern</button>
                         <button id="cancel-rank-order" class="btn btn-default btn-sm btn-flat">Abbrechen</button>
@@ -134,17 +101,16 @@
                 <div class="card-body p-0">
                     @forelse($categorizedRoles['Departments'] as $deptName => $deptRoles)
                         @if(!empty($deptRoles))
-                            {{-- Abteilungs-Titel --}}
                             <div class="list-group-item list-group-item-secondary bg-secondary">
                                 {{ $deptName }}
                             </div>
-                            {{-- Zugehörige Rollen --}}
                             <div class="list-group list-group-flush">
                                 @foreach($deptRoles as $role)
                                     <a href="{{ route('admin.roles.index', ['role' => $role->id]) }}" 
                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center
                                             @if(isset($currentRole) && $currentRole->id === $role->id) active @endif">
-                                        {{ ucfirst($role->name) }}
+                                        {{-- ÄNDERUNG: Anzeige Label --}}
+                                        {{ $role->label }}
                                         <span class="badge bg-secondary">{{ $role->users_count ?? 0 }} Nutzer</span>
                                     </a>
                                 @endforeach
@@ -165,8 +131,9 @@
                         @forelse($categorizedRoles['Other'] as $role)
                             <a href="{{ route('admin.roles.index', ['role' => $role->id]) }}" 
                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center 
-                                    @if(isset($currentRole) && $currentRole->id === $role->id) active @endif">
-                                {{ ucfirst($role->name) }}
+                                   @if(isset($currentRole) && $currentRole->id === $role->id) active @endif">
+                                {{-- ÄNDERUNG: Anzeige Label --}}
+                                {{ $role->label }}
                                 <span class="badge bg-secondary">{{ $role->users_count ?? 0 }} Nutzer</span>
                             </a>
                         @empty
@@ -176,9 +143,6 @@
                 </div>
             </div>
 
-            {{-- ============================================= --}}
-            {{-- NEU: Department Management Card             --}}
-            {{-- ============================================= --}}
              <div class="card card-outline card-warning">
                   <div class="card-header">
                        <h3 class="card-title">Abteilungen Verwalten</h3>
@@ -212,21 +176,18 @@
                        @endforelse
                   </div>
              </div>
-
         </div>
 
-        {{-- ======================================================= --}}
-        {{-- Rechte Spalte: Berechtigungsdetails                   --}}
-        {{-- ======================================================= --}}
+        {{-- Rechte Spalte: Berechtigungsdetails --}}
         <div class="col-lg-8">
             <div class="card">
                 
                 @if(isset($currentRole))
                     {{-- Formular zum Bearbeiten der Rolle --}}
                     <div class="card-header bg-info">
-                        <h3 class="card-title">Berechtigungen für Rolle: {{ ucfirst($currentRole->name) }}</h3>
+                        {{-- ÄNDERUNG: Titel zeigt Label --}}
+                        <h3 class="card-title">Berechtigungen für: {{ $currentRole->label }}</h3>
                     </div>
-                    {{-- KORREKTUR: ID zum Formular hinzugefügt, damit JS es finden kann --}}
                     <form id="editRoleForm" action="{{ route('admin.roles.update', $currentRole) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -234,9 +195,22 @@
                         <fieldset @cannot('roles.edit') disabled @endcannot>
                             <div class="card-body">
                                 
-                                {{-- Eingabefeld für Rollenname --}}
+                                {{-- NEU: Eingabefeld für Anzeigename (Label) --}}
                                 <div class="form-group">
-                                    <label for="role_name">Rollenname (Slug)</label>
+                                    <label for="role_label">Anzeigename (Öffentlich)</label>
+                                    <input type="text" 
+                                           class="form-control @error('label') is-invalid @enderror" 
+                                           id="role_label" 
+                                           name="label" 
+                                           {{-- Wir greifen direkt auf das Attribut zu, um zu sehen was in der DB steht, oder fallback auf name --}}
+                                           value="{{ old('label', $currentRole->getAttributes()['label'] ?? $currentRole->name) }}" 
+                                           required>
+                                    @error('label') <div class="text-danger small">{{ $message }}</div> @enderror
+                                </div>
+
+                                {{-- Eingabefeld für Rollenname (Technisch) --}}
+                                <div class="form-group">
+                                    <label for="role_name">Technischer Name (Slug)</label>
                                     <input type="text" 
                                            class="form-control @error('name') is-invalid @enderror" 
                                            id="role_name" 
@@ -249,15 +223,14 @@
                                     @endif
                                     @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
-                                {{-- ============================================= --}}
-                                {{-- NEU: Rollentyp Auswahl                      --}}
-                                {{-- ============================================= --}}
+                                
+                                {{-- Rollentyp Auswahl --}}
                                 <div class="form-group">
                                     <label>Rollentyp</label>
                                     <div class="form-check">
                                         <input class="form-check-input" type="radio" name="role_type" id="type_rank" value="rank" 
                                                {{ old('role_type', $currentRoleType) == 'rank' ? 'checked' : '' }} 
-                                               @if($currentRole->name === 'chief') disabled @endif> {{-- Chief kann kein anderer Typ werden --}}
+                                               @if($currentRole->name === 'chief') disabled @endif>
                                         <label class="form-check-label" for="type_rank">Rang (wird in Hierarchie einsortiert)</label>
                                     </div>
                                     <div class="form-check">
@@ -275,9 +248,7 @@
                                     @error('role_type', 'updateRole')<div class="text-danger small">{{ $message }}</div>@enderror
                                 </div>
                                 
-                                {{-- ============================================= --}}
-                                {{-- NEU: Department Auswahl (Konditional)       --}}
-                                {{-- ============================================= --}}
+                                {{-- Department Auswahl (Konditional) --}}
                                 <div class="form-group" id="edit_department_select_group" style="{{ old('role_type', $currentRoleType) == 'department' ? '' : 'display: none;' }}">
                                      <label for="edit_department_id">Zugehörige Abteilung</label>
                                      <select name="department_id" id="edit_department_id" class="form-control @error('department_id', 'updateRole') is-invalid @enderror">
@@ -292,7 +263,6 @@
                                      @error('department_id', 'updateRole')<div class="invalid-feedback">{{ $message }}</div>@enderror
                                 </div>
                                 
-                                {{-- Berechtigungen nach Modul auflisten --}}
                                 <h5 class="border-bottom pb-2 mb-3 mt-4">Zugewiesene Berechtigungen nach Modul:</h5>
                                 <div class="row">
                                     @forelse($permissions as $module => $modulePermissions)
@@ -306,7 +276,6 @@
                                                                value="{{ $permission->name }}" id="perm-{{ $permission->id }}"
                                                                {{ in_array($permission->name, $currentRolePermissions) ? 'checked' : '' }}>
                                                         <label for="perm-{{ $permission->id }}" class="small">
-                                                            {{-- Nimmt den Teil nach dem Punkt --}}
                                                             {{ ucfirst(str_replace('-', ' ', explode('.', $permission->name)[1] ?? $permission->name)) }}
                                                             <small class="text-muted d-block">({{ $permission->name }})</small>
                                                         </label>
@@ -323,7 +292,6 @@
                             </div>
                         </fieldset>
 
-                        {{-- Footer mit Speichern und Löschen --}}
                         <div class="card-footer text-right">
                             @can('roles.edit')
                                 <button type="submit" class="btn btn-primary btn-flat">
@@ -344,7 +312,6 @@
                     @include('admin.roles.partials.delete-modal')
 
                 @else
-                    {{-- Platzhalter, wenn keine Rolle ausgewählt ist --}}
                     <div class="card-body text-center py-5">
                         <p class="lead text-muted">Bitte wähle links eine Rolle aus, um deren Berechtigungen zu bearbeiten.</p>
                         <i class="fas fa-arrow-left fa-4x text-primary"></i>
@@ -355,7 +322,7 @@
         </div>
     </div>
     
-@include('admin.roles.partials.create-modal') {{-- Wichtig: Dieser Include muss da sein --}}
+    @include('admin.roles.partials.create-modal')
     @include('admin.roles.partials.create-department-modal')
     @foreach($allDepartments as $department)
         @include('admin.roles.partials.edit-department-modal', ['department' => $department])

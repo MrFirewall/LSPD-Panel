@@ -624,37 +624,46 @@ class UserController extends Controller
         
         // --- ENDE: DETAILLIERTES LOGGING (Generation) ---
 
-        // Service Record bei Beförderung/Degradierung
+        
         if ($oldValues['rank'] !== $newRank) {
-            $changedRankLevels = Rank::whereIn('name', [$oldValues['rank'], $newRank])
-                                      ->pluck('level', 'name');
+            
+            // Lade die Ränge/Rollen neu, um an das 'label' zu kommen
+            // Wir holen uns Name UND Label
+            $rankInfo = Role::whereIn('name', [$oldValues['rank'], $newRank])->get()->keyBy('name');
+
+            // Helper um den schönen Namen zu bekommen (Fallback auf internen Namen)
+            $getPrettyName = function($internalName) use ($rankInfo) {
+                return $rankInfo[$internalName]->label ?? $internalName;
+            };
+
+            $oldRankLabel = $getPrettyName($oldValues['rank']);
+            $newRankLabel = $getPrettyName($newRank);
+
+            // Level Logik (Bleibt wie vorher, nutzt technische Namen für die Berechnung)
+            $changedRankLevels = Rank::whereIn('name', [$oldValues['rank'], $newRank])->pluck('level', 'name');
             $currentRankLevel = $changedRankLevels->get($newRank, 0);
             $oldRankLevel = $changedRankLevels->get($oldValues['rank'], 0);
 
             $recordType = $currentRankLevel > $oldRankLevel ? 'Beförderung' : ($currentRankLevel < $oldRankLevel ? 'Degradierung' : 'Rangänderung');
+            
+            // DB Eintrag (Hier nutzen wir jetzt den schönen Namen für den Text!)
             ServiceRecord::create([
                 'user_id' => $user->id,
                 'author_id' => Auth::id(),
                 'type' => $recordType,
-                'content' => "Rang geändert von '{$oldValues['rank']}' zu '{$newRank}'."
+                'content' => "Rang geändert von '{$oldRankLabel}' zu '{$newRankLabel}'."
             ]);
-            // --- DISCORD LOGIK START ---
 
-            // 1. Mapping definieren (Muss exakt mit den 'action' Namen im Seeder übereinstimmen!)
+            // --- DISCORD LOGIK ---
             $discordActionMap = [
                 'Beförderung'  => 'rank.promotion',
                 'Degradierung' => 'rank.demotion',
-                // 'Rangänderung' => 'rank.change', // Falls du das im Seeder hinzugefügt hast
             ];
 
-            // 2. Prüfen, ob wir für diesen Typ eine Aktion definiert haben
             if (array_key_exists($recordType, $discordActionMap)) {
                 $actionKey = $discordActionMap[$recordType];
-                
-                // 3. Farbe festlegen (5763719 = Grün, 15548997 = Rot)
                 $color = ($recordType === 'Beförderung') ? 5763719 : 15548997; 
 
-                // 4. Embed zusammenbauen
                 $embeds = [
                     [
                         'title' => "📢 Neue " . $recordType,
@@ -663,12 +672,12 @@ class UserController extends Controller
                         'fields' => [
                             [
                                 'name' => 'Alte Position', 
-                                'value' => $oldValues['rank'] ?? 'Unbekannt', 
+                                'value' => $oldRankLabel, // <--- Schöner Name
                                 'inline' => true
                             ],
                             [
                                 'name' => 'Neue Position', 
-                                'value' => $newRank, 
+                                'value' => $newRankLabel, // <--- Schöner Name
                                 'inline' => true
                             ],
                             [

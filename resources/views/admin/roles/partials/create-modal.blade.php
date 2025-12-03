@@ -6,7 +6,7 @@
 <div class="modal fade" id="createRoleModal" tabindex="-1" role="dialog" aria-labelledby="createRoleModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="card card-success card-outline mb-0"> {{-- Farbe geändert --}}
+            <div class="card card-success card-outline mb-0">
                 <form action="{{ route('admin.roles.store') }}" method="POST">
                     @csrf
                     <div class="modal-header bg-success">
@@ -17,19 +17,36 @@
                     </div>
                     <div class="modal-body">
                         <p class="text-muted small">
-                            Rollen werden als Slugs gespeichert (nur Kleinbuchstaben, Zahlen, Bindestriche).
+                            Erstellen Sie hier eine neue Rolle. Der <b>Anzeigename</b> ist für Nutzer sichtbar, der <b>Technische Name</b> wird im Code verwendet.
                         </p>
                         
-                        {{-- Rollenname --}}
+                        {{-- NEU: Anzeigename (Label) --}}
                         <div class="form-group">
-                            <label for="new_role_name">Rollenname (Slug)</label>
+                            <label for="new_role_label">Anzeigename (Öffentlich)</label>
+                            <input type="text" 
+                                   class="form-control {{ $modalErrors->has('label') ? 'is-invalid' : '' }}" 
+                                   id="new_role_label" 
+                                   name="label" 
+                                   value="{{ old('label') }}" 
+                                   placeholder="z.B. Polizeipräsident/in">
+                            @if ($modalErrors->has('label'))
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $modalErrors->first('label') }}</strong>
+                                </span>
+                            @endif
+                        </div>
+
+                        {{-- Rollenname (Slug) --}}
+                        <div class="form-group">
+                            <label for="new_role_name">Technischer Name (Slug)</label>
                             <input type="text" 
                                    class="form-control {{ $modalErrors->has('name') ? 'is-invalid' : '' }}" 
                                    id="new_role_name" 
                                    name="name" 
                                    value="{{ old('name') }}" 
                                    required 
-                                   placeholder="z.B. neuer-ausbilder">
+                                   placeholder="z.B. police_chief">
+                            <small class="form-text text-muted">Nur Kleinbuchstaben, Zahlen und Bindestriche/Unterstriche.</small>
                             @if ($modalErrors->has('name'))
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $modalErrors->first('name') }}</strong>
@@ -49,7 +66,7 @@
                                 <label class="form-check-label" for="create_type_department">Abteilungsrolle</label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="radio" name="role_type" id="create_type_other" value="other" {{ old('role_type', 'other') == 'other' ? 'checked' : '' }}> {{-- Standard: other --}}
+                                <input class="form-check-input" type="radio" name="role_type" id="create_type_other" value="other" {{ old('role_type', 'other') == 'other' ? 'checked' : '' }}>
                                 <label class="form-check-label" for="create_type_other">Andere Rolle</label>
                             </div>
                              @if ($modalErrors->has('role_type'))
@@ -62,14 +79,12 @@
                              <label for="create_department_id">Zugehörige Abteilung</label>
                              <select name="department_id" id="create_department_id" class="form-control {{ $modalErrors->has('department_id') ? 'is-invalid' : '' }}">
                                  <option value="">Bitte Abteilung wählen...</option>
-                                 @foreach($allDepartments ?? [] as $department) {{-- Prüfe ob Variable existiert --}}
+                                 @foreach($allDepartments ?? [] as $department)
                                      <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
                                          {{ $department->name }}
                                      </option>
                                  @endforeach
                              </select>
-                             {{-- Optional: Button zum Erstellen einer neuen Abteilung direkt von hier --}}
-                             {{-- <button type="button" class="btn btn-xs btn-link" data-toggle="modal" data-target="#createDepartmentModal" data-dismiss="modal">Neue Abteilung erstellen?</button> --}}
                               @if ($modalErrors->has('department_id'))
                                 <div class="invalid-feedback">{{ $modalErrors->first('department_id') }}</div>
                             @endif
