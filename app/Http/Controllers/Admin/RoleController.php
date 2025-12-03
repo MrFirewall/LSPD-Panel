@@ -53,8 +53,8 @@ public function index(Request $request)
         $ranks = Rank::orderBy('level', 'desc')->get();
         $allDepartments = Department::orderBy('name')->get();
 
-        $allRoleNames = $allRolesCollection->pluck('name'); 
-        $allRanks = Rank::orderBy('level', 'desc')->pluck('level', 'name');
+        $allRoleNames = $allRolesCollection->pluck('label'); 
+        $allRanks = Rank::orderBy('level', 'desc')->pluck('level', 'label');
 
         $categorizedRoles = ['Ranks' => [], 'Departments' => [], 'Other' => []];
 
