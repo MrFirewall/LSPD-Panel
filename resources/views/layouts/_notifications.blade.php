@@ -76,19 +76,7 @@
                 
                 {{-- WICHTIG: Klasse 'notification-row' hinzugefügt --}}
                 <div class="d-flex border-bottom notification-row" id="notif-row-{{ $notification['id'] }}">
-                    
-                    {{-- A) BUTTON: AJAX MARK AS READ --}}
-                    {{-- Kein Formular mehr! Nur ein Button mit data-Attributen --}}
-                    <button type="button" 
-                            class="btn btn-link text-muted mark-read-ajax-btn d-flex align-items-center justify-content-center px-3 border-right h-100" 
-                            style="text-decoration: none; border-radius: 0;" 
-                            title="Als gelesen markieren"
-                            data-url="{{ route('notifications.markAsRead', $notification['id']) }}"
-                            data-id="{{ $notification['id'] }}">
-                        <i class="fas fa-check"></i>
-                    </button>
 
-                    {{-- B) BUTTON: TEXT KLICKEN (Redirect bleibt wie gehabt) --}}
                     <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
                         @csrf
                         <input type="hidden" name="redirect_to_target" value="1">
@@ -104,6 +92,16 @@
                             </div>
                         </button>
                     </form>
+                    
+                    <button type="button" 
+                            class="btn btn-link text-muted mark-read-ajax-btn d-flex align-items-center justify-content-center px-3 border-right" 
+                            style="text-decoration: none; border-radius: 0;" 
+                            title="Als gelesen markieren"
+                            data-url="{{ route('notifications.markAsRead', $notification['id']) }}"
+                            data-id="{{ $notification['id'] }}">
+                        <i class="fas fa-check"></i>
+                    </button>
+
                 </div>
 
             @endforeach
@@ -119,13 +117,12 @@
 </div>
 
 {{-- 3. FOOTER --}}
-<div class="dropdown-footer border-top bg-light p-0">
-    {{-- Link zu allen Benachrichtigungen --}}
+<div class="dropdown-footer border-top p-0">
     <a href="{{ route('notifications.index') }}" class="dropdown-item text-center py-2 text-primary font-weight-bold">
         Alle anzeigen
     </a>
-    
-    {{-- PUSH BUTTONS CONTAINER --}}
+</div>
+<div class="dropdown-footer border-top p-0">
     <div class="text-center pb-2">
         <button type="button" id="enable-push" class="btn btn-xs btn-info shadow-sm" style="display: none;">
             <i class="fas fa-bell mr-1"></i> Desktop-Benachrichtigungen aktivieren
@@ -135,3 +132,5 @@
         </button>
     </div>
 </div>
+
+
