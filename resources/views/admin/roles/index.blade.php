@@ -220,6 +220,7 @@
                                    value="{{ old('name', $currentRole->name) }}" 
                                    required 
                                    @if($currentRole->name === 'chief') disabled @endif>
+                                    @if($currentRole->name === 'chief')
                                         <small class="text-danger">Der Name der Super-Admin-Rolle kann nicht geändert werden.</small>
                                     @endif
                                     @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
