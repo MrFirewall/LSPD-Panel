@@ -20,7 +20,7 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        // FIX: 'user.rankRelation' laden statt 'user.rank'
+        // Wir laden 'user.rankRelation' für das Label
         $query = Report::with(['user.rankRelation'])->latest();
 
         if (Auth::user()->cannot('viewAny', Report::class)) {
@@ -47,7 +47,7 @@ class ReportController extends Controller
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        // FIX: 'rankRelation' laden
+        // rankRelation laden für Dropdown-Labels
         $allStaff = User::with('rankRelation')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
 
@@ -84,9 +84,11 @@ class ReportController extends Controller
             $report->attendingStaff()->attach($request->input('attending_staff'));
         }
 
+        // Fines speichern mit Bemerkung
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {
+                // Wir nutzen die ID als Key für sync
                 $syncData[$fineData['id']] = ['remark' => $fineData['remark'] ?? ''];
             }
             $report->fines()->sync($syncData);
@@ -112,7 +114,6 @@ class ReportController extends Controller
 
     public function show(Report $report)
     {
-        // FIX: 'rankRelation' überall laden
         $report->load(['user.rankRelation', 'citizen', 'attendingStaff.rankRelation', 'fines']);
         return view('reports.show', compact('report'));
     }
@@ -121,7 +122,6 @@ class ReportController extends Controller
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        // FIX: 'rankRelation' laden
         $allStaff = User::with('rankRelation')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
         
@@ -154,6 +154,7 @@ class ReportController extends Controller
         $report->update($validatedData);
         $report->attendingStaff()->sync($request->input('attending_staff', []));
         
+        // Fines synchronisieren
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {
