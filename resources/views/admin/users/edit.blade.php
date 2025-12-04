@@ -134,42 +134,60 @@
                         <p class="text-muted small">Bitte wählen Sie <strong>einen</strong> Rang und optional weitere Zusatzrollen/Abteilungen.</p>
                         @error('roles')<div class="alert alert-danger">{{ $message }}</div>@enderror
                         @error('roles.*')<div class="alert alert-danger">{{ $message }}</div>@enderror
+
                         @php
                             $currentUser = auth()->user();
+                            // Prüfen, ob der Bearbeiter hierarchisch über dem Ziel-User steht
                             $canEditUser = $currentUser->hasAnyRole('Super-Admin', 'chief') || ($currentUser->level > $user->level);
+                            // Prüfen, ob Ränge in der Liste vorhanden sind
+                            $hasRanksAvailable = !empty($categorizedRoles['Ranks']);
                         @endphp
 
-                        @if($canEditUser)
-                        {{-- 1. RÄNGE (Radio Buttons - Single Select) --}}
-                            @if (!empty($categorizedRoles['Ranks']))
-                                <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
-                                <div class="form-group">
-                                    @foreach($categorizedRoles['Ranks'] as $role)
-                                        <div class="icheck-primary mb-2"> {{-- mb-2 für Abstand untereinander --}}
-                                            <input type="radio" 
-                                                name="roles[]" 
-                                                value="{{ $role->name }}" 
-                                                id="rank_{{ $role->id }}" 
-                                                {{-- Prüft, ob dieser Rang im Array der User-Rollen ist --}}
-                                                @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
-                                            <label for="rank_{{ $role->id }}" class="font-weight-normal">
-                                                {{ $role->label }}
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>                            
-                            @endif
-                            @else
-                                {{-- FALLBACK: Wenn keine Ränge verfügbar sind (weil gefiltert oder leer) --}}
-                                <div class="callout callout-warning mt-3 shadow-sm">
-                                    <h6 class="text-warning">
-                                        <i class="fas fa-lock mr-1"></i> Keine Ränge verfügbar
-                                    </h6>
-                                    <p class="small text-muted mb-0">
-                                        Du hast keine Berechtigung, Ränge in dieser Kategorie zu vergeben, oder alle verfügbaren Ränge sind höher als dein eigener.
-                                    </p>
-                                </div>
-                            @endif
+                        {{-- FALL 1: Alles okay - Ränge anzeigen --}}
+                        @if($canEditUser && $hasRanksAvailable)
+                            <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
+                            <div class="form-group">
+                                @foreach($categorizedRoles['Ranks'] as $role)
+                                    <div class="icheck-primary mb-2">
+                                        <input type="radio" 
+                                            name="roles[]" 
+                                            value="{{ $role->name }}" 
+                                            id="rank_{{ $role->id }}" 
+                                            {{-- Prüft, ob dieser Rang im Array der User-Rollen ist --}}
+                                            @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
+                                        <label for="rank_{{ $role->id }}" class="font-weight-normal">
+                                            {{ $role->label }}
+                                            {{-- Optional: Markierung, welcher Rang aktuell in der DB ist (nicht nur checked) --}}
+                                            @if(in_array($role->name, $user->getRoleNames()->toArray()))
+                                                <span class="badge badge-info ml-2">Aktuell</span>
+                                            @endif
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+
+                        {{-- FALL 2: Hierarchie-Schutz greift (Ziel-User ist gleich hoch oder höher) --}}
+                        @elseif(!$canEditUser)
+                            <div class="callout callout-danger mt-3 shadow-sm">
+                                <h6 class="text-danger">
+                                    <i class="fas fa-user-shield mr-1"></i> Zugriff verweigert
+                                </h6>
+                                <p class="small text-muted mb-0">
+                                    Du kannst den Rang dieses Mitarbeiters nicht ändern, da er im Rang <strong>gleich oder höher</strong> steht als du.
+                                </p>
+                            </div>
+
+                        {{-- FALL 3: User darf bearbeiten, aber es gibt keine Ränge in der Liste (Controller Filterung) --}}
+                        @else
+                            <div class="callout callout-warning mt-3 shadow-sm">
+                                <h6 class="text-warning">
+                                    <i class="fas fa-exclamation-circle mr-1"></i> Keine Ränge verfügbar
+                                </h6>
+                                <p class="small text-muted mb-0">
+                                    Es wurden keine Ränge gefunden, die du diesem Benutzer zuweisen darfst (alle verfügbaren Ränge sind höher als dein eigener Level).
+                                </p>
+                            </div>
+                        @endif
                         {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
                             <h6 class="text-primary mt-4 border-bottom pb-2">Abteilungen & Zusatzrollen</h6>
