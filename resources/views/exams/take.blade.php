@@ -180,7 +180,7 @@
                 </p>
             </div>
             <div class="modal-footer border-top-0 justify-content-between">
-                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-dismiss="modal">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">
                     Abbrechen
                 </button>
                 <button type="button" class="btn btn-success rounded-pill px-4 font-weight-bold" onclick="document.getElementById('exam-form').submit();">
