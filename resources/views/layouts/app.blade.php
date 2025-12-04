@@ -256,9 +256,27 @@
     </div>
 
     {{-- FOOTER --}}
-    <footer class="main-footer" style="background-color: var(--bg-dark); color: #888; border-top: 1px solid var(--glass-border);">        
-        <div class="float-right d-none d-sm-inline">Version 1.0</div>
-        <strong>Copyright &copy; 2025 LSPD Panel.</strong> All rights reserved.
+    <footer class="main-footer" style="background-color: var(--bg-dark); color: #888; border-top: 1px solid var(--glass-border); font-size: 0.9rem;">        
+        <div class="float-right d-none d-sm-inline">
+            @php
+                // Versucht, den aktuellen Commit-Hash zu holen (nur wenn git vorhanden)
+                try {
+                    $commitHash = trim(shell_exec('git rev-parse --short HEAD 2>&1'));
+                    // Prüfen, ob es wirklich ein Hash ist (und keine Fehlermeldung)
+                    if (!$commitHash || str_contains($commitHash, 'fatal')) {
+                        $commitHash = 'v1.0'; // Fallback
+                    }
+                } catch (\Exception $e) {
+                    $commitHash = 'v2.0';
+                }
+            @endphp
+            Version: <span class="text-monospace" style="color: #666;">{{ $commitHash }}</span>
+        </div>
+        
+        <strong>Copyright &copy; {{ date('Y') }} LSPD Panel.</strong>
+        <span class="ml-2 pl-2 border-left border-secondary">
+            Entwickelt von <a href="https://ivaro.de" target="_blank" class="font-weight-bold" style="color: #4b6cb7; text-decoration: none;">Herbert Bart</a>
+        </span>
     </footer>
 </div>
 
