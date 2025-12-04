@@ -272,11 +272,12 @@
             @endphp
             Version: <span class="text-monospace" style="color: #666;">{{ $commitHash }}</span>
         </div>
-        
-        <strong>Copyright &copy; {{ date('Y') }} LSPD Panel.</strong>
-        <span class="ml-2 pl-2 border-left border-secondary">
-            Entwickelt von <a href="https://ivaro.de" target="_blank" class="font-weight-bold" style="color: #4b6cb7; text-decoration: none;">Herbert Bart</a>
-        </span>
+        <div class="float-right d-none d-sm-inline">
+            <strong>Copyright &copy; {{ date('Y') }} LSPD Panel.</strong>
+            <span class="ml-2 pl-2 border-left border-secondary">
+                <i class="fas fa-tools text-secondary mr-1"></i> Zammjebastelt vom <a href="https://ivaro.de" target="_blank" class="font-weight-bold" style="color: #4b6cb7; text-decoration: none;">Herbert Bart</a> 🛠️
+            </span>        
+        </div>
     </footer>
 </div>
 
