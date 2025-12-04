@@ -499,7 +499,7 @@ class UserController extends Controller
                 $modulesToSync[$moduleId] = [
                     'assigned_by_user_id' => $adminUser->id,
                     'completed_at' => $timestamp->toDateString(),
-                    'notes' => "Manuell zugewiesen von {$adminUser->name} am " . $timestamp->format('d.m.Y H:i')
+                    'notes' => "Zugewiesen von {$adminUser->name} am " . $timestamp->format('d.m.Y H:i')
                 ];
             }
         }
@@ -568,7 +568,7 @@ class UserController extends Controller
         if (!empty($addedModules)) {
             $moduleNames = TrainingModule::whereIn('id', $addedModules)->pluck('name')->toArray();
             foreach ($moduleNames as $mName) {
-                $this->createSystemRecord($user, 'Ausbildung', "Modul '{$mName}' manuell zugewiesen.");
+                $this->createSystemRecord($user, 'Ausbildung', "Modul '{$mName}' zugewiesen.");
             }
         }
         if (!empty($removedModules)) {
