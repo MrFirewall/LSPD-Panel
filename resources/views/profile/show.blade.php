@@ -15,7 +15,7 @@
                 </p>
             </div>
             <div class="col-md-4 text-right">
-                <span class="badge badge-dark badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <span class="badge badge-light badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     {{ $user->rankRelation->label ?? 'Mitarbeiter' }}
                 </span>
             </div>
@@ -41,14 +41,25 @@
                                  style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #2d3748;">
                         </div>
 
-                        <h3 class="profile-username text-center font-weight-bold">{{ $user->name }}</h3>
-                        <p class="text-muted text-center mb-4">
-                            @forelse($user->getRoleNames() as $role)
-                                <span class="badge badge-info">{{ $role }}</span>
+                        <h3 class="profile-username text-center font-weight-bold mb-1">{{ $user->name }}</h3>
+                        
+                        {{-- Rollenanzeige: Clean & Text statt Badges --}}
+                        <div class="text-center mb-4">
+                            @php
+                                // Hole Rank-Labels aus Cache für saubere Anzeige
+                                $rankLabels = \Illuminate\Support\Facades\Cache::remember('ranks_labels_map', 60, function () {
+                                    return \App\Models\Rank::pluck('label', 'name')->toArray();
+                                });
+                            @endphp
+
+                            @forelse($user->getRoleNames() as $roleSlug)
+                                <div class="text-info font-weight-bold" style="font-size: 0.95rem; letter-spacing: 0.5px;">
+                                    {{ $rankLabels[$roleSlug] ?? ucfirst(str_replace(['_', '-'], ' ', $roleSlug)) }}
+                                </div>
                             @empty
-                                <span class="text-muted small">Keine Rolle zugewiesen</span>
+                                <span class="text-muted small font-italic">Keine Rolle zugewiesen</span>
                             @endforelse
-                        </p>
+                        </div>
 
                         @can('users.edit')
                             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-primary btn-block rounded-pill">
