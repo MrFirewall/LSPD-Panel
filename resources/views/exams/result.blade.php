@@ -75,7 +75,7 @@
                             <div class="card-body text-center">
                                 <div class="alert alert-light border-0" style="background-color: rgba(255,255,255,0.05);">
                                     <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
-                                    <p class="mb-0 font-weight-bold">Bewertung abgeschlossen</p>
+                                    <p class="mb-0 font-weight-bold text-primary">Bewertung abgeschlossen</p>
                                     <small class="text-muted">Status kann nicht mehr geändert werden.</small>
                                 </div>
                             </div>
@@ -156,7 +156,7 @@
                         @endphp
 
                         {{-- FRAGE CARD --}}
-                        <div class="card card-outline {{ $index > 0 ? 'mt-3' : '' }} mb-0 shadow-sm" 
+                        <div class="card card-outline {{ $index > 0 ? 'mt-3' : '' }} mb-3 shadow-sm" 
                              style="border-left: 4px solid !important; {{ $cardBorderClass == 'border-left-success' ? 'border-left-color: #28a745;' : ($cardBorderClass == 'border-left-danger' ? 'border-left-color: #dc3545;' : ($cardBorderClass == 'border-left-warning' ? 'border-left-color: #ffc107;' : 'border-left-color: #6c757d;')) }}">
                             
                             <div class="card-body">
