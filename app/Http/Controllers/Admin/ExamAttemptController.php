@@ -29,7 +29,7 @@ class ExamAttemptController extends Controller
     {
         $attempts = ExamAttempt::with(['exam', 'user', 'evaluator']) 
                             ->orderBy('id', 'desc')
-                            ->paginate(2);
+                            ->paginate(25);
         return view('admin.exams.attempts-index', compact('attempts'));
     }
 
