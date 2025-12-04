@@ -5,8 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ExamAttempt;
 use App\Models\User;
-// use App\Models\TrainingModule; // Nicht mehr benötigt
-use App\Models\Exam; // NEU
+use App\Models\Exam;
 use App\Models\Evaluation;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
@@ -23,16 +22,11 @@ class ExamAttemptController extends Controller
     public function __construct(ExamAttemptService $attemptService)
     {
         $this->attemptService = $attemptService;
-        // Middleware für Berechtigungen
         $this->middleware('can:viewAny,' . ExamAttempt::class)->only('index');
-        // Autorisierung für andere Methoden erfolgt direkt in den Methoden
     }
 
     public function index()
     {
-        // $this->authorize('viewAny', ExamAttempt::class); // Bereits durch Middleware
-
-        // KORREKTUR: Lade den Bewerter (evaluator) direkt mit, für die Ansicht
         $attempts = ExamAttempt::with(['exam', 'user', 'evaluator']) 
                             ->orderBy('updated_at', 'desc')
                             ->paginate(25);
@@ -42,35 +36,37 @@ class ExamAttemptController extends Controller
     public function store(GenerateExamAttemptRequest $request)
     {
         $validated = $request->validated();
-        $exam = Exam::findOrFail($validated['exam_id']); // Finde die Prüfung
-        $user = User::findOrFail($validated['user_id']); // Finde den User
-        $evaluation = isset($validated['evaluation_id']) ? Evaluation::find($validated['evaluation_id']) : null; // Evaluation ist optional
+        $exam = Exam::findOrFail($validated['exam_id']);
+        $user = User::findOrFail($validated['user_id']);
+        $evaluation = isset($validated['evaluation_id']) ? Evaluation::find($validated['evaluation_id']) : null;
 
-        $attempt = $this->attemptService->generateAttempt($user, $exam); // Übergebe Exam statt Module
+        $attempt = $this->attemptService->generateAttempt($user, $exam);
 
-        // Markiere den Antrag als "erledigt", nur wenn er existiert
+        // NEU: Den aktuellen Admin direkt als Prüfer (Evaluator) eintragen
+        $attempt->update(['evaluator_id' => Auth::id()]);
+
         if ($evaluation) {
              $evaluation->update(['status' => 'processed']);
         }
 
-        $secureUrl = route('exams.take', $attempt); // Nutzt RMB
+        $secureUrl = route('exams.take', $attempt);
 
         ActivityLog::create([
             'user_id' => Auth::id(),
             'log_type' => 'EXAM',
             'action' => 'LINK_GENERATED',
             'target_id' => $attempt->id,
-            'description' => "Prüfungslink für '{$exam->title}' wurde für {$user->name} generiert." // Angepasster Text
+            'description' => "Prüfungslink für '{$exam->title}' wurde für {$user->name} generiert."
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
             'Admin\ExamAttemptController@store',
-            $user, // Der Prüfling (Empfänger/Trigger)
+            $user,
             $attempt,
-            Auth::user() // Der Admin (Akteur)
+            Auth::user()
         );
 
-        return back()->with('success', 'Prüfungslink erfolgreich generiert!')
+        return back()->with('success', 'Prüfungslink generiert und Sie wurden als Prüfer eingetragen!')
                      ->with('secure_url', $secureUrl);
     }
 
@@ -78,13 +74,11 @@ class ExamAttemptController extends Controller
     {
         $this->authorize('viewResult', $attempt);
         
-        // KORREKTUR für das ursprüngliche Problem "Keine Optionen definiert!": 
-        // Laden der Optionen über die Exam->Questions-Relation.
         $attempt->load([
-            'exam.questions.options', // Wichtig: Lädt Fragen und Optionen des Exams
+            'exam.questions.options',
             'user', 
             'answers.question', 
-            'answers.option', // Lädt die spezifisch gewählte Option
+            'answers.option',
             'evaluator'
         ]);
         
@@ -93,18 +87,14 @@ class ExamAttemptController extends Controller
 
     public function update(FinalizeExamRequest $request, ExamAttempt $attempt)
     {
-        $this->authorize('setEvaluated', $attempt); // Prüfen ob bewertet werden darf
+        $this->authorize('setEvaluated', $attempt);
         $validated = $request->validated();
 
-        // Status für Log/Event ableiten (nicht mehr gespeichert)
         $isPassed = $validated['final_score'] >= $attempt->exam->pass_mark;
         $status_result_for_log = $isPassed ? 'bestanden' : 'nicht_bestanden';
         
-        // KORREKTUR: Füge die ID des Admins als Bewerter hinzu
-        $validated['evaluator_id'] = Auth::id();
+        $validated['evaluator_id'] = Auth::id(); // Hier wird der Prüfer beim Speichern des Ergebnisses auch nochmal gesetzt/aktualisiert
 
-        // KORREKTUR: Übergib alle validierten Daten (inkl. evaluator_id) an den Service
-        // (Stelle sicher, dass dein ExamAttemptService 'evaluator_id' verarbeiten kann)
         $attempt = $this->attemptService->finalizeAttempt($attempt, $validated); 
 
         $actionDesc = "Prüfung '{$attempt->exam->title}' von {$attempt->user->name} wurde als '{$status_result_for_log}' bewertet. Score: {$validated['final_score']}%";
@@ -112,13 +102,12 @@ class ExamAttemptController extends Controller
 
         PotentiallyNotifiableActionOccurred::dispatch(
             'Admin\ExamAttemptController@update',
-            $attempt->user, // Der Prüfling (Empfänger/Trigger)
+            $attempt->user,
             $attempt,
-            Auth::user(), // Der Admin (Akteur)
-            ['status_result' => $status_result_for_log, 'final_score' => $validated['final_score']] // Zusätzliche Daten für Listener
+            Auth::user(),
+            ['status_result' => $status_result_for_log, 'final_score' => $validated['final_score']]
         );
 
-        // Angepasste Erfolgsmeldung
         return redirect()->route('admin.exams.attempts.index')->with('success', "Prüfung finalisiert: Score für {$attempt->user->name} auf {$validated['final_score']}% gesetzt.");
     }
 
@@ -126,6 +115,10 @@ class ExamAttemptController extends Controller
     {
         $this->authorize('resetAttempt', $attempt);
         $this->attemptService->resetAttempt($attempt);
+
+        // Beim Resetten könnte man überlegen, ob man den Evaluator löscht oder beibehält.
+        // Meistens behält man ihn oder setzt ihn neu, wenn jemand resettet.
+        // Hier lassen wir es erstmal wie es ist (Evaluator bleibt oder wird durch resetAttempt Service evtl. genullt, je nach Service-Logik).
 
         ActivityLog::create([
             'user_id' => Auth::id(),
@@ -137,28 +130,31 @@ class ExamAttemptController extends Controller
 
         PotentiallyNotifiableActionOccurred::dispatch(
             'Admin\ExamAttemptController@resetAttempt',
-            $attempt->user, // Der Student
+            $attempt->user,
             $attempt,
-            Auth::user() // Der Admin
+            Auth::user()
         );
 
-        return back()->with('success', 'Prüfungsversuch wurde zurückgesetzt.'); // Optional: Erfolgsmeldung
+        return back()->with('success', 'Prüfungsversuch wurde zurückgesetzt.');
     }
 
     public function sendLink(ExamAttempt $attempt) 
     {
         $this->authorize('sendLink', $attempt);
+        
+        // NEU: Wenn der Link erneut gesendet wird, trägt sich der aktuelle User als Prüfer ein
+        $attempt->update(['evaluator_id' => Auth::id()]);
+
         $secureUrl = route('exams.take', $attempt);
 
         PotentiallyNotifiableActionOccurred::dispatch(
             'Admin\ExamAttemptController@sendLink',
-            $attempt->user, // Der Student
+            $attempt->user,
             $attempt,
-            Auth::user() // Der Admin
+            Auth::user()
         );
 
-        // ->with('success', ...) hinzugefügt
-        return back()->with('success', 'Prüfungslink erneut generiert!')
+        return back()->with('success', 'Prüfungslink erneut generiert und Sie wurden als Prüfer eingetragen!')
                      ->with('secure_url', $secureUrl);
     }
 
@@ -171,41 +167,40 @@ class ExamAttemptController extends Controller
            $resultText = $isPassed ? 'Bestanden' : 'Nicht bestanden';
 
            $attempt->update([
-               'status' => 'evaluated', // Nur Status und Score setzen
+               'status' => 'evaluated',
                'score' => $validated['score'],
-               'evaluator_id' => Auth::id(), // KORREKTUR: Bewerter hier auch setzen
+               'evaluator_id' => Auth::id(), // Hier wird der Prüfer explizit gesetzt
            ]);
 
            $message = "Prüfungsversuch #{$attempt->id} von {$attempt->user->name} wurde manuell bewertet: Score {$validated['score']}% ({$resultText}).";
            ActivityLog::create([
                'user_id' => Auth::id(),
                'log_type' => 'EXAM',
-               'action' => 'EVALUATED_MANUAL', // Eigener Action-Typ?
+               'action' => 'EVALUATED_MANUAL',
                'target_id' => $attempt->id,
                'description' => $message
            ]);
 
            PotentiallyNotifiableActionOccurred::dispatch(
                'Admin\ExamAttemptController@setEvaluated',
-               $attempt->user, // Der Student
+               $attempt->user,
                $attempt,
-               Auth::user(), // Der Admin
-               ['isPassed' => $isPassed] // Zusätzliche Info für Listener
+               Auth::user(),
+               ['isPassed' => $isPassed]
            );
 
-           return back()->with('success', 'Score manuell gesetzt.'); // Optional: Erfolgsmeldung
+           return back()->with('success', 'Score manuell gesetzt.');
     }
 
     public function destroy(ExamAttempt $attempt)
     {
         $this->authorize('delete', $attempt);
 
-        // Lade Relationen, bevor das Model gelöscht wird, um Daten für Log/Event zu haben
         $attempt->load(['exam', 'user']);
         $attemptTitle = $attempt->exam->title ?? 'Unbekannte Prüfung';
         $attemptUser = $attempt->user->name ?? 'Unbekannter User';
         $attemptId = $attempt->id;
-        $deletedAttemptData = $attempt->toArray(); // Event-Daten sichern
+        $deletedAttemptData = $attempt->toArray();
 
         $this->attemptService->deleteAttempt($attempt);
 
@@ -213,16 +208,15 @@ class ExamAttemptController extends Controller
             'user_id' => Auth::id(),
             'log_type' => 'EXAM',
             'action' => 'DELETED',
-            'target_id' => $attemptId, // ID verwenden, da Objekt gelöscht ist
+            'target_id' => $attemptId,
             'description' => "Prüfungsversuch #{$attemptId} ('{$attemptTitle}') von {$attemptUser} wurde endgültig gelöscht."
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
             'Admin\ExamAttemptController@destroy',
-             Auth::user(), // Der Admin
-             (object) $deletedAttemptData, // Alte Daten
              Auth::user(),
-             // Zusätzliche Daten für den Listener
+             (object) $deletedAttemptData,
+             Auth::user(),
              ['id' => $attemptId, 'exam_title' => $attemptTitle, 'user_name' => $attemptUser]
         );
 
