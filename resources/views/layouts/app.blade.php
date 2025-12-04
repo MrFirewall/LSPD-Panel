@@ -165,7 +165,7 @@
 
     @stack('styles')
 </head>
-<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed dark-mode">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
 <div class="wrapper">
 
     {{-- PRELOADER --}}
