@@ -23,7 +23,7 @@
                 
                 @forelse($examsCollection as $attempt)
                     <tr>
-                        <td class="pl-3 text-muted">{{ $attempt->completed_at->format('d.m.Y') ?? 'N/A' }}</td>
+                        <td class="pl-3 text-muted">{{ $attempt->completed_at?->format('d.m.Y') ?? 'Offen' }}</td>
                         <td>
                             <strong class="text-white">{{ $attempt->exam->title ?? 'Unbekannt' }}</strong>
                         </td>
