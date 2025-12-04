@@ -11,17 +11,18 @@
     </div>
 </div>
 
-<div class="content" style="background-color: #1f2937;">
+<div class="content bg-gray-dark pt-5 pb-5"> <!-- FIX: Haupt-Content-Bereich klar als dunkel definieren -->
     <div class="container">
         
         <!-- Search Widget -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
             <div class="col-md-8">
                 <!-- FIX: Dark Mode Card (Card-dark) -->
-                <div class="card shadow-lg card-dark">
-                    <div class="card-body p-2">
+                <div class="card shadow-lg card-dark card-outline-info">
+                    <div class="card-body p-2 bg-dark"> <!-- FIX: Card body explizit dunkel machen -->
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
+                                <!-- FIX: Ensure the search icon background is dark -->
                                 <span class="input-group-text border-0 bg-dark"><i class="fas fa-search text-muted"></i></span>
                             </div>
                             <!-- FIX: Dark Mode Input -->
@@ -50,9 +51,9 @@
                             
                             <div id="collapse{{ Str::slug($section) }}" class="collapse" data-parent="#accordion">
                                 <div class="card-body p-0 table-responsive">
-                                    <!-- FIX: bg-dark und text-white für Tabelleninhalt -->
-                                    <table class="table table-hover table-striped fine-table mb-0 text-white" style="background-color: #1f2937;">
-                                        <thead class="bg-dark">
+                                    <!-- FIX: table-striped entfernt. table-dark erzwingt dunklen Hintergrund und dunkle Hover-Effekte -->
+                                    <table class="table table-dark table-hover fine-table mb-0 text-white"> 
+                                        <thead class="bg-gray-dark"> <!-- FIX: etwas helleres Dark-Grau für bessere Trennung -->
                                             <tr>
                                                 <th class="pl-4">Tatbestand</th>
                                                 <th style="width: 150px">Bußgeld</th>
