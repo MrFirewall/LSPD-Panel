@@ -146,14 +146,7 @@
                                                         </form>
                                                     @endcan
 
-                                                    {{-- 3. Schnellbewertung --}}
-                                                    @can('setEvaluated', $attempt)
-                                                        <button type="button" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Schnellbewertung" data-toggle="modal" data-target="#evaluateModal{{ $attempt->id }}">
-                                                            <i class="fas fa-clipboard-check text-success"></i>
-                                                        </button>
-                                                    @endcan
-
-                                                    {{-- 4. Reset --}}
+                                                    {{-- 3. Reset --}}
                                                     @can('resetAttempt', $attempt)
                                                         <form action="{{ route('admin.exams.attempts.reset', $attempt) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -163,7 +156,7 @@
                                                         </form>
                                                     @endcan
 
-                                                    {{-- 5. Löschen --}}
+                                                    {{-- 4. Löschen --}}
                                                     @can('delete', $attempt)
                                                         <form action="{{ route('admin.exams.attempts.destroy', $attempt) }}" method="POST" class="d-inline">
                                                             @csrf
@@ -201,53 +194,6 @@
     </div>
 </div>
 
-{{-- MODALS für Schnellbewertung --}}
-@foreach ($attempts as $attempt)
-    @can('setEvaluated', $attempt)
-    <div class="modal fade" id="evaluateModal{{ $attempt->id }}" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <form action="{{ route('admin.exams.attempts.setEvaluated', $attempt) }}" method="POST" class="w-100">
-                @csrf
-                <div class="modal-content" style="background-color: #2d3748; color: #fff; border: 1px solid rgba(255,255,255,0.1);">
-                    <div class="modal-header border-bottom-0">
-                        <h5 class="modal-title font-weight-bold">
-                            <i class="fas fa-gavel text-success mr-2"></i> Bewertung: {{ $attempt->user->name ?? 'Unbekannt' }}
-                        </h5>
-                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body pt-0">
-                        <div class="alert alert-light bg-transparent border border-secondary text-muted small mb-4">
-                            <strong>Prüfung:</strong> {{ $attempt->exam->title ?? 'N/A' }}<br>
-                            <strong>Bestehensgrenze:</strong> {{ $attempt->exam->pass_mark }}%
-                        </div>
-
-                        <div class="form-group">
-                            <label for="score{{ $attempt->id }}" class="text-uppercase text-xs font-weight-bold text-muted">Gesamtscore (%)</label>
-                            <input type="number" name="score" id="score{{ $attempt->id }}" 
-                                   class="form-control form-control-lg font-weight-bold text-center text-white" 
-                                   style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
-                                   min="0" max="100" 
-                                   value="{{ round($attempt->score ?? 0) }}" required>
-                        </div>
-                        
-                        <p class="text-xs text-muted mb-0">
-                            <i class="fas fa-info-circle mr-1"></i> Setzt Status auf "Bewertet". Ergebnis (Bestanden/Nicht bestanden) wird automatisch berechnet.
-                        </p>
-                    </div>
-                    <div class="modal-footer border-top-0 justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-dismiss="modal">Abbrechen</button>
-                        <button type="button" class="btn btn-success rounded-pill px-4 font-weight-bold" onclick="this.form.submit()">
-                            Speichern
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-    @endcan
-@endforeach
 
 @endsection
 
