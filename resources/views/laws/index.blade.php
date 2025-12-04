@@ -1,31 +1,26 @@
-@extends('layouts.app')
+@extends('layouts.public')
+
+@section('title', 'Gesetzbuch')
 
 @section('content')
-<!-- Content Header (Page header) -->
-<section class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1>Gesetzbuch der Hansestadt Hamburg</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="#">Home</a></li>
-                    <li class="breadcrumb-item active">Gesetze</li>
-                </ol>
-            </div>
-        </div>
+<!-- Hero Section -->
+<div class="hero-header">
+    <div class="container text-center">
+        <h1 class="hero-title display-4"><i class="fas fa-balance-scale mr-3"></i>Gesetzbuch</h1>
+        <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
     </div>
-</section>
+</div>
 
 <!-- Main content -->
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-primary card-outline card-outline-tabs">
-                    <div class="card-header p-0 border-bottom-0">
-                        <ul class="nav nav-tabs" id="law-tabs" role="tablist">
+<div class="content">
+    <div class="container">
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Navigation Tabs styled as Pills -->
+                <div class="card card-outline card-navy mb-4">
+                    <div class="card-header p-2 bg-white">
+                        <ul class="nav nav-pills nav-fill" id="law-tabs" role="tablist">
                             @foreach($laws as $book => $entries)
                                 <li class="nav-item">
                                     <a class="nav-link {{ $loop->first ? 'active' : '' }}" 
@@ -33,46 +28,56 @@
                                        data-toggle="pill" 
                                        href="#content-{{ Str::slug($book) }}" 
                                        role="tab">
-                                        {{ $book }}
+                                        <i class="fas fa-book-open mr-2"></i> {{ $book }}
                                     </a>
                                 </li>
                             @endforeach
                         </ul>
                     </div>
-                    <div class="card-body">
-                        <div class="tab-content" id="law-tabs-content">
-                            @foreach($laws as $book => $entries)
-                                <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" 
-                                     id="content-{{ Str::slug($book) }}" 
-                                     role="tabpanel">
-                                    
-                                    <div class="timeline">
-                                        @foreach($entries as $law)
-                                            <div>
-                                                <i class="fas fa-book bg-blue"></i>
-                                                <div class="timeline-item">
-                                                    <h3 class="timeline-header">
-                                                        <a href="#">{{ $law->paragraph }}</a> {{ $law->title }}
-                                                    </h3>
-                                                    <div class="timeline-body">
-                                                        {{ $law->content }}
-                                                    </div>
-                                                </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="tab-content" id="law-tabs-content">
+                    @foreach($laws as $book => $entries)
+                        <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" 
+                             id="content-{{ Str::slug($book) }}" 
+                             role="tabpanel">
+                            
+                            <!-- Timeline Style for Laws -->
+                            <div class="timeline">
+                                <div class="time-label">
+                                    <span class="bg-navy">{{ $book }}</span>
+                                </div>
+
+                                @foreach($entries as $law)
+                                    <div>
+                                        <i class="fas fa-paragraph bg-gray"></i>
+                                        <div class="timeline-item shadow-sm">
+                                            <h3 class="timeline-header bg-light border-bottom-0" style="font-size: 1.1rem; font-weight: 600;">
+                                                <span class="text-navy mr-2">{{ $law->paragraph }}</span> {{ $law->title }}
+                                            </h3>
+                                            <div class="timeline-body text-justify" style="font-size: 1.05rem; line-height: 1.6;">
+                                                {!! nl2br(e($law->content)) !!}
                                             </div>
-                                        @endforeach
-                                        <div>
-                                            <i class="fas fa-clock bg-gray"></i>
                                         </div>
                                     </div>
-
+                                @endforeach
+                                
+                                <div>
+                                    <i class="fas fa-gavel bg-navy"></i>
                                 </div>
-                            @endforeach
+                            </div>
+
                         </div>
-                    </div>
-                    <!-- /.card -->
+                    @endforeach
                 </div>
+                
+                <div class="text-center mt-5 mb-5 text-muted">
+                    <small>Stand der Gesetzgebung: {{ date('d.m.Y') }} | Änderungen vorbehalten.</small>
+                </div>
+
             </div>
         </div>
     </div>
-</section>
+</div>
 @endsection
