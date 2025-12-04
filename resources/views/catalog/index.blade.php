@@ -4,29 +4,26 @@
 
 @section('content')
 <!-- Hero Section -->
-<div class="hero-header bg-dark pt-5 pb-4">
-    <div class="container text-center text-white">
-        <h1 class="hero-title display-4"><i class="fas fa-clipboard-list mr-3 text-warning"></i>Bußgeldkatalog</h1>
-        <p class="hero-subtitle mt-2 text-muted">Übersicht aller Verwarnungs- und Bußgelder (BBuG)</p>
+<div class="hero-header" style="background: linear-gradient(135deg, #605ca8 0%, #353275 100%);">
+    <div class="container text-center">
+        <h1 class="hero-title display-4"><i class="fas fa-clipboard-list mr-3"></i>Bußgeldkatalog</h1>
+        <p class="hero-subtitle mt-2">Übersicht aller Verwarnungs- und Bußgelder (BBuG)</p>
     </div>
 </div>
 
-<div class="content bg-gray-dark pt-5 pb-5"> <!-- FIX: Haupt-Content-Bereich klar als dunkel definieren -->
+<div class="content">
     <div class="container">
         
         <!-- Search Widget -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
             <div class="col-md-8">
-                <!-- FIX: Dark Mode Card (Card-dark) -->
-                <div class="card shadow-lg card-dark card-outline-info">
-                    <div class="card-body p-2 bg-dark"> <!-- FIX: Card body explizit dunkel machen -->
+                <div class="card shadow-lg">
+                    <div class="card-body p-2">
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
-                                <!-- FIX: Ensure the search icon background is dark -->
-                                <span class="input-group-text border-0 bg-dark"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text border-0 bg-white"><i class="fas fa-search text-muted"></i></span>
                             </div>
-                            <!-- FIX: Dark Mode Input -->
-                            <input type="text" id="catalog-search" class="form-control border-0 bg-dark text-white" placeholder="Was suchen Sie? (z.B. 'Fahren', 'Körperverletzung', 'Drogen')..." autocomplete="off">
+                            <input type="text" id="catalog-search" class="form-control border-0" placeholder="Was suchen Sie? (z.B. 'Fahren', 'Körperverletzung', 'Drogen')..." autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -38,22 +35,20 @@
             <div class="col-lg-10">
                 <div id="accordion">
                     @foreach($categories as $section => $fines)
-                        <!-- FIX: Dark Mode Card (card-dark) -->
-                        <div class="card card-dark card-outline card-primary mb-3 category-card">
-                            <div class="card-header bg-dark"> <!-- Hintergrund des Headers auf Dunkel setzen -->
+                        <div class="card card-outline card-purple mb-3 category-card">
+                            <div class="card-header bg-white">
                                 <h4 class="card-title w-100">
-                                    <a class="d-block w-100 text-white font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
-                                        <i class="fas fa-folder-open text-primary mr-2"></i> {{ $section }}
-                                        <span class="float-right badge badge-primary badge-pill">{{ count($fines) }} Einträge</span>
+                                    <a class="d-block w-100 text-dark font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
+                                        <i class="fas fa-folder-open text-purple mr-2"></i> {{ $section }}
+                                        <span class="float-right badge badge-purple badge-pill">{{ count($fines) }} Einträge</span>
                                     </a>
                                 </h4>
                             </div>
-                            
-                            <div id="collapse{{ Str::slug($section) }}" class="collapse" data-parent="#accordion">
+                            <!-- 'show' removed from first element to keep it clean, or logic can be kept -->
+                            <div id="collapse{{ Str::slug($section) }}" class="collapse {{ $loop->first ? 'show' : '' }}" data-parent="#accordion">
                                 <div class="card-body p-0 table-responsive">
-                                    <!-- FIX: table-striped entfernt. table-dark erzwingt dunklen Hintergrund und dunkle Hover-Effekte -->
-                                    <table class="table table-dark table-hover fine-table mb-0 text-white"> 
-                                        <thead class="bg-gray-dark"> <!-- FIX: etwas helleres Dark-Grau für bessere Trennung -->
+                                    <table class="table table-hover table-striped fine-table mb-0">
+                                        <thead class="bg-light">
                                             <tr>
                                                 <th class="pl-4">Tatbestand</th>
                                                 <th style="width: 150px">Bußgeld</th>
@@ -66,7 +61,7 @@
                                             @foreach($fines as $fine)
                                                 <tr class="fine-row">
                                                     <td class="pl-4 font-weight-bold">{{ $fine->offense }}</td>
-                                                    <td class="text-warning font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
+                                                    <td class="text-danger font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
                                                     <td class="text-center">
                                                         @if($fine->jail_time > 0)
                                                             <span class="badge badge-warning text-dark">{{ $fine->jail_time }} HE</span>
@@ -109,18 +104,13 @@
 @push('scripts')
 <script>
     $(document).ready(function(){
-        const $searchField = $("#catalog-search");
-        const $noResults = $("#no-results");
-        const $categoryCards = $(".category-card");
-        
-        $searchField.on("keyup", function() {
+        $("#catalog-search").on("keyup", function() {
             var value = $(this).val().toLowerCase();
             var hasGlobalMatches = false;
 
             // Iteriere durch alle Karten (Kategorien)
-            $categoryCards.each(function() {
+            $(".category-card").each(function() {
                 var card = $(this);
-                var collapseTarget = card.find('.collapse');
                 var hasVisibleRows = false;
                 
                 // Suche innerhalb der Tabelle in dieser Karte
@@ -128,45 +118,34 @@
                     // Suche in Tatbestand (Index 0) und Hinweisen (Index 4)
                     var text = $(this).text().toLowerCase();
                     var match = text.indexOf(value) > -1;
-                    
-                    // Zeile anzeigen/verbergen
                     $(this).toggle(match);
                     if(match) hasVisibleRows = true;
                 });
 
-                // Leere Suche: Zeige alle Karten, schließe alle Akkordeons
+                // Wenn Suche leer ist, zeige alles wie Standard
                 if(value === "") {
                     card.show();
-                    collapseTarget.collapse('hide');
-                    if (card.is(':first-child')) {
-                        // Optional: Nur die erste Kategorie standardmäßig öffnen
-                        // collapseTarget.collapse('show'); 
-                    }
-                    hasGlobalMatches = true;
+                    // Optional: Akkordeon Logik zurücksetzen (z.B. nur erstes offen)
+                    // Hier lassen wir den aktuellen Status
                 } else {
-                    // Ergebnis gefunden: Zeige Karte und öffne Akkordeon
+                    // Wenn Treffer in der Tabelle, öffne das Akkordeon und zeige Karte
                     if (hasVisibleRows) {
                         card.show();
-                        collapseTarget.collapse('show');
+                        card.find('.collapse').collapse('show');
                         hasGlobalMatches = true;
                     } else {
-                        // Kein Ergebnis: Verstecke die Karte und schließe Akkordeon (falls offen)
                         card.hide();
-                        collapseTarget.collapse('hide');
                     }
                 }
             });
 
-            // "Keine Ergebnisse" Nachricht anzeigen
+            // "Keine Ergebnisse" Nachricht
             if(!hasGlobalMatches && value !== "") {
-                $noResults.show();
+                $("#no-results").show();
             } else {
-                $noResults.hide();
+                $("#no-results").hide();
             }
         });
-        
-        // Beim Laden alle Akkordeons schließen (für sauberen Start)
-        $categoryCards.find('.collapse').collapse('hide');
     });
 </script>
 @endpush
