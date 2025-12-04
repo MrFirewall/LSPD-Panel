@@ -111,10 +111,10 @@ class ReportController extends Controller
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
-            action: 'ReportController@store',
             triggeringUser: $citizen ?? (object)['name' => $report->patient_name],
             relatedModel: $report,
-            actorUser: $creator
+            actorUser: $creator,
+            additionalData: ['action' => 'ReportController@store']
         );
 
         return redirect()->route('reports.index');
@@ -185,10 +185,10 @@ class ReportController extends Controller
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
-            action: 'ReportController@update',
             triggeringUser: $citizen ?? (object)['name' => $report->patient_name],
             relatedModel: $report,
-            actorUser: $editor
+            actorUser: $editor,
+            additionalData: ['action' => 'ReportController@update']
         );
 
         return redirect()->route('reports.index');
@@ -216,11 +216,14 @@ class ReportController extends Controller
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
-            action: 'ReportController@destroy',
             triggeringUser: (object)['name' => $patientName],
             relatedModel: null,
             actorUser: $deleter,
-            additionalData: ['title' => $reportTitle, 'patient_name' => $patientName]
+            additionalData: [
+                'action' => 'ReportController@destroy',
+                'title' => $reportTitle, 
+                'patient_name' => $patientName
+            ]
         );
 
         return redirect()->route('reports.index');
