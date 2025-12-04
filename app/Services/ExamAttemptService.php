@@ -107,6 +107,8 @@ class ExamAttemptService
             $attempt->update([
                 'score' => $validatedData['final_score'],
                 'status' => 'evaluated',
+                'evaluator_id' => $data['evaluator_id'] ?? auth()->id(),
+                'completed_at' => now()
             ]);
 
             // --- Modul-Update ENTFERNT ---
@@ -127,6 +129,7 @@ class ExamAttemptService
                 'completed_at' => null,
                 'score' => null,
                 'flags' => null,
+                'evaluator_id' => null,
                 'started_at' => now(), // Startzeit zurücksetzen
             ]);
         });
