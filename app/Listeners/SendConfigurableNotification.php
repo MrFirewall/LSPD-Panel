@@ -154,6 +154,23 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
                  ? route('admin.forms.evaluations.show', $evaluation->id)
                  : route('forms.evaluations.index');
         }
+        // A.2) NEU: Prüfungsanmeldung (Exam Request) -> Direkt ExamAttempt
+        elseif ($event->controllerAction === 'EvaluationController@store_exam_request' && $event->relatedModel instanceof ExamAttempt) {
+             /** @var ExamAttempt $attempt */ $attempt = $event->relatedModel;
+             /** @var User $student */ $student = $event->triggeringUser;
+             
+             // Titel der Prüfung holen (entweder aus der Relation oder aus den Event-Daten)
+             $examTitle = $attempt->exam->title ?? $event->additionalData['subject_name'] ?? 'Unbekannte Prüfung';
+
+             $pushTitle = "Neue Prüfungsanfrage";
+             $notificationText = "Neuer Prüfungsantrag für '{$examTitle}' von {$student->name} eingegangen.";
+             
+             // Icon: Warnung/Unterschrift (wie beim Antrag) oder Datei
+             $notificationIcon = 'fas fa-file-signature text-warning'; 
+             
+             // URL: Führt Admins direkt zum generierten Versuch
+             $notificationUrl = route('admin.exams.attempts.show', $attempt);
+        }
 
         // B) Benutzer Modul zugewiesen (TrainingAssignmentController@assign)
         elseif ($event->controllerAction === 'TrainingAssignmentController@assign' && $event->relatedModel instanceof TrainingModule) {

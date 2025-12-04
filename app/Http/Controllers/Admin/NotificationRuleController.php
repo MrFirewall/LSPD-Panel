@@ -142,8 +142,8 @@ class NotificationRuleController extends Controller
         // Wert ist die Beschreibung für das Dropdown im Frontend
         return [
             // Evaluations / Anträge
-            'EvaluationController@store' => 'Antrag eingereicht (Modul/Prüfung)',
-
+            'EvaluationController@store' => 'Antrag eingereicht (Modul)',
+            'EvaluationController@store_exam_request' => 'Prüfung eingereicht',
             // Modulzuweisung
             'TrainingAssignmentController@assign' => '[Admin] Benutzer Modul zugewiesen',
 
