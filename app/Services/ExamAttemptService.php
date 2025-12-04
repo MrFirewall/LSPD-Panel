@@ -125,12 +125,12 @@ class ExamAttemptService
         DB::transaction(function () use ($attempt) {
             $attempt->answers()->delete();
             $attempt->update([
-                'status' => 'in_progress',
+                'status' => 'new',
                 'completed_at' => null,
                 'score' => null,
                 'flags' => null,
                 'evaluator_id' => null,
-                'started_at' => now(), // Startzeit zurücksetzen
+                'started_at' => null, // Startzeit zurücksetzen
             ]);
         });
 
