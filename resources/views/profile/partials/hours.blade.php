@@ -1,96 +1,89 @@
-{{-- Hilfsfunktion zur Umrechnung von Sekunden in HH:MM Format --}}
+{{-- Hilfsfunktion (falls nicht global definiert) --}}
 @php
-function formatSeconds($seconds) {
-    if ($seconds < 1) return '00:00';
-    $h = floor($seconds / 3600);
-    $m = floor(($seconds % 3600) / 60);
-    return sprintf('%02d:%02d', $h, $m);
+if (!function_exists('formatSeconds')) {
+    function formatSeconds($seconds) {
+        if ($seconds < 1) return '00:00';
+        $h = floor($seconds / 3600);
+        $m = floor(($seconds % 3600) / 60);
+        return sprintf('%02d:%02d', $h, $m);
+    }
 }
-// Mapping von Rank-Slugs zu lesbaren Namen (kann erweitert werden)
-$rankNames = [
-    'chief'         => 'Chief',
-    'deputy chief'  => 'Deputy Chief',
-    'doctor'        => 'Doctor',
-    'captain'       => 'Captain',
-    'lieutenant'    => 'Lieutenant',
-    'supervisor'    => 'Supervisor',
-    's-emt'         => 'S-EMT (Senior EMT)',
-    'paramedic'     => 'Paramedic',
-    'a-emt'         => 'A-EMT (Advanced EMT)',
-    'emt'           => 'EMT (Emergency Medical Technician)',
-    'trainee'       => 'Trainee',
-];
+
+// Ränge dynamisch aus der Datenbank laden
+// Wir holen 'label' als Wert und 'name' (slug) als Key
+// Optional: Caching für bessere Performance (z.B. 60 Minuten), falls viele User gleichzeitig zugreifen
+$rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, function () {
+    return \App\Models\Rank::pluck('label', 'name')->toArray();
+});
 @endphp
 
-{{-- Box: Aktive Stunden --}}
 <div class="row">
+    {{-- 1. Wochenstunden Tabelle --}}
     <div class="col-md-4">
-        <div class="card card-info mb-3">
-            <div class="card-header">
-                <h3 class="card-title">Wochenstunden</h3>
+        <div class="card card-outline card-info h-100">
+            <div class="card-header border-0">
+                <h3 class="card-title font-weight-bold"><i class="far fa-calendar-alt mr-2"></i> Wochenstunden</h3>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm m-0">
-                        <thead>
+            <div class="card-body p-0 table-responsive">
+                <table class="table table-sm table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th class="pl-3">KW</th>
+                            <th>Stunden</th>
+                            <th>Leitstelle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($weeklyHours as $kw => $hours)
                             <tr>
-                                <th>KW</th>
-                                <th>Stunden</th>
-                                <th>Leitstelle</th>
+                                <td class="pl-3 text-muted">{{ $kw }}</td>
+                                <td class="font-weight-bold">{{ formatSeconds($hours['normal_seconds']) }}</td>
+                                <td class="text-muted">{{ formatSeconds($hours['leitstelle_seconds']) }}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($weeklyHours as $kw => $hours)
-                                <tr>
-                                    <td>{{ $kw }}</td>
-                                    <td>{{ formatSeconds($hours['normal_seconds']) }} h</td>
-                                    <td>{{ formatSeconds($hours['leitstelle_seconds']) }} h</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted">Keine wöchentlichen Daten vorhanden.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-3">Keine Daten vorhanden.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card card-primary mb-3">
-            <div class="card-header">
-                <h3 class="card-title">Stunden (Aktiver Zeitraum)</h3>
-            </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        Dienstzeit gesamt
-                        <span>{{ formatSeconds($hourData['active_total_seconds']) }} h</span>
-                    </li>
-                    {{-- Hier könnten später Leitstellenstunden etc. hinzukommen --}}
-                </ul>
-            </div>
-        </div>
-    </div>
-    {{-- Box: Stundenarchiv nach Rang --}}
 
+    {{-- 2. Gesamtzeit (Aktiver Zeitraum) --}}
     <div class="col-md-4">
-        <div class="card card-secondary">
-            <div class="card-header">
-                <h3 class="card-title">Stundenarchiv</h3>
+        <div class="card card-outline card-success h-100 text-center">
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div class="mb-2">
+                    <i class="fas fa-stopwatch fa-3x text-success opacity-50"></i>
+                </div>
+                <h5 class="text-muted text-uppercase small font-weight-bold ls-1">Dienstzeit Gesamt</h5>
+                <h2 class="font-weight-bold text-white display-4 mb-0">
+                    {{ formatSeconds($hourData['active_total_seconds']) }}
+                </h2>
+                <small class="text-muted">(Aktiver Zeitraum)</small>
             </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    @forelse ($hourData['archive_by_rank'] as $rank => $seconds)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{-- Zeigt den lesbaren Namen oder den Slug an --}}
-                            {{ $rankNames[$rank] ?? ucfirst($rank) }} 
-                            <span>{{ formatSeconds($seconds) }} h</span>
+        </div>
+    </div>
+
+    {{-- 3. Archiv nach Rang --}}
+    <div class="col-md-4">
+        <div class="card card-outline card-secondary h-100">
+            <div class="card-header border-0">
+                <h3 class="card-title font-weight-bold"><i class="fas fa-history mr-2"></i> Archiv (nach Rang)</h3>
+            </div>
+            <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                <ul class="list-group list-group-flush bg-transparent">
+                    @forelse ($hourData['archive_by_rank'] as $rankSlug => $seconds)
+                        <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                            {{-- Hier wird der Slug mit dem Label aus der DB abgeglichen --}}
+                            <span class="text-muted">{{ $rankNames[$rankSlug] ?? ucfirst($rankSlug) }}</span>
+                            <span class="font-weight-bold">{{ formatSeconds($seconds) }} h</span>
                         </li>
                     @empty
-                        <li class="list-group-item text-muted">
-                            Keine archivierten Stunden vorhanden.
+                        <li class="list-group-item bg-transparent text-center text-muted py-3">
+                            Keine archivierten Stunden.
                         </li>
                     @endforelse
                 </ul>
