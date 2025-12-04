@@ -73,6 +73,7 @@ class TrainingModuleController extends Controller
         // --- FIX START ---
         // Add the user_id to the validated array before creating the model
         $validated['user_id'] = $creator->id;
+        $validated['instructor_name'] = $creator->name;
         // --- FIX END ---
 
         $module = TrainingModule::create($validated);
@@ -97,7 +98,7 @@ class TrainingModuleController extends Controller
 
         return redirect()->route('modules.index');
     }
-    
+
     /**
      * Display the specified training module and its assigned users.
      *
