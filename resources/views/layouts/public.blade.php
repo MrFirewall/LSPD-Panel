@@ -44,11 +44,11 @@
     </style>
     @stack('styles')
 </head>
-<body class="hold-transition layout-top-nav">
+<body class="hold-transition layout-top-nav dark-mode">
 <div class="wrapper">
 
   <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand-md navbar-light navbar-white shadow-sm">
+  <nav class="main-header navbar navbar-expand-md shadow-sm">
     <div class="container">
       <a href="{{ url('/') }}" class="navbar-brand">
         <!-- Logo hier einfügen falls vorhanden -->

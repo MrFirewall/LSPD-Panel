@@ -19,7 +19,7 @@
             <div class="col-lg-10">
                 <!-- Navigation Tabs styled as Pills -->
                 <div class="card card-outline card-navy mb-4">
-                    <div class="card-header p-2 bg-white">
+                    <div class="card-header p-2">
                         <ul class="nav nav-pills nav-fill" id="law-tabs" role="tablist">
                             @foreach($laws as $book => $entries)
                                 <li class="nav-item">
@@ -53,7 +53,7 @@
                                     <div>
                                         <i class="fas fa-paragraph bg-gray"></i>
                                         <div class="timeline-item shadow-sm">
-                                            <h3 class="timeline-header bg-light border-bottom-0" style="font-size: 1.1rem; font-weight: 600;">
+                                            <h3 class="timeline-header border-bottom-0" style="font-size: 1.1rem; font-weight: 600;">
                                                 <span class="text-navy mr-2">{{ $law->paragraph }}</span> {{ $law->title }}
                                             </h3>
                                             <div class="timeline-body text-justify" style="font-size: 1.05rem; line-height: 1.6;">

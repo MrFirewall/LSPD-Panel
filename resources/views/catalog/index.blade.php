@@ -21,7 +21,7 @@
                     <div class="card-body p-2">
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
-                                <span class="input-group-text border-0 bg-white"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text border-0"><i class="fas fa-search text-muted"></i></span>
                             </div>
                             <input type="text" id="catalog-search" class="form-control border-0" placeholder="Was suchen Sie? (z.B. 'Fahren', 'Körperverletzung', 'Drogen')..." autocomplete="off">
                         </div>
@@ -36,9 +36,9 @@
                 <div id="accordion">
                     @foreach($categories as $section => $fines)
                         <div class="card card-outline card-purple mb-3 category-card">
-                            <div class="card-header bg-white">
+                            <div class="card-header">
                                 <h4 class="card-title w-100">
-                                    <a class="d-block w-100 text-dark font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
+                                    <a class="d-block w-100  font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
                                         <i class="fas fa-folder-open text-purple mr-2"></i> {{ $section }}
                                         <span class="float-right badge badge-purple badge-pill">{{ count($fines) }} Einträge</span>
                                     </a>
@@ -48,7 +48,7 @@
                             <div id="collapse{{ Str::slug($section) }}" class="collapse {{ $loop->first ? 'show' : '' }}" data-parent="#accordion">
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-hover table-striped fine-table mb-0">
-                                        <thead class="bg-light">
+                                        <thead>
                                             <tr>
                                                 <th class="pl-4">Tatbestand</th>
                                                 <th style="width: 150px">Bußgeld</th>
@@ -64,7 +64,7 @@
                                                     <td class="text-danger font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
                                                     <td class="text-center">
                                                         @if($fine->jail_time > 0)
-                                                            <span class="badge badge-warning text-dark">{{ $fine->jail_time }} HE</span>
+                                                            <span class="badge badge-warning ">{{ $fine->jail_time }} HE</span>
                                                         @else
                                                             <span class="text-muted small">-</span>
                                                         @endif
