@@ -8,10 +8,11 @@ use App\Models\ActivityLog;
 use App\Models\TrainingModule;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
-use App\Models\Rank; // Rank Model importieren
+use App\Models\Rank;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\PotentiallyNotifiableActionOccurred;
+use App\Services\ExamAttemptService; // Service für die direkte Prüfungs-Erstellung
 
 class EvaluationController extends Controller
 {
@@ -22,15 +23,20 @@ class EvaluationController extends Controller
     // Typen für Anträge und Bewertungen
     public static array $applicationTypes = ['modul_anmeldung', 'pruefung_anmeldung'];
     public static array $evaluationTypes = ['azubi', 'praktikant', 'mitarbeiter', 'leitstelle', 'gutachten', 'anmeldung'];
+    
     // Alle Typen kombiniert für Validierung
     public static array $allTypeLabels = [
         'azubi', 'praktikant', 'mitarbeiter', 'leitstelle', 'gutachten',
         'anmeldung', 'modul_anmeldung', 'pruefung_anmeldung'
     ];
 
+    protected $attemptService;
 
-    public function __construct()
+    public function __construct(ExamAttemptService $attemptService)
     {
+        // Service injizieren, um Prüfungsversuche direkt anlegen zu können
+        $this->attemptService = $attemptService;
+        
         // Policy-basierte Autorisierung
         $this->authorizeResource(Evaluation::class, 'evaluation');
     }
@@ -77,7 +83,7 @@ class EvaluationController extends Controller
         // Counts optional
         $counts = $this->getEvaluationCounts();
 
-        // Übergabe der Daten an die View (ohne Module & Exams)
+        // Übergabe der Daten an die View
         return view('forms.evaluations.index', compact(
             'applications',
             'evaluations',
@@ -128,16 +134,14 @@ class EvaluationController extends Controller
 
     public function azubi()
     {
-        // Wir suchen alle Ränge, die "Azubi" implizieren (Anwärter, Schüler etc.)
-        // Anhand deiner DB-Daten: polizeischueler, polizeimeister_anwaerter, etc.
+        // Wir suchen alle Ränge, die "Azubi" implizieren
         $traineeRankNames = Rank::where('name', 'LIKE', '%anwaerter%')
                                 ->orWhere('name', 'LIKE', '%schueler%')
                                 ->pluck('name');
 
-        // Suche User mit diesen Rängen und sortiere sie nach Hierarchie (Level)
         $users = User::whereIn('rank', $traineeRankNames)
             ->leftJoin('ranks', 'users.rank', '=', 'ranks.name')
-            ->orderByDesc('ranks.level') // Höhere Anwärter oben
+            ->orderByDesc('ranks.level')
             ->orderBy('users.name')
             ->select('users.id', 'users.name')
             ->get();
@@ -152,7 +156,6 @@ class EvaluationController extends Controller
 
     public function leitstelle()
     {
-        // Alle User, aber nach Rang sortiert
         $users = User::leftJoin('ranks', 'users.rank', '=', 'ranks.name')
             ->orderByDesc('ranks.level')
             ->orderBy('users.name')
@@ -164,13 +167,10 @@ class EvaluationController extends Controller
 
     public function mitarbeiter()
     {
-        // Wir schließen die Azubi-Ränge aus (siehe azubi() Methode)
         $traineeRankNames = Rank::where('name', 'LIKE', '%anwaerter%')
                                 ->orWhere('name', 'LIKE', '%schueler%')
                                 ->pluck('name');
         
-        // Praktikanten schließen wir auch aus (falls es diesen Rang gäbe, oder wir filtern nach Namen/Status)
-        // Hier nehmen wir alle, die KEINE Trainee-Ränge sind.
         $users = User::whereNotIn('rank', $traineeRankNames)
             ->leftJoin('ranks', 'users.rank', '=', 'ranks.name')
             ->orderByDesc('ranks.level')
@@ -237,11 +237,14 @@ class EvaluationController extends Controller
             'period' => $validated['period'],
             'json_data' => $validated['data'] ?? [],
             'description' => $validated['description'] ?? null,
-            'status' => 'pending',
+            'status' => 'pending', // Default für normale Anträge
         ];
 
         $logDescription = '';
         $relatedModel = null;
+        $successMessage = 'Eintrag erfolgreich gespeichert.';
+
+        // --- Logik für verschiedene Typen ---
 
         if ($evaluationType === 'modul_anmeldung') {
             $module = TrainingModule::find($validated['target_module_id']);
@@ -253,19 +256,30 @@ class EvaluationController extends Controller
             $relatedModel = $module;
 
         } elseif ($evaluationType === 'pruefung_anmeldung') {
+            // AUTOMATISCHE PRÜFUNGSANLAGE
             $exam = Exam::find($validated['target_exam_id']);
             $data['user_id'] = Auth::id();
             $data['target_name'] = Auth::user()->name;
             $data['json_data']['exam_id'] = $exam->id;
             $data['json_data']['exam_title'] = $exam->title;
-            $logDescription = "Antrag auf Prüfungsanmeldung für '{$exam->title}' von {$data['target_name']} eingereicht.";
+            
+            // Setze Antrag direkt auf 'processed', da wir den Attempt jetzt erstellen
+            $data['status'] = 'processed'; 
+
+            $logDescription = "Antrag auf Prüfungsanmeldung für '{$exam->title}' von {$data['target_name']} eingereicht und automatisch angelegt.";
             $relatedModel = $exam;
+
+            // Hier wird der Prüfungsversuch (Attempt) direkt angelegt
+            // Der User sieht keinen Link, der Versuch taucht aber im Admin-Panel auf.
+            $this->attemptService->generateAttempt(Auth::user(), $exam);
+
+            $successMessage = 'Die Prüfung wurde erfolgreich angelegt. Dein Prüfer wird dir den Link zur Durchführung zusenden.';
 
         } elseif ($evaluationType === 'praktikant') {
             $data['user_id'] = null;
             $data['target_name'] = $validated['target_name'];
             $logDescription = "Neue Bewertung für Praktikant/in '{$data['target_name']}' ({$evaluationType}) erstellt.";
-            $data['status'] = 'processed'; // Bewertungen sind direkt "erledigt"
+            $data['status'] = 'processed';
 
         } elseif (in_array($evaluationType, self::$evaluationTypes)) {
             $data['user_id'] = $validated['user_id'];
@@ -275,6 +289,7 @@ class EvaluationController extends Controller
             $data['status'] = 'processed';
         }
 
+        // Evaluation erstellen (Historie/Dokumentation)
         $evaluation = Evaluation::create($data);
 
         ActivityLog::create([
@@ -285,6 +300,7 @@ class EvaluationController extends Controller
              'description' => $logDescription,
          ]);
 
+        // Benachrichtigung senden (falls relevant)
         if (in_array($evaluationType, self::$applicationTypes)) {
              PotentiallyNotifiableActionOccurred::dispatch(
                  'EvaluationController@store',
@@ -295,7 +311,8 @@ class EvaluationController extends Controller
              );
         }
 
-        return redirect()->back();
+        // Redirect zur Übersicht (anstatt zurück zum Formular, wirkt aufgeräumter)
+        return redirect()->route('forms.evaluations.index')->with('success', $successMessage);
     }
 
     public function show(Evaluation $evaluation)
@@ -318,14 +335,10 @@ class EvaluationController extends Controller
         return view('forms.evaluations.show', compact('evaluation', 'evaluationData', 'targetName', 'relatedItem'));
     }
 
-    /**
-     * NEU: Löscht einen Antrag oder eine Bewertung.
-     */
     public function destroy(Evaluation $evaluation)
     {
-        // Die Autorisierung erfolgt automatisch über authorizeResource und die EvaluationPolicy.
-        // $this->authorize('delete', $evaluation);
-
+        // Die Autorisierung erfolgt automatisch über authorizeResource
+        
         $logDescription = "Eintrag #{$evaluation->id} (Typ: {$evaluation->evaluation_type})";
         $applicantName = $evaluation->target_name ?? $evaluation->user->name ?? 'Unbekannt';
 
@@ -336,28 +349,25 @@ class EvaluationController extends Controller
             $logDescription = "Bewertung (Typ: {$evaluation->evaluation_type}) für {$applicantName} (ID: {$evaluation->id}) wurde gelöscht.";
         }
 
-        // Kopie der Daten für das Event erstellen, bevor gelöscht wird
         $deletedData = $evaluation->toArray();
-        $triggeringUser = $evaluation->user ?? Auth::user(); // Der Antragsteller, falls vorhanden
+        $triggeringUser = $evaluation->user ?? Auth::user(); 
 
         $evaluation->delete();
 
-        // Activity Log Eintrag
         ActivityLog::create([
-             'user_id' => Auth::id(), // Der Admin, der löscht
+             'user_id' => Auth::id(),
              'log_type' => 'EVALUATION',
              'action' => 'DELETED',
-             'target_id' => $deletedData['id'], // ID aus den alten Daten nehmen
+             'target_id' => $deletedData['id'],
              'description' => $logDescription,
          ]);
 
-        // Benachrichtigung via Event
         PotentiallyNotifiableActionOccurred::dispatch(
             'EvaluationController@destroy',
-            $triggeringUser,    // Der ursprüngliche Antragsteller
-            (object) $deletedData, // Die gelöschte Evaluation als relatedModel
-            Auth::user(),       // Der Admin (actor user)
-            ['description' => $logDescription] // Zusätzliche Daten
+            $triggeringUser,    
+            (object) $deletedData, 
+            Auth::user(),       
+            ['description' => $logDescription]
         );
 
         return redirect()->route('forms.evaluations.index')->with('success', 'Eintrag erfolgreich gelöscht.');
