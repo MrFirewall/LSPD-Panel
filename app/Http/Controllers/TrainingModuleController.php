@@ -33,7 +33,7 @@ class TrainingModuleController extends Controller
      */
     public function index()
     {
-        $modules = TrainingModule::latest()->paginate(20);
+        $modules = TrainingModule::first()->paginate(20);
         return view('training_modules.index', compact('modules'));
     }
 
