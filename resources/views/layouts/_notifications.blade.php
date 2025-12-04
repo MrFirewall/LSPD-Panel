@@ -7,7 +7,7 @@
         border-radius: 12px !important; /* Global Radius */
         overflow: hidden; /* Damit Ecken nicht von Kindern überlappt werden */
         border: 1px solid rgba(255,255,255,0.08); /* Glass Border */
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6); /* Stärkerer Schatten für Tiefe */
     }
 
     .notification-list-scroll {
@@ -23,17 +23,21 @@
     .notification-list-scroll::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 2px; }
 
     .notification-content {
-        white-space: normal;
+        white-space: normal; /* Erlaubt Umbruch */
+        word-wrap: break-word; /* Wichtig für lange Wörter */
         overflow-wrap: break-word;
         line-height: 1.4;
-        color: #e2e8f0; 
+        color: #e2e8f0;
+        display: block; /* Sicherstellen, dass es Block-Verhalten hat */
     }
     
     /* Notification Row Styling */
     .notification-row {
         border-bottom: 1px solid rgba(255,255,255,0.08) !important;
         transition: background-color 0.2s;
-        /* Kein Margin, flache Liste */
+        display: flex;
+        align-items: stretch; /* Damit beide Spalten gleich hoch sind */
+        width: 100%;
     }
     .notification-row:hover {
         background-color: rgba(255,255,255,0.05) !important;
@@ -50,6 +54,7 @@
         border: none;
         background: transparent;
         color: inherit;
+        display: block; /* Wichtig für Width Calculation */
     }
     
     /* Header Styles */
@@ -62,7 +67,9 @@
     /* Mark Read Button */
     .mark-read-ajax-btn {
         color: #718096 !important;
-        border-left: 1px solid rgba(255,255,255,0.05);
+        border-left: 1px solid rgba(255,255,255,0.05); /* Trennlinie links */
+        flex-shrink: 0; /* WICHTIG: Verhindert, dass der Button zusammengedrückt wird */
+        width: 50px; /* Feste Breite */
     }
     .mark-read-ajax-btn:hover {
         color: #4ade80 !important; /* Green */
@@ -81,14 +88,14 @@
 
     {{-- 1. HEADER --}}
     <span class="dropdown-item dropdown-header d-flex justify-content-between align-items-center custom-header py-3 px-3">
-        <span class="font-weight-bold" style="font-size: 1rem;">
+        <span class="font-weight-bold text-nowrap mr-3" style="font-size: 1rem;">
             <i class="far fa-bell mr-2"></i> {{ $totalCount ?? 0 }} Benachrichtigungen
         </span>
         
         @if(($totalCount ?? 0) > 0)
             <form action="{{ route('notifications.markAllRead') }}" method="POST" class="m-0">
                 @csrf
-                <button type="submit" class="btn btn-xs btn-outline-light rounded-pill px-3" title="Alle als gelesen markieren">
+                <button type="submit" class="btn btn-xs btn-outline-light rounded-pill px-3 text-nowrap" title="Alle als gelesen markieren">
                     Alle lesen
                 </button>
             </form>
@@ -98,14 +105,14 @@
     {{-- 2. SCROLLBARE LISTE (FLACH) --}}
     <div class="notification-list-scroll">
 
-        {{-- Wir iterieren zwar noch durch die Gruppen-Struktur (falls Controller diese liefert), rendern aber keine Header --}}
         @forelse ($groupedNotifications as $group)
             @foreach ($group['items'] as $notification)
                 
                 <div class="d-flex notification-row" id="notif-row-{{ $notification['id'] }}">
 
                     {{-- Linker Teil: Text & Zeit --}}
-                    <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1">
+                    {{-- WICHTIG: min-width: 0 bei flex-child zwingt den Text zum Umbruch --}}
+                    <form action="{{ route('notifications.markAsRead', $notification['id']) }}" method="POST" class="flex-grow-1" style="min-width: 0;">
                         @csrf
                         <input type="hidden" name="redirect_to_target" value="1">
                         
@@ -125,9 +132,9 @@
                     
                     {{-- Rechter Teil: Check-Button --}}
                     <button type="button" 
-                            class="btn btn-link mark-read-ajax-btn d-flex align-items-center justify-content-center px-3" 
-                            style="text-decoration: none; border-radius: 0; min-width: 50px;" 
-                            title="Gelesen"
+                            class="btn btn-link mark-read-ajax-btn d-flex align-items-center justify-content-center" 
+                            style="text-decoration: none; border-radius: 0;" 
+                            title="Als gelesen markieren"
                             data-url="{{ route('notifications.markAsRead', $notification['id']) }}"
                             data-id="{{ $notification['id'] }}">
                         <i class="fas fa-check"></i>
