@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/icheck-bootstrap/3.0.1/icheck-bootstrap.min.css" integrity="sha512-8vq2g5nHE062j3xor4XxPeZiPjmRDh6wlufQlfC6pdQ/9urJkU07NM0tEREeymP++NczacJ/Q59ul+/K2eYvcg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/icheck-bootstrap/3.0.1/icheck-bootstrap.min.css">
     {{-- DATATABLES DEPENDENCIES --}}
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.2/css/responsive.bootstrap4.min.css">
@@ -20,46 +20,152 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 
-    {{-- Custom Styles & Dark Mode Fixes --}}
+    {{-- GLOBAL MODERN DARK THEME STYLES --}}
     <style>
+        :root {
+            --bg-dark: #1a202c;       /* Deep Blue/Grey Background */
+            --card-dark: #2d3748;     /* Lighter Card Background */
+            --text-light: #e2e8f0;    /* Soft White Text */
+            --accent-gradient: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%); /* Purple/Grey Hero */
+            --glass-border: rgba(255,255,255,0.08);
+        }
+
+        /* 1. Global Backgrounds & Text */
+        body, .content-wrapper {
+            background-color: var(--bg-dark) !important;
+            color: var(--text-light) !important;
+        }
+        .dark-mode .content-wrapper { background-color: var(--bg-dark) !important; }
+
+        /* 2. The Hero Header (Global Transformation) */
+        .content-header, .hero-header-internal {
+            background: var(--accent-gradient);
+            color: white;
+            padding: 2.5rem 1.5rem 5rem 1.5rem; /* Viel Padding unten für Overlap */
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            margin-bottom: -3rem !important; /* Zieht den Content nach oben */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            position: relative;
+            z-index: 1;
+        }
+        .content-header h1 { font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .breadcrumb-item a { color: rgba(255,255,255,0.8); }
+        .breadcrumb-item.active { color: white; font-weight: bold; }
+
+        /* 3. Modern Cards (Glass-Like Look for all standard cards) */
+        .card {
+            background-color: var(--card-dark);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            color: var(--text-light);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        /* Hover Effekt nur für Info-Boxen oder interaktive Cards */
+        .small-box:hover, .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .card-header {
+            background-color: rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--glass-border);
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        /* 4. Inputs & Tables Dark Mode Overrides */
+        .form-control, .select2-selection {
+            background-color: #171923 !important; /* Very Dark input bg */
+            border: 1px solid var(--glass-border) !important;
+            color: white !important;
+            border-radius: 8px;
+        }
+        .form-control:focus {
+            background-color: #1a202c !important;
+            border-color: #6366f1 !important; /* Indigo Focus */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .table {
+            color: var(--text-light) !important;
+            margin-bottom: 0;
+        }
+        .table thead th {
+            border-bottom: 2px solid var(--glass-border);
+            border-top: none;
+            background-color: rgba(0,0,0,0.2);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .table td, .table th { border-top: 1px solid var(--glass-border); }
+        .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(255,255,255,0.02); }
+        .table-hover tbody tr:hover { background-color: rgba(255,255,255,0.05); }
+
+        /* 5. Sidebar & Navbar Tweaks */
+        .main-sidebar { 
+            background-color: #0f111a !important; 
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+        }
+        .main-header {
+            border-bottom: none;
+            background-color: var(--bg-dark) !important; /* Nahtloser Übergang */
+            box-shadow: none;
+        }
+        .nav-link { color: rgba(255,255,255,0.8) !important; }
+        .nav-link.active { 
+            background-color: rgba(255,255,255,0.1) !important; 
+            color: white !important; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+        }
+        
+        /* Navbar: Notification Badge Size */
+        .main-header .navbar-badge { font-size: 0.75rem; padding: 3px 6px; top: 6px; right: 3px; font-weight: 700; }
+
+        /* 6. Utility Helper */
+        .glass-card {
+            background: rgba(45, 45, 45, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+        }
+        
         /* Preloader */
-        .preloader { background-color: #343a40; }
+        .preloader { background-color: var(--bg-dark); }
         .ekg-loader { width: 20vw; height: 10vw; max-width: 300px; max-height: 150px; min-width: 120px; min-height: 60px; }
-        .ekg-loader path { stroke: #007bff; stroke-width: 4; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s linear infinite; }
+        .ekg-loader path { stroke: #928dab; stroke-width: 4; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 2s linear infinite; }
         @keyframes draw { to { stroke-dashoffset: 0; } }
 
-        /* Dark Mode: List Group */
-        .dark-mode .list-group-item { background-color: #343a40; border-color: #454d55; color: #f8f9fa; }
-        .dark-mode a.list-group-item:hover, .dark-mode a.list-group-item:focus { background-color: #495057; color: #ffffff; }
-        .dark-mode .text-muted { color: #adb5bd !important; }
-
         /* Dark Mode: Select2 Overrides */
+        .select2-dropdown { background-color: var(--card-dark); border: 1px solid var(--glass-border); }
         .dark-mode .select2-container--bootstrap4 .select2-selection,
         .dark-mode .select2-dropdown { background-color: #343a40; border-color: #6c757d; }
         .dark-mode .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered { color: #fff; }
         .dark-mode .select2-container--bootstrap4 .select2-selection--single .select2-selection__arrow b { border-color: #fff transparent transparent transparent; }
         .dark-mode .select2-search--dropdown .select2-search__field { background-color: #454d55; color: #fff; }
-        .dark-mode .select2-container--bootstrap4 .select2-results__option--highlighted { background-color: #007bff; color: #fff; }
+        .dark-mode .select2-container--bootstrap4 .select2-results__option--highlighted { background-color: #6366f1; color: #fff; }
         .dark-mode .select2-container--bootstrap4 .select2-results__option { color: #dee2e6; }
-
+        
         /* Select2: Multi-Select Tag Styling */
         .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice { background-color: #007bff; color: #fff !important; margin-top: 2px !important; margin-bottom: 2px !important; float: left; }
         .dark-mode .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice { background-color: #3f6791; }
         .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove { color: #fff !important; text-shadow: 0 1px 0 #495057; font-size: 1.5rem; line-height: 1; opacity: .5; background-color: transparent; border: 0; float: left; padding: 0 3px; margin: 0 1px 0 3px; font-weight: 700; }
         .dark-mode .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__choice__remove:hover { color: #fff; text-decoration: none; }
-
+        
         /* Select2 Multi Height Fixes */
         .select2-container--bootstrap4 .select2-selection--multiple { min-height: 38px; height: auto !important; padding-top: 5px !important; padding-bottom: 5px !important; }
         .select2-container--bootstrap4 .select2-selection--multiple .select2-selection__rendered { line-height: normal; display: block; padding: 0; margin: 0; }
         .select2-container--bootstrap4 .select2-selection--multiple .select2-search--inline { float: none !important; display: inline-block; width: 100%; }
         .select2-container--bootstrap4 .select2-selection--multiple .select2-search__field { min-width: 100px !important; }
 
-        /* Navbar: Notification Badge Size */
-        .main-header .navbar-badge { font-size: 0.75rem; padding: 3px 6px; top: 6px; right: 3px; font-weight: 700; }
+        /* List Group */
+        .list-group-item { background-color: var(--card-dark); border-color: var(--glass-border); color: white; }
     </style>
+
     @stack('styles')
 </head>
-<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">
+<body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed dark-mode">
 <div class="wrapper">
 
     {{-- PRELOADER --}}
@@ -70,7 +176,7 @@
     </div>
 
     {{-- NAVBAR --}}
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light" id="mainNavbar">
+    <nav class="main-header navbar navbar-expand navbar-dark" id="mainNavbar">
         <ul class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
@@ -85,22 +191,13 @@
             </li>
             @endif
 
-            {{-- Dark Mode Toggle --}}
-            <li class="nav-item">
-                <a class="nav-link" id="darkModeToggle" href="#" role="button">
-                    <i class="fas fa-moon"></i>
-                </a>
-            </li>
-
             {{-- Notification Dropdown --}}
             <li class="nav-item dropdown" id="notification-dropdown">
                 <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
                     <i class="far fa-bell"></i>
-                    {{-- Die Badge wird via JS eingeblendet, wenn count > 0 --}}
                     <span class="badge badge-warning navbar-badge" id="notification-count" style="display: none;">0</span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" id="notification-list" style="left: inherit; right: 0px;">
-                    {{-- Lade-Indikator --}}
                     <span class="dropdown-item dropdown-header">Lade Benachrichtigungen...</span>
                 </div>
             </li>
@@ -108,23 +205,23 @@
             {{-- User Dropdown --}}
             <li class="nav-item dropdown user-menu">
                 <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-                    @if(Auth::check()) {{-- Sicherstellen, dass der Benutzer eingeloggt ist --}}
+                    @if(Auth::check())
                         <img src="{{ Auth::user()->avatar }}" class="user-image img-circle elevation-1" alt="User Image">
-                        <span class="d-none d-md-inline">{{ Auth::user()->name }}</span>
+                        <span class="d-none d-md-inline font-weight-bold">{{ Auth::user()->name }}</span>
                     @endif
                 </a>
-                <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                    @if(Auth::check()) {{-- Sicherstellen, dass der Benutzer eingeloggt ist --}}
-                        <li class="user-header bg-primary">
+                <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right" style="background-color: var(--card-dark); border: 1px solid var(--glass-border);">
+                    @if(Auth::check())
+                        <li class="user-header" style="background: var(--accent-gradient); color: white;">
                             <img src="{{ Auth::user()->avatar }}" class="img-circle elevation-2" alt="User Image">
                             <p>
                                 {{ Auth::user()->name }}
                                 <small>{{ Auth::user()->rank ?? 'Mitarbeiter' }}</small>
                             </p>
                         </li>
-                        <li class="user-footer">
-                             <a href="{{ route('profile.show') }}" class="btn btn-default btn-flat">Profil</a>
-                            <a href="#" class="btn btn-default btn-flat float-right"
+                        <li class="user-footer" style="background-color: var(--card-dark);">
+                             <a href="{{ route('profile.show') }}" class="btn btn-secondary btn-flat">Profil</a>
+                            <a href="#" class="btn btn-secondary btn-flat float-right"
                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 Abmelden
                             </a>
@@ -140,10 +237,9 @@
 
     {{-- MAIN SIDEBAR --}}
     <aside class="main-sidebar sidebar-dark-primary elevation-4" id="mainSidebar">
-        {{-- 'd-flex align-items-center' sorgt für die vertikale Zentrierung --}}
-        <a href="{{ route('dashboard') }}" class="brand-link d-flex align-items-center justify-content-center">
-            <i class="fas fa-user-shield fa-lg elevation-3 mr-3" style="opacity: .8"></i>            
-            <span class="brand-text font-weight-light">LSPD Panel</span>
+        <a href="{{ route('dashboard') }}" class="brand-link d-flex align-items-center justify-content-center" style="border-bottom: 1px solid var(--glass-border);">
+            <i class="fas fa-user-shield fa-lg elevation-3 mr-3 text-white" style="opacity: .9"></i>            
+            <span class="brand-text font-weight-bold">LSPD Panel</span>
         </a>
 
         <div class="sidebar">
@@ -155,15 +251,12 @@
 
     {{-- CONTENT WRAPPER --}}
     <div class="content-wrapper">
-        <div class="content">
-            <div class="container-fluid pt-3">
-                @yield('content')
-            </div>
-        </div>
+        {{-- Hier rendern wir den Content. Der 'content-header' im Child-View wird durch CSS transformiert. --}}
+        @yield('content')
     </div>
 
     {{-- FOOTER --}}
-    <footer class="main-footer">        
+    <footer class="main-footer" style="background-color: var(--bg-dark); color: #888; border-top: 1px solid var(--glass-border);">        
         <div class="float-right d-none d-sm-inline">Version 1.0</div>
         <strong>Copyright &copy; 2025 LSPD Panel.</strong> All rights reserved.
     </footer>
@@ -194,8 +287,7 @@
 {{-- SELECT2 JS --}}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-
-{{-- ECHO & PUSHER DEPENDENCIES (CDN Version, wie von dir genutzt) --}}
+{{-- ECHO & PUSHER DEPENDENCIES --}}
 <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.0/echo.iife.min.js"></script>
 
@@ -204,51 +296,9 @@
 {{-- ===================================================================== --}}
 <script>
     $(document).ready(function() {
-
-        // ==========================================
-        // 1. THEME LOGIK
-        // ==========================================
-        (() => {
-            'use strict'
-            const getStoredTheme = () => localStorage.getItem('theme')
-            const setStoredTheme = theme => localStorage.setItem('theme', theme)
-            const getPreferredTheme = () => {
-                const storedTheme = getStoredTheme()
-                if (storedTheme) return storedTheme
-                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-            }
-            const applyTheme = theme => {
-                const body = document.body;
-                const navbar = document.getElementById('mainNavbar');
-                const sidebar = document.getElementById('mainSidebar');
-                const toggleIcon = document.getElementById('darkModeToggle')?.querySelector('i');
-
-                if (!navbar || !sidebar || !toggleIcon) return;
-
-                if (theme === 'dark') {
-                    body.classList.add('dark-mode');
-                    navbar.classList.add('navbar-dark');
-                    navbar.classList.remove('navbar-white', 'navbar-light');
-                    sidebar.classList.add('sidebar-dark-primary');
-                    sidebar.classList.remove('sidebar-light-primary');
-                    toggleIcon.classList.replace('fa-moon', 'fa-sun');
-                } else {
-                    body.classList.remove('dark-mode');
-                    navbar.classList.add('navbar-white', 'navbar-light');
-                    navbar.classList.remove('navbar-dark');
-                    sidebar.classList.add('sidebar-light-primary');
-                    sidebar.classList.remove('sidebar-dark-primary');
-                    toggleIcon.classList.replace('fa-sun', 'fa-moon');
-                }
-            }
-            applyTheme(getPreferredTheme());
-            $('#darkModeToggle').on('click', function(e) {
-                e.preventDefault();
-                const currentTheme = getStoredTheme() === 'dark' ? 'light' : 'dark';
-                setStoredTheme(currentTheme);
-                applyTheme(currentTheme);
-            });
-        })();
+        
+        // --- Select2 Init ---
+        $('.select2').select2({ theme: 'bootstrap4' });
 
         // ==========================================
         // 2. HELPER: SWEETALERT
@@ -265,7 +315,8 @@
                 Swal.fire({
                     toast: true, position: 'top-end', icon: type,
                     title: title, text: decodeHtml(message),
-                    showConfirmButton: false, timer: 3000
+                    showConfirmButton: false, timer: 3000,
+                    background: '#2d3748', color: '#fff' // Dark Mode Anpassung
                 });
             }, 50);
         }
@@ -322,7 +373,6 @@
         }
 
         // Diese Funktion prüft den Status und zeigt die Buttons im Dropdown an
-        // Sie MUSS aufgerufen werden, NACHDEM das Dropdown-HTML geladen wurde!
         function checkPushStatus() {
             if (!VAPID_PUBLIC_KEY || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
@@ -334,17 +384,14 @@
             $disableBtn.hide();
 
             if (Notification.permission === 'denied') {
-                // Wenn blockiert, zeigen wir vielleicht gar nichts oder einen Hinweis
                 return;
             }
 
             navigator.serviceWorker.ready.then(reg => {
                 reg.pushManager.getSubscription().then(sub => {
                     if (sub) {
-                        // User ist abonniert -> Zeige "Deaktivieren"
                         $disableBtn.show();
                     } else {
-                        // User ist nicht abonniert -> Zeige "Aktivieren"
                         $enableBtn.show();
                     }
                 }).catch(err => console.error('Push Subscription Error:', err));
@@ -371,7 +418,7 @@
                             data: JSON.stringify(sub),
                             success: function() {
                                 showSweetAlert('success', 'Desktop-Benachrichtigungen aktiviert!');
-                                checkPushStatus(); // Buttons aktualisieren
+                                checkPushStatus(); 
                             }
                         });
                     }).catch(err => {
@@ -396,7 +443,7 @@
                                 data: JSON.stringify({ endpoint: sub.endpoint }),
                                 success: function() {
                                     showSweetAlert('success', 'Deaktiviert.');
-                                    checkPushStatus(); // Buttons aktualisieren
+                                    checkPushStatus();
                                 }
                             });
                         });
@@ -440,8 +487,7 @@
                         // Offene Gruppen wiederherstellen
                         openGroups.forEach(function(id) { $(`#${id}`).collapse('show'); });
                         
-                        // WICHTIG: JETZT PRÜFEN WIR DEN PUSH STATUS, 
-                        // WEIL DIE BUTTONS JETZT ERST EXISTIEREN!
+                        // Buttons prüfen
                         checkPushStatus();
                     } else {
                         notificationList.html('<a href="#" class="dropdown-item"><span class="text-muted">Keine Meldungen.</span></a>');
@@ -506,183 +552,6 @@
     });
 </script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const VAPID_PUBLIC_KEY = '{{ config('webpush.vapid.public_key') }}';
-        if (!VAPID_PUBLIC_KEY) {
-            console.error("[Push] VAPID_PUBLIC_KEY ist nicht konfiguriert!");
-        }
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
-            return outputArray;
-        }
-
-        function subscribeUser() {
-            if (!VAPID_PUBLIC_KEY) {
-                 alert("Fehler: Push-Benachrichtigungen sind serverseitig nicht konfiguriert.");
-                 return;
-            }
-             if (!navigator.serviceWorker) {
-                 console.error("[Push] Service Worker wird nicht unterstützt.");
-                 alert("Ihr Browser unterstützt keine Service Worker, die für Desktop-Benachrichtigungen benötigt werden.");
-                 return;
-             }
-
-            navigator.serviceWorker.ready.then(registration => {
-                const subscribeOptions = {
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                };
-                return registration.pushManager.subscribe(subscribeOptions);
-            })
-            .then(pushSubscription => {
-                sendSubscriptionToServer(pushSubscription);
-            })
-            .catch(error => {
-                console.error('[Push] Abo fehlgeschlagen:', error);
-                if (Notification.permission === 'denied') {
-                     alert('Sie haben Benachrichtigungen blockiert. Bitte ändern Sie dies in Ihren Browser-Einstellungen, um sie zu aktivieren.');
-                } else {
-                     alert('Aktivierung fehlgeschlagen. Ist der VAPID Key korrekt? Fehler: ' + error.message);
-                }
-                 updatePushButtons(false);
-            });
-        }
-
-        function sendSubscriptionToServer(subscription) {
-            $.ajax({
-                url: '{{ route('push.subscribe') }}',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(subscription),
-                success: function() {
-                    alert('Desktop-Benachrichtigungen sind jetzt aktiv!');
-                    updatePushButtons(true);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error("[Push] Fehler beim Senden des Abos an den Server:", textStatus, errorThrown, jqXHR.responseText);
-                    alert("Fehler: Das Abo konnte nicht auf dem Server gespeichert werden.");
-                     updatePushButtons(false);
-                }
-            });
-        }
-
-        function unsubscribeUser() {
-             if (!navigator.serviceWorker) { return; }
-
-            navigator.serviceWorker.ready.then(registration => {
-                registration.pushManager.getSubscription().then(subscription => {
-                    if (subscription) {
-                        subscription.unsubscribe().then(successful => {
-                            if (successful) {
-                                sendUnsubscriptionToServer(subscription);
-                            } else {
-                                console.error("[Push] Deabonnieren beim Browser fehlgeschlagen.");
-                                alert("Fehler beim Deaktivieren der Benachrichtigungen im Browser.");
-                            }
-                        }).catch(error => {
-                             console.error("[Push] Fehler bei subscription.unsubscribe():", error);
-                             alert("Fehler beim Deaktivieren: " + error.message);
-                        });
-                    } else {
-                         updatePushButtons(false);
-                    }
-                }).catch(error => {
-                     console.error("[Push] Fehler bei getSubscription():", error);
-                     alert("Fehler beim Abrufen des Abonnements.");
-                });
-            });
-        }
-
-        function sendUnsubscriptionToServer(subscription) {
-            const endpoint = subscription.endpoint;
-            $.ajax({
-                url: '{{ route('push.unsubscribe') }}',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ endpoint: endpoint }),
-                success: function() {
-                    alert('Desktop-Benachrichtigungen wurden deaktiviert.');
-                    updatePushButtons(false);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error("[Push] Fehler beim Entfernen des Abos vom Server:", textStatus, errorThrown, jqXHR.responseText);
-                    alert("Fehler: Das Abo konnte nicht auf dem Server entfernt werden.");
-                }
-            });
-        }
-
-        function updatePushButtons(isSubscribed) {
-            const enableBtn = document.getElementById('enable-push');
-            const disableBtn = document.getElementById('disable-push');
-            if (!enableBtn || !disableBtn) {
-                 return;
-            }
-
-            enableBtn.style.display = 'none';
-            disableBtn.style.display = 'none';
-
-            if (Notification.permission !== 'denied') {
-                if (isSubscribed) {
-                    disableBtn.style.display = 'inline-block';
-                } else {
-                    enableBtn.style.display = 'inline-block';
-                }
-            }
-        }
-
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            navigator.serviceWorker.register('/sw.js');
-
-            const pushButtonEnable = document.getElementById('enable-push');
-            const pushButtonDisable = document.getElementById('disable-push');
-
-            if (pushButtonEnable && pushButtonDisable) {
-                pushButtonEnable.addEventListener('click', () => {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === 'granted') {
-                            subscribeUser();
-                        } else if (permission === 'denied') {
-                             alert('Sie haben Benachrichtigungen blockiert. Bitte ändern Sie dies in Ihren Browser-Einstellungen.');
-                             updatePushButtons(false);
-                        }
-                    });
-                });
-
-                pushButtonDisable.addEventListener('click', () => {
-                    unsubscribeUser();
-                });
-
-                 navigator.serviceWorker.ready.then(reg => {
-                     if (Notification.permission === 'denied') {
-                         updatePushButtons(false);
-                         return;
-                     }
-                     reg.pushManager.getSubscription().then(sub => {
-                         updatePushButtons(!!sub);
-                     }).catch(() => {
-                         updatePushButtons(false);
-                     });
-                }).catch(() => {
-                     updatePushButtons(false);
-                });
-            }
-        } else {
-            const pushButtonEnable = document.getElementById('enable-push');
-            const pushButtonDisable = document.getElementById('disable-push');
-            if(pushButtonEnable) pushButtonEnable.style.display = 'none';
-            if(pushButtonDisable) pushButtonDisable.style.display = 'none';
-        }
-
-    });
-</script>
-
 {{-- FINALER SESSION-TIMER (SERVER-GESTEUERT MIT PING-RESET & DEBUGGING) --}}
 @if(session('is_remembered') === false)
 <script>
@@ -691,7 +560,6 @@
   const DEBUG = false; 
   function log(message, ...args) {
       if (DEBUG) {
-          // %c für CSS-Styling in der Konsole
           console.log(`%c[TIMER_DEBUG] %c${message}`, 'color: #1e90ff; font-weight: bold;', 'color: black;', ...args);
       }
   }
@@ -834,17 +702,11 @@
   // ===================================================================
   // === DER "WAKE UP" FIX GEGEN BACKGROUND THROTTLING ===
   // ===================================================================
-  // Dieser Event feuert, wenn der Tab (oder das Browserfenster)
-  // wieder in den Fokus rückt.
   window.addEventListener('focus', function() {
       log('%c[FOCUS] Tab ist wieder im Fokus. Prüfe Zeit...', 'color: purple; font-weight: bold;');
-      
-      // Starte sofort eine manuelle Prüfung. 
-      // checkTimer() ist sicher, da es die Zeit vergleicht und ggf. redirectToLockscreen() aufruft.
-      if (expiryTimestamp) { // Nur ausführen, wenn wir schon ein Ziel haben
+      if (expiryTimestamp) { 
          checkTimer();
       } else {
-         // Falls der allererste fetch nie passiert ist (z.B. kein Netz beim Laden)
          log('[FOCUS] Kein Ziel-Timestamp gefunden. Starte fetchSessionExpiry()');
          fetchSessionExpiry();
       }
