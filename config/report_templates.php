@@ -1,113 +1,109 @@
 <?php
 
-return array (
-  'verkehrsunfall_mit_personenschaden' => 
-  array (
-    'name' => 'Verkehrsunfall mit Personenschaden',
-    'title' => 'Verkehrsunfall mit Personenschaden',
-    'incident_description' => 'Bei Eintreffen an der Einsatzstelle wurde ein Verkehrsunfall zwischen zwei Fahrzeugen vorgefunden. Beteiligte Fahrzeuge: [FAHRZEUG 1] und [FAHRZEUG 2]. Die Unfallstelle war bereits durch die Polizei abgesichert.
-Folgende Situation wurde vorgefunden:
-Person A (Fahrer Fahrzeug 1):
-Person B (Fahrer Fahrzeug 2):',
-    'actions_taken' => 'Folgende Maßnahmen wurden durchgeführt:
-Bei Patient A:
-Stiffneck angelegt
-Vitalparameter überprüft (Blutdruck, Puls, SpO2)
-Zugang gelegt
-Bei Patient B:
-Sichtung und Erstversorgung
-Beide Patienten wurden nach der Erstversorgung transportfähig gemacht und in das nächstgelegene Krankenhaus transportiert.',
-  ),
-  'hauslicher_sturz' => 
-  array (
-    'name' => 'Häuslicher Sturz',
-    'title' => 'Gestürzte Person im häuslichen Umfeld',
-    'incident_description' => 'Nach Eintreffen in der Wohnung wurde eine gestürzte Person (ca. [ALTER] Jahre alt) auf dem Boden liegend vorgefunden. Die Person war ansprechbar und orientiert. Eigenen Angaben zufolge ist sie im Badezimmer ausgerutscht und auf die Hüfte gefallen.
-Schmerzangabe auf einer Skala von 1-10: [WERT].',
-    'actions_taken' => 'Immobilisierung des betroffenen Beins
-Vitalparameter-Check
-Schmerzmittelgabe nach Rücksprache mit dem Notarzt
-Umlagerung auf die Vakuummatratze
-Transport ins Krankenhaus zur weiteren Abklärung (Verdacht auf Oberschenkelhalsfraktur).',
-  ),
-  'atemnot' => 
-  array (
-    'name' => 'Atemnot',
-    'title' => 'Patient mit akuter Atemnot',
-    'incident_description' => 'Patient (ca. [ALTER] Jahre alt) klagte über plötzlich aufgetretene, massive Atemnot. Vorerkrankungen: [VORERKRANKUNGEN, z.B. COPD, Asthma].
-Sauerstoffsättigung bei Eintreffen: [WERT]%.',
-    'actions_taken' => 'Sauerstoffgabe über eine Maske ([LITER] l/min)
-Oberkörperhochlagerung
-Vitalparameter-Monitoring
-Verneblung mit [MEDIKAMENT] nach ärztlicher Anordnung
-Zügiger Transport in die Notaufnahme.
-Absolut. Hier sind weitere passende Vorlagen im gleichen Stil für verschiedene gängige Notfallsituationen:',
-  ),
-  'reanimation' => 
-  array (
-    'name' => 'Reanimation',
-    'title' => 'Reanimation bei Herz-Kreislauf-Stillstand',
-    'incident_description' => 'Beim Eintreffen wurde eine leblose Person (ca. [ALTER] Jahre alt) vorgefunden. Ersthelfer führten bereits eine Laienreanimation durch. Die Person zeigte keine Atmung und keinen Puls. Umstände des Auffindens: [z.B. von Angehörigen, plötzlicher Zusammenbruch].',
-    'actions_taken' => 'Unverzügliche Übernahme der Herzdruckmassage (Frequenz 100-120/min)
-Beatmung mit Beatmungsbeutel und Sauerstoff
-Frühzeitiger Einsatz des AED/Defibrillators, [ANZAHL] Schocks abgegeben
-Legen eines intravenösen Zugangs
-Medikamentengabe nach Notarztanordnung ([MEDIKAMENT])
-Sicherung der Atemwege mittels [z.B. Larynxtubus, Endotrachealtubus]
-Nach [DAUER] Minuten konnte ein Spontankreislauf (ROSC) erzielt werden.
-Transport unter Reanimationsbereitschaft in die Klinik.',
-  ),
-  'krampfanfall' => 
-  array (
-    'name' => 'Krampfanfall',
-    'title' => 'Patient nach Krampfanfall',
-    'incident_description' => 'Ein Patient (ca. [ALTER] Jahre alt) wurde nach einem generalisierten Krampfanfall angetroffen. Der Anfall dauerte laut Zeugenaussagen ca. [DAUER] Minuten. Bei Eintreffen war der Patient postiktal (in der Nachschlafphase), schwach ansprechbar und desorientiert. Verletzungen während des Anfalls: [z.B. Zungenbiss, Kopfplatzwunde].',
-    'actions_taken' => 'Stabile Seitenlage zur Sicherung der Atemwege
-Schutz vor Auskühlung mit einer Decke
-Vitalparameterüberwachung (SpO2, Puls, Blutdruck, Blutzucker)
-Blutzuckermessung: [WERT] mg/dl
-Sauerstoffgabe über Nasenbrille ([LITER] l/min)
-Untersuchung auf weitere Verletzungen
-Überwachung und Betreuung bis zum vollständigen Erwachen
-Transport zur weiteren Abklärung ins Krankenhaus.',
-  ),
-  'brandverletzung' => 
-  array (
-    'name' => 'Brandverletzung',
-    'title' => 'Patient mit thermischer Verletzung',
-    'incident_description' => 'Einsatz in Zusammenarbeit mit der Feuerwehr. Ein Patient (ca. [ALTER] Jahre alt) hat bei einem [ART DES UNFALLS, z.B. Grillunfall, Wohnungsbrand] Brandverletzungen erlitten. Betroffene Körperregionen: [z.B. beide Unterarme, Gesicht, Brust]. Verbrennungsgrad (geschätzt): [GRAD, z.B. Grad 2a/2b]. Verdacht auf Inhalationstrauma: [JA/NEIN].',
-    'actions_taken' => 'Kühlung der verbrannten Areale mit sterilem, wassergetränktem Tuch für maximal 10 Minuten
-Entfernung von kontaminierter/verbrannter Kleidung, sofern nicht an der Haut haftend
-Sterile Abdeckung der Wunden mit metallisierter Wundauflage
-Hochdosierte Sauerstoffgabe über Maske wegen Verdacht auf Rauchgasintoxikation
-Legen von mindestens einem großlumigen i.v.-Zugang
-Schmerztherapie nach Anordnung des Notarztes mit [MEDIKAMENT]
-Wärmeerhalt während des Transports
-Ankündigung im Zentrum für Schwerbrandverletzte.',
-  ),
-  'allergische_reaktion' => 
-  array (
-    'name' => 'Allergische Reaktion',
-    'title' => 'Anaphylaktische Reaktion',
-    'incident_description' => 'Patient (ca. [ALTER] Jahre alt) mit plötzlich aufgetretener, schwerer allergischer Reaktion nach [AUSLÖSER, z.B. Insektenstich, Nahrungsmitteleinnahme]. Symptome bei Eintreffen: [z.B. generalisierte Urtikaria (Nesselsucht), Atemnot, Schwellung im Gesicht/Halsbereich, Schwindel]. Blutdruck: [WERT] mmHg. Herzfrequenz: [WERT]/min.',
-    'actions_taken' => 'Sofortige Adrenalin-Gabe i.m. in den Oberschenkel
-Oberkörperhochlagerung zur Erleichterung der Atmung / Schocklage bei niedrigem Blutdruck
-Sauerstoffgabe über Maske
-Legen eines i.v.-Zugangs und Gabe von [MEDIKAMENT, z.B. Kortison, Antihistaminika] nach ärztlicher Anordnung
-Kontinuierliches Monitoring der Vitalparameter
-Schneller und schonender Transport in die nächste Klinik mit Notarztbegleitung.',
-  ),
-  'unterzuckerung' => 
-  array (
-    'name' => 'Unterzuckerung',
-    'title' => 'Hypoglykämie bei bekanntem Diabetes mellitus',
-    'incident_description' => 'Patient (ca. [ALTER] Jahre alt) wurde mit Bewusstseinstrübung aufgefunden. Laut Angehörigen bekannter Diabetiker (Typ [TYP]). Letzte Mahlzeit/Insulingabe: [INFORMATION]. Bei Eintreffen war der Patient [ZUSTAND, z.B. stark schwitzend, somnolent, aggressiv].',
-    'actions_taken' => 'Messung des Blutzuckers: [WERT] mg/dl
-Sicherung der Atemwege
-Legen eines i.v.-Zugangs
-Gabe von Glukose ([MENGE] g) intravenös
-Nach Glukosegabe deutliche Besserung des Zustandes, Patient wieder ansprechbar und orientiert
-Gabe von schnell wirksamen Kohlenhydraten oral (z.B. gezuckerter Tee, Traubenzucker)
-Überwachung und Transport zur weiteren Beobachtung.',
-  ),
-);
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Report Templates / Einsatzbericht-Vorlagen
+    |--------------------------------------------------------------------------
+    | Diese Vorlagen werden via JS in die Felder geladen.
+    | Platzhalter wie [NAME] oder [ORT] müssen vom Beamten ausgefüllt werden.
+    |
+    */
+
+    // -------------------------------------------------------------------------
+    // VERKEHR (StVO)
+    // -------------------------------------------------------------------------
+    'verkehr_allgemein' => [
+        'name' => 'Verkehr: Allgemeine Kontrolle (Routine)',
+        'title' => 'Bericht: Allgemeine Verkehrskontrolle',
+        'incident_description' => "Am [DATUM/UHRZEIT] wurde im Bereich [ORT] das Fahrzeug [MODELL] mit dem Kennzeichen [KENNZEICHEN] einer allgemeinen Verkehrskontrolle unterzogen.\n\nFahrer: [NAME]\nBeifahrer: [NAME ODER 'Keine']\n\nGrund der Kontrolle: Routinekontrolle / Auffällige Fahrweise.\nEs wurden keine strafrechtlich relevanten Gegenstände gefunden.",
+        'actions_taken' => "• Überprüfung von Führerschein und Fahrzeugpapieren\n• Abfrage im Fahndungsregister (negativ)\n• Verbandskasten und Warndreieck kontrolliert\n• Mündliche Verwarnung / Bußgeld ausgestellt\n• Weiterfahrt gestattet",
+    ],
+
+    'verkehr_alkohol_drogen' => [
+        'name' => 'Verkehr: Trunkenheit / Drogen (DUI)',
+        'title' => 'Strafanzeige: Fahren unter Einfluss (BTM/Alkohol)',
+        'incident_description' => "Das Fahrzeug [MODELL] ([KENNZEICHEN]) fiel durch Schlangenlinien / überhöhte Geschwindigkeit auf.\nBei der Kontrolle von [NAME] wurde starker Alkoholgeruch / Marihuanageruch wahrgenommen.\n\nDurchgeführter Schnelltest:\n• Alkohol: [WERT] Promille\n• Drogen: Positiv auf [SUBSTANZ]",
+        'actions_taken' => "• Untersagung der Weiterfahrt\n• Schlüssel sichergestellt\n• Blutentnahme durch Mediziner angeordnet\n• Führerschein vorläufig beschlagnahmt\n• Transport zur Dienststelle zur Ausnüchterung\n• Anzeige gem. § 315c / § 316 StGB gefertigt",
+    ],
+
+    'verkehr_flucht' => [
+        'name' => 'Verkehr: Flucht vor Polizei',
+        'title' => 'Einsatzbericht: Verfolgungsjagd / Flucht',
+        'incident_description' => "Der Tatverdächtige [NAME] entzog sich der Verkehrskontrolle durch Flucht mit dem Fahrzeug [MODELL] ([KENNZEICHEN]).\n\nVerlauf der Flucht:\n• Start: [ORT]\n• Ende: [ORT]\n• Dauer: ca. [MINUTEN] Min.\n• Höchstgeschwindigkeit: [KM/H]\n\nEs kam zu Gefährdungen von Passanten/anderen Fahrern: [JA/NEIN].\nDer TV konnte schließlich durch [METHODE, z.B. Unfall/Pit-Manöver] gestoppt werden.",
+        'actions_taken' => "• Felony Stop durchgeführt\n• TV aus Fahrzeug befohlen und gesichert (Handschellen)\n• Rechtsbelehrung verlesen und verstanden\n• Fahrzeug abgeschleppt/beschlagnahmt\n• Vorläufige Festnahme und Transport in das SG",
+    ],
+
+    'verkehr_unfall' => [
+        'name' => 'Verkehr: Unfallaufnahme',
+        'title' => 'Protokoll: Verkehrsunfall mit Sachschaden',
+        'incident_description' => "Eintreffen an Unfallstelle [ORT].\n\nBeteiligte:\n1. [NAME A] (Fahrzeug: [MODELL A])\n2. [NAME B] (Fahrzeug: [MODELL B])\n\nHergang: Laut Spurenlage und Zeugenaussagen missachtete Beteiligter A die Vorfahrt / übersah Beteiligten B beim Abbiegen.\nVerletzte Personen: [ANZAHL/KEINE].",
+        'actions_taken' => "• Unfallstelle abgesichert\n• Personalien aller Beteiligten aufgenommen\n• Fotos zur Beweissicherung erstellt\n• Platzverweis für Schaulustige erteilt\n• Bußgeldverfahren gegen Verursacher eingeleitet\n• Unfallbericht-Nummer an Beteiligte ausgehändigt",
+    ],
+
+    // -------------------------------------------------------------------------
+    // KRIMINALITÄT & GEWALT (StGB)
+    // -------------------------------------------------------------------------
+    'festnahme_haftbefehl' => [
+        'name' => 'Festnahme: Haftbefehl offen',
+        'title' => 'Vollstreckung Haftbefehl',
+        'incident_description' => "Im Rahmen einer Personenkontrolle wurde die Identität von [NAME], geb. am [DATUM], überprüft.\nDas System meldete einen offenen Haftbefehl (Aktenzeichen: [NR]) wegen [GRUND].",
+        'actions_taken' => "• Person vorläufig festgenommen\n• Handfesseln angelegt\n• Person und Kleidung durchsucht\n• Rechtsbelehrung erfolgt\n• Transport zur JVA/SG\n• Haftbefehl vollstreckt ([ANZAHL] HE)",
+    ],
+
+    'straftat_raub_shop' => [
+        'name' => 'Raub: Ladenüberfall/Tankstelle',
+        'title' => 'Strafanzeige: Raubüberfall auf [LADENNAME]',
+        'incident_description' => "Alarmierung durch Panik-Button / Leitstelle.\nBei Eintreffen am [LADEN] wurde der Täter [NAME] noch vor Ort / auf der Flucht angetroffen.\n\nDer Täter bedrohte den Verkäufer mit einer [WAFFE, z.B. Pistole] und forderte Bargeld.\nBeute: $[BETRAG] (sichergestellt: [JA/NEIN]).",
+        'actions_taken' => "• Täter unter Vorhalt der Schusswaffe gestellt\n• Entwaffnung und Fesselung\n• Waffe ([TYP]) und Beute sichergestellt (Asservatenkammer)\n• Videoaufnahmen des Ladens gesichert\n• Verkäufer (Opfer) betreut\n• Anzeige wegen schwerem Raub gefertigt",
+    ],
+
+    'straftat_koerperverletzung' => [
+        'name' => 'Gewalt: Schlägerei / Körperverletzung',
+        'title' => 'Anzeige: Körperverletzung',
+        'incident_description' => "Einsatzstichwort 'Schlägerei' am [ORT].\nVor Ort wurde das Opfer [NAME OPFER] mit sichtbaren Verletzungen ([ART DER VERLETZUNG]) angetroffen.\n\nDer Beschuldigte [NAME TÄTER] wurde von Zeugen identifiziert.\nHergang: Nach einem verbalen Streit schlug der Beschuldigte unvermittelt zu.",
+        'actions_taken' => "• Parteien getrennt\n• Erste Hilfe geleistet / MD alarmiert\n• Personalien festgestellt\n• Platzverweis für Unbeteiligte\n• Anzeige wegen Körperverletzung (§ 223 StGB) aufgenommen\n• Opfer über Zivilklageweg informiert",
+    ],
+
+    'straftat_waffenbesitz' => [
+        'name' => 'Waffen: Illegaler Besitz (Langwaffe)',
+        'title' => 'Verstoß WaffG: Besitz verbotener Waffen',
+        'incident_description' => "Die Person [NAME] führte in der Öffentlichkeit sichtbar eine Langwaffe ([TYP, z.B. Karabiner]) mit sich.\nBei Überprüfung der Lizenzen konnte keine Berechtigung für Waffenkategorie C/D vorgelegt werden.",
+        'actions_taken' => "• Waffe und Munition ([ANZAHL] Schuss) beschlagnahmt\n• Sicherheitsüberprüfung der Waffe durchgeführt\n• Person festgenommen\n• Rechtsbelehrung verlesen\n• Eintragung ins Strafregister wegen illegalem Waffenbesitz",
+    ],
+
+    // -------------------------------------------------------------------------
+    // DROGEN & BTM (BtMG)
+    // -------------------------------------------------------------------------
+    'btm_besitz_klein' => [
+        'name' => 'BTM: Besitz (Geringe Menge)',
+        'title' => 'Verstoß BtMG (Eigenbedarf)',
+        'incident_description' => "Bei einer Personenkontrolle wirkte [NAME] nervös.\nBei der Durchsuchung (nach § 6 SOG) wurde in der Hosentasche folgende Substanz gefunden:\n\n• Art: [SUBSTANZ, z.B. Cannabis]\n• Menge: ca. [MENGE] Gramm/Stück",
+        'actions_taken' => "• Betäubungsmittel sichergestellt und vernichtet\n• Mündliche Verwarnung ausgesprochen\n• Personalien für Datenbank erfasst\n• Platzverweis erteilt",
+    ],
+
+    'btm_handel' => [
+        'name' => 'BTM: Handel / Große Menge',
+        'title' => 'Strafanzeige: Handel mit Betäubungsmitteln',
+        'incident_description' => "Observation im Bereich [ORT]. Der TV [NAME] wurde dabei beobachtet, wie er BTM an Dritte übergab.\nBei der anschließenden Festnahme und Durchsuchung wurden gefunden:\n\n• [MENGE]x [SUBSTANZ]\n• [MENGE]x [SUBSTANZ]\n• $[BETRAG] Bargeld (vermutl. Dealgelder)",
+        'actions_taken' => "• Festnahme wegen Verdacht auf gewerbsmäßigen Handel\n• Beschlagnahmung aller Substanzen (Asservaten-Nr: [NR])\n• Beschlagnahmung des Bargelds und der Mobiltelefone\n• Transport zum HQ und erkennungsdienstliche Behandlung",
+    ],
+
+    // -------------------------------------------------------------------------
+    // ORDNUNG & SONSTIGES
+    // -------------------------------------------------------------------------
+    'sonstiges_platzverweis' => [
+        'name' => 'Ordnung: Platzverweis Durchsetzung',
+        'title' => 'Bericht: Durchsetzung Platzverweis / Gewahrsam',
+        'incident_description' => "Die Person [NAME] störte massiv eine polizeiliche Maßnahme am [ORT].\nEinem mehrfach ausgesprochenen Platzverweis wurde nicht Folge geleistet.\nDie Person verhielt sich weiterhin aggressiv und uneinsichtig.",
+        'actions_taken' => "• Ingewahrsamnahme zur Durchsetzung des Platzverweises (§ 5 SOG)\n• Transport zur Ausnüchterungszelle/Dienststelle\n• Dauer des Gewahrsams: Bis [UHRZEIT] (max. 48h)\n• Durchsuchung zum Eigenschutz durchgeführt",
+    ],
+
+    'sonstiges_hausfriedensbruch' => [
+        'name' => 'Ordnung: Hausfriedensbruch (SG/PD)',
+        'title' => 'Strafanzeige: Hausfriedensbruch Sicherheitsbereich',
+        'incident_description' => "Die Person [NAME] wurde im Sicherheitsbereich (Sperrzone) des [LSPD/FIB/SG] angetroffen.\nTrotz Beschilderung und Aufforderung durch Beamte weigerte sich die Person, den Bereich zu verlassen.",
+        'actions_taken' => "• Vorläufige Festnahme\n• Identitätsfeststellung\n• Durchsuchung auf gefährliche Gegenstände\n• Anzeige wegen Hausfriedensbruch und Widerstand gefertigt",
+    ],
+];
