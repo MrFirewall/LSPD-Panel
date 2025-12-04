@@ -19,6 +19,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Suchformular -->
     <div class="card card-outline card-info">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-search"></i> Berichtsarchiv durchsuchen</h3>
@@ -55,8 +57,8 @@
                                 <td>{{ $report->title }}</td>
                                 <td>{{ $report->patient_name }}</td>
                                 <td>
-                                    <!-- Rang Label aus Relation -->
-                                    <span class="badge badge-secondary">{{ optional($report->user->rank)->label ?? 'N/A' }}</span> 
+                                    <!-- FIX: Zugriff über rankRelation -->
+                                    <span class="badge badge-secondary">{{ optional($report->user->rankRelation)->label ?? 'Officer' }}</span> 
                                     {{ $report->user->name }}
                                 </td>
                                 <td class="text-right">

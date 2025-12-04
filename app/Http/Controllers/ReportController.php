@@ -20,8 +20,8 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        // Wir laden 'user.rank' mit, um das Label anzuzeigen
-        $query = Report::with(['user.rank'])->latest();
+        // FIX: 'user.rankRelation' laden statt 'user.rank'
+        $query = Report::with(['user.rankRelation'])->latest();
 
         if (Auth::user()->cannot('viewAny', Report::class)) {
              $query->where('user_id', Auth::id());
@@ -47,8 +47,8 @@ class ReportController extends Controller
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        // Hier auch Rang laden für die Anzeige im Dropdown
-        $allStaff = User::with('rank')->orderBy('name')->get();
+        // FIX: 'rankRelation' laden
+        $allStaff = User::with('rankRelation')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
 
         return view('reports.create', compact('templates', 'citizens', 'allStaff', 'fines'));
@@ -64,7 +64,6 @@ class ReportController extends Controller
             'actions_taken' => 'required|string',
             'attending_staff' => 'nullable|array',
             'attending_staff.*' => 'exists:users,id',
-            // Wir erwarten nun ein Array von Bußgeldern mit ID und Bemerkung
             'fines' => 'nullable|array', 
             'fines.*.id' => 'exists:fines,id',
             'fines.*.remark' => 'nullable|string',
@@ -85,16 +84,9 @@ class ReportController extends Controller
             $report->attendingStaff()->attach($request->input('attending_staff'));
         }
 
-        // Fines verknüpfen mit individueller Bemerkung
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {
-                // Wir nutzen die ID als Key für sync, und übergeben die Pivot-Daten
-                // Da man theoretisch dasselbe Bußgeld 2x haben könnte, wäre attach() besser, 
-                // aber sync() ist sauberer beim Update. 
-                // Für multiple gleiche Einträge müsste man $report->fines()->attach(...) in Loop nutzen.
-                // Hier gehen wir erstmal von Unique pro Bericht aus oder nutzen die ID als Key.
-                
                 $syncData[$fineData['id']] = ['remark' => $fineData['remark'] ?? ''];
             }
             $report->fines()->sync($syncData);
@@ -120,8 +112,8 @@ class ReportController extends Controller
 
     public function show(Report $report)
     {
-        // User.rank laden
-        $report->load(['user.rank', 'citizen', 'attendingStaff.rank', 'fines']);
+        // FIX: 'rankRelation' überall laden
+        $report->load(['user.rankRelation', 'citizen', 'attendingStaff.rankRelation', 'fines']);
         return view('reports.show', compact('report'));
     }
 
@@ -129,7 +121,8 @@ class ReportController extends Controller
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        $allStaff = User::with('rank')->orderBy('name')->get();
+        // FIX: 'rankRelation' laden
+        $allStaff = User::with('rankRelation')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
         
         $report->load(['attendingStaff', 'fines']); 
@@ -161,7 +154,6 @@ class ReportController extends Controller
         $report->update($validatedData);
         $report->attendingStaff()->sync($request->input('attending_staff', []));
         
-        // Fines synchronisieren mit Bemerkung
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {

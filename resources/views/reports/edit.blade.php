@@ -93,7 +93,6 @@
                             </div>
                         </div>
 
-                        <!-- Dynamische Liste mit vorbefüllten Werten -->
                         <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                             <table class="table table-sm table-striped" id="selected-fines-table">
                                 <thead>
@@ -111,7 +110,6 @@
                                                 <input type="hidden" name="fines[{{ $assignedFine->id }}][id]" value="{{ $assignedFine->id }}">
                                             </td>
                                             <td>
-                                                <!-- Hier nutzen wir den Pivot-Wert -->
                                                 <input type="text" name="fines[{{ $assignedFine->id }}][remark]" class="form-control form-control-sm" value="{{ $assignedFine->pivot->remark }}">
                                             </td>
                                             <td>
@@ -134,8 +132,9 @@
                                     $selectedStaffIds = $report->attendingStaff->pluck('id')->toArray();
                                 @endphp
                                 @foreach($allStaff as $staff)
+                                    <!-- FIX: rankRelation nutzen -->
                                     <option value="{{ $staff->id }}" {{ in_array($staff->id, $selectedStaffIds) ? 'selected' : '' }}>
-                                        {{ optional($staff->rank)->label ?? '??' }} {{ $staff->name }}
+                                        {{ optional($staff->rankRelation)->label ?? '??' }} {{ $staff->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -188,7 +187,6 @@
                 }
             });
 
-            // Gleiche JS Logik wie im Create View
             $('#add-fine-btn').click(function() {
                 const selector = $('#fine-selector');
                 const id = selector.val();

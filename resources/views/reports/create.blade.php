@@ -97,7 +97,6 @@
                                                 <optgroup label="{{ $fine->catalog_section }}">
                                                 @php $currentSection = $fine->catalog_section; @endphp
                                             @endif
-                                            <!-- Wir speichern die Standard-Bemerkung im data-Attribut -->
                                             <option value="{{ $fine->id }}" 
                                                     data-offense="{{ $fine->offense }}" 
                                                     data-amount="{{ $fine->amount }}" 
@@ -114,7 +113,6 @@
                                 </div>
                             </div>
 
-                            <!-- Dynamische Liste -->
                             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                                 <table class="table table-sm table-striped" id="selected-fines-table">
                                     <thead>
@@ -125,7 +123,6 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Hier werden die Rows per JS eingefügt -->
                                     </tbody>
                                 </table>
                             </div>
@@ -136,8 +133,9 @@
                                 <label>Beteiligte Beamte</label>
                                 <select name="attending_staff[]" class="form-control select2" multiple="multiple" style="width: 100%;" data-placeholder="Beamte auswählen...">
                                     @foreach($allStaff as $staff)
+                                        <!-- FIX: rankRelation nutzen -->
                                         <option value="{{ $staff->id }}" {{ Auth::id() == $staff->id ? 'selected' : '' }}>
-                                            {{ optional($staff->rank)->label ?? '??' }} {{ $staff->name }}
+                                            {{ optional($staff->rankRelation)->label ?? '??' }} {{ $staff->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -162,12 +160,10 @@
         const templates = @json($templates);
 
         $(document).ready(function() {
-            // Init Select2
             $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
             $('.select2-citizen').select2({ theme: 'bootstrap4', width: '100%', tags: true, placeholder: "Bürger suchen oder Name eingeben" });
             $('.select2-fines').select2({ theme: 'bootstrap4', width: '100%', placeholder: "Bußgeld auswählen..." });
 
-            // Vorlagen
             $('#template-selector').on('change', function() {
                 const selectedKey = $(this).val();
                 if (selectedKey && templates[selectedKey]) {
@@ -178,27 +174,20 @@
                 }
             });
 
-            // --- Bußgeld Logik ---
             $('#add-fine-btn').click(function() {
                 const selector = $('#fine-selector');
                 const id = selector.val();
-                
                 if (!id) return;
 
-                // Daten aus dem Option-Tag holen
                 const option = selector.find(':selected');
                 const offense = option.data('offense');
-                const remark = option.data('remark') || ''; // Standard Bemerkung
+                const remark = option.data('remark') || ''; 
 
-                // Prüfen ob schon vorhanden
                 if ($(`#row-fine-${id}`).length > 0) {
                     alert('Dieses Bußgeld wurde bereits hinzugefügt.');
                     return;
                 }
 
-                // Neue Zeile einfügen
-                // Wichtig: name="fines[index][id]" und name="fines[index][remark]"
-                // Wir nutzen die ID als Index, um es einfach zu halten
                 const html = `
                     <tr id="row-fine-${id}">
                         <td>
@@ -217,12 +206,9 @@
                 `;
 
                 $('#selected-fines-table tbody').append(html);
-                
-                // Reset Selection
                 selector.val('').trigger('change');
             });
 
-            // Entfernen Button
             $(document).on('click', '.remove-fine-btn', function() {
                 const id = $(this).data('id');
                 $(`#row-fine-${id}`).remove();

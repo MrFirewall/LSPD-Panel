@@ -20,8 +20,7 @@
             <div class="col-12">
                 
                 <!-- Main Report Card -->
-                <div class="invoice p-3 mb-3" style="background-color: transparent;"> <!-- BG transparent für Dark Mode Adaption wenn Card verwendet wird -->
-                    <!-- In AdminLTE ist .invoice meist weiß, im Dark Mode dunkel. Wir nutzen hier die Standardklassen -->
+                <div class="invoice p-3 mb-3" style="background-color: transparent;">
                     
                     <div class="row">
                         <div class="col-12">
@@ -36,7 +35,8 @@
                         <div class="col-sm-4 invoice-col">
                             Verantwortlicher Beamter
                             <address>
-                                <strong>{{ optional($report->user->rank)->label ?? 'Officer' }} {{ $report->user->name }}</strong><br>
+                                <!-- FIX: rankRelation nutzen -->
+                                <strong>{{ optional($report->user->rankRelation)->label ?? 'Officer' }} {{ $report->user->name }}</strong><br>
                                 Dienstnummer: {{ $report->user->id }}
                             </address>
                         </div>
@@ -55,7 +55,7 @@
                             <b>Einsatzort:</b> {{ $report->location }}<br>
                             <b>Beteiligte Einheiten:</b><br>
                             @foreach($report->attendingStaff as $staff)
-                                <span class="badge badge-info">{{ optional($staff->rank)->label }} {{ $staff->name }}</span>
+                                <span class="badge badge-info">{{ optional($staff->rankRelation)->label }} {{ $staff->name }}</span>
                             @endforeach
                         </div>
                     </div>
@@ -63,7 +63,6 @@
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <p class="lead">Vorfallhergang:</p>
-                            <!-- Hintergrund entfernen oder an Dark Mode anpassen -->
                             <div class="border rounded p-3" style="min-height: 150px;">
                                 {!! nl2br(e($report->incident_description)) !!}
                             </div>
@@ -76,7 +75,6 @@
                         </div>
                     </div>
 
-                    <!-- Fines Table -->
                     <div class="row mt-4">
                         <div class="col-12 table-responsive">
                             <p class="lead text-danger"><i class="fas fa-exclamation-triangle"></i> Strafbestand & Bußgelder</p>
@@ -101,7 +99,6 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                <!-- Hier holen wir uns die Bemerkung aus der Pivot Tabelle -->
                                                 @if(!empty($fine->pivot->remark))
                                                     {{ $fine->pivot->remark }}
                                                 @else
