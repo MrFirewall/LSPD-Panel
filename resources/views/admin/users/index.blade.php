@@ -158,9 +158,9 @@
                 { "searchable": false, "targets": "no-search" }
             ],
             // AdminLTE/Bootstrap 4 Style Integration
-            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+            "dom": "<'row'<'col-sm-12 col-md-8'l><'col-sm-12 col-md-4'f>>" +
                    "<'row'<'col-sm-12'tr>>" +
-                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+                   "<'row'<'col-sm-12 col-md-8'i><'col-sm-12 col-md-4'p>>",
             "renderer": "bootstrap"
         });
     });
