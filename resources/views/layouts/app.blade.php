@@ -256,8 +256,20 @@
     </div>
 
     {{-- FOOTER --}}
-    <footer class="main-footer" style="background-color: var(--bg-dark); color: #888; border-top: 1px solid var(--glass-border); font-size: 0.9rem;">        
-        <div class="float-right d-none d-sm-inline">
+    <footer class="main-footer d-flex justify-content-between align-items-center" style="background-color: var(--bg-dark); color: #888; border-top: 1px solid var(--glass-border); font-size: 0.9rem;">        
+        
+        {{-- Links: Credits --}}
+        <div>
+            <i class="fas fa-tools text-secondary mr-1"></i> Zammjebastelt vom <a href="https://ivaro.de" target="_blank" class="font-weight-bold" style="color: #4b6cb7; text-decoration: none;">Herbert Bart</a>
+        </div>
+
+        {{-- Mitte: Copyright --}}
+        <div>
+            <strong>Copyright &copy; {{ date('Y') }} LSPD Panel.</strong>
+        </div>
+
+        {{-- Rechts: Version --}}
+        <div class="d-none d-sm-inline">
             @php
                 // Versucht, den aktuellen Commit-Hash zu holen (nur wenn git vorhanden)
                 try {
@@ -267,16 +279,10 @@
                         $commitHash = 'v1.0'; // Fallback
                     }
                 } catch (\Exception $e) {
-                    $commitHash = 'v2.0';
+                    $commitHash = 'v1.0';
                 }
             @endphp
             Version: <span class="text-monospace" style="color: #666;">{{ $commitHash }}</span>
-        </div>
-        <div class="float-center d-none d-sm-inline">
-            <strong>Copyright &copy; {{ date('Y') }} LSPD Panel.</strong>
-            <span class="ml-2 pl-2 border-left border-secondary">
-                <i class="fas fa-tools text-secondary mr-1"></i> Zammjebastelt vom <a href="https://ivaro.de" target="_blank" class="font-weight-bold" style="color: #4b6cb7; text-decoration: none;">Herbert Bart</a> 🛠️
-            </span>        
         </div>
     </footer>
 </div>
