@@ -183,12 +183,54 @@
                 <button type="button" class="btn btn-secondary rounded-pill px-4" data-dismiss="modal">
                     Abbrechen
                 </button>
-                <button type="button" class="btn btn-success rounded-pill px-4 font-weight-bold" onclick="document.getElementById('exam-form').submit();">
+                {{-- ÄNDERUNG: onclick ruft jetzt eine eigene Funktion auf --}}
+                <button type="button" class="btn btn-success rounded-pill px-4 font-weight-bold" onclick="validateAndSubmit()">
                     Ja, verbindlich abgeben
                 </button>
             </div>
         </div>
     </div>
 </div>
+<script>
+    function validateAndSubmit() {
+        const form = document.getElementById('exam-form');
+        
+        // 1. Prüfen, ob HTML5-Validierung (required Felder) erfüllt ist
+        if (!form.checkValidity()) {
+            // Modal schließen, damit man das Formular sieht
+            $('#submissionModal').modal('hide');
+            
+            // SweetAlert Fehlermeldung
+            Swal.fire({
+                icon: 'warning',
+                title: 'Unvollständig',
+                text: 'Bitte beantworten Sie alle markierten Fragen, bevor Sie die Prüfung einreichen.',
+                confirmButtonText: 'Verstanden'
+            });
 
+            // Optional: Zeigt die Standard-Browser-Bubbles an den fehlenden Feldern an
+            form.reportValidity(); 
+            return;
+        }
+
+        // 2. Wenn alles okay ist, Formular absenden
+        form.submit();
+    }
+</script>
+@if($errors->any())
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Fehler beim Speichern',
+            html: `
+                <ul style="text-align: left;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            `,
+            confirmButtonText: 'Okay'
+        });
+    </script>
+@endif
 @endsection
