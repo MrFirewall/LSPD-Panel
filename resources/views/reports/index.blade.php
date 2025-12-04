@@ -2,7 +2,7 @@
 
 @section('title', 'Einsatzberichte')
 @php
-@dump($report->getRelations())
+@dump($report)
 @endphp
 @section('content')
     <div class="content-header">
