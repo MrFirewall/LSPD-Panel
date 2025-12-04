@@ -74,25 +74,42 @@ class ExamAttemptController extends Controller
                      ->with('secure_url', $secureUrl);
     }
 
-    public function show(ExamAttempt $attempt)
-    {
-        $this->authorize('viewResult', $attempt);
-        
-        // KORREKTUR: Laden Sie die Relationen 'exam.questions.options' 
-        // und 'answers.option' explizit, um die Optionen auf allen Ebenen zu gewährleisten.
-        $attempt->load([
-            'exam.questions.options', // Fügt die Fragen UND deren Optionen hinzu, die im Blade-Loop verwendet werden.
-            'user', 
-            'answers.question', // Die Frage ist bereits durch answers.question.options oben geladen. answers.option ist wichtig für die Optionstexte.
-            'answers.option', // Stellt sicher, dass die gewählte Option geladen ist (falls für andere Logik benötigt).
-            'evaluator'
-        ]);
-        
-        // Wenn Sie nur die Fragen mit Optionen für die Ansicht verwenden, 
-        // ist 'exam.questions.options' der wichtigste Fix.
-        
-        return view('exams.result', compact('attempt'));
-    }
+public function show(ExamAttempt $attempt)
+{
+    $this->authorize('viewResult', $attempt);
+    
+    // Sicherstellen, dass die Optionen ÜBER die Fragen-Relation des Exams geladen werden
+    // UND die Antworten des Users geladen werden.
+    $attempt->load([
+        'exam.questions.options', // Wichtig: Lädt $attempt->exam->questions mit $question->options
+        'user', 
+        'answers.question', 
+        'answers.option', 
+        'evaluator'
+    ]);
+    
+    // --- DEBUG-SCHRITT HIER EINFÜGEN ---
+    // Wir prüfen die geladenen Fragen und deren Optionen:
+    $questionsWithOptions = $attempt->exam->questions->map(function ($question) {
+        return [
+            'id' => $question->id,
+            'type' => $question->type,
+            'question_text' => $question->question_text,
+            'options_count' => $question->options->count(), // Zählt, wie viele Optionen geladen wurden
+            'options_data' => $question->options->pluck('option_text', 'is_correct')->toArray(), // Zeigt die Texte
+            'user_answers' => $attempt->answers->where('question_id', $question->id)->pluck('option_id')
+        ];
+    });
+
+    // Stoppt die Ausführung und zeigt die geladenen Daten im Browser an
+     dd($questionsWithOptions); 
+    // --- ENDE DEBUG-SCHRITT ---
+    
+    // Wenn Sie den Code oben ausführen, können Sie sehen, ob 'options_count' > 0 ist.
+    // Entfernen Sie das dd() nach dem Testen.
+    
+    return view('exams.result', compact('attempt'));
+}
 
     public function update(FinalizeExamRequest $request, ExamAttempt $attempt)
     {
