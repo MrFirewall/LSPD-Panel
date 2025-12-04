@@ -44,8 +44,11 @@ class Report extends Model
     {
         return $this->belongsToMany(User::class, 'report_user');
     }
+    
     public function fines()
-{
-    return $this->belongsToMany(Fine::class, 'fine_report')->withPivot('quantity');
-}
+    {
+        // WICHTIG: 'remark' muss hier stehen, damit es beim sync() gespeichert wird!
+        return $this->belongsToMany(Fine::class, 'fine_report')
+                    ->withPivot('quantity', 'remark');
+    }
 }
