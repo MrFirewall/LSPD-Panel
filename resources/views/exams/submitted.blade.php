@@ -20,7 +20,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 
-                <div class="card card-outline card-success shadow-lg border-0" style="margin-top: -4rem;">
+                <div class="card card-outline card-success shadow-lg border-0">
                     <div class="card-body text-center py-5 px-4">
                         
                         <div class="mb-4">
