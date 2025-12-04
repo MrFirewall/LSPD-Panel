@@ -3,8 +3,8 @@
 @section('title', 'Bußgeldkatalog')
 
 @section('content')
-<!-- Hero Section -->
-<div class="hero-header" style="background: linear-gradient(135deg, #605ca8 0%, #353275 100%);">
+<!-- Hero Section - Akzentfarbe Rot/Gefahr (Danger) -->
+<div class="hero-header" style="background: linear-gradient(135deg, #dc3545 0%, #a81c2d 100%);">
     <div class="container text-center">
         <h1 class="hero-title display-4"><i class="fas fa-clipboard-list mr-3"></i>Bußgeldkatalog</h1>
         <p class="hero-subtitle mt-2">Übersicht aller Verwarnungs- und Bußgelder (BBuG)</p>
@@ -14,15 +14,16 @@
 <div class="content">
     <div class="container">
         
-        <!-- Search Widget -->
+        <!-- Search Widget - Hell abgesetzt für Sichtbarkeit -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
             <div class="col-md-8">
                 <div class="card shadow-lg">
                     <div class="card-body p-2">
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
-                                <span class="input-group-text border-0"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text border-0 bg-transparent"><i class="fas fa-search text-info"></i></span>
                             </div>
+                            <!-- Input-Feld passt sich automatisch an Dark Mode an -->
                             <input type="text" id="catalog-search" class="form-control border-0" placeholder="Was suchen Sie? (z.B. 'Fahren', 'Körperverletzung', 'Drogen')..." autocomplete="off">
                         </div>
                     </div>
@@ -35,16 +36,18 @@
             <div class="col-lg-10">
                 <div id="accordion">
                     @foreach($categories as $section => $fines)
-                        <div class="card card-outline card-purple mb-3 category-card">
+                        <!-- card-purple zu card-danger geändert -->
+                        <div class="card card-outline card-danger mb-3 category-card">
                             <div class="card-header">
                                 <h4 class="card-title w-100">
-                                    <a class="d-block w-100  font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
-                                        <i class="fas fa-folder-open text-purple mr-2"></i> {{ $section }}
-                                        <span class="float-right badge badge-purple badge-pill">{{ count($fines) }} Einträge</span>
+                                    <a class="d-block w-100  font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
+                                        <i class="fas fa-folder-open text-danger mr-2"></i> {{ $section }}
+                                        <!-- badge-purple zu badge-danger geändert -->
+                                        <span class="float-right badge badge-danger badge-pill">{{ count($fines) }} Einträge</span>
                                     </a>
                                 </h4>
                             </div>
-                            <!-- 'show' removed from first element to keep it clean, or logic can be kept -->
+                            
                             <div id="collapse{{ Str::slug($section) }}" class="collapse {{ $loop->first ? 'show' : '' }}" data-parent="#accordion">
                                 <div class="card-body p-0 table-responsive">
                                     <table class="table table-hover table-striped fine-table mb-0">
@@ -61,10 +64,11 @@
                                             @foreach($fines as $fine)
                                                 <tr class="fine-row">
                                                     <td class="pl-4 font-weight-bold">{{ $fine->offense }}</td>
-                                                    <td class="text-danger font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
+                                                    <!-- text-danger zu text-warning für bessere Sichtbarkeit von Geldbeträgen im Dark Mode -->
+                                                    <td class="text-warning font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
                                                     <td class="text-center">
                                                         @if($fine->jail_time > 0)
-                                                            <span class="badge badge-warning ">{{ $fine->jail_time }} HE</span>
+                                                            <span class="badge badge-danger ">{{ $fine->jail_time }} HE</span>
                                                         @else
                                                             <span class="text-muted small">-</span>
                                                         @endif
@@ -76,7 +80,8 @@
                                                             <span class="text-muted small">-</span>
                                                         @endif
                                                     </td>
-                                                    <td class="text-muted small">
+                                                    <!-- text-light, um sicherzustellen, dass die Hinweise gut sichtbar sind -->
+                                                    <td class="text-light small">
                                                         {{ $fine->remark ?: '-' }}
                                                     </td>
                                                 </tr>

@@ -13,16 +13,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
     
     <style>
-        /* Custom Public Styles */
+        /* Dark Mode Custom Public Styles */
         .public-wrapper {
-            background-color: #f4f6f9;
+            /* Hintergrund wird automatisch von AdminLTE Dark Mode gesetzt (#343a40) */
+            background-color: transparent !important; 
         }
+        /* Hero Header - Für mehr Kontrast im Dark Mode */
         .hero-header {
-            background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
+            /* Dunkler, kontrastreicher Blue-Gradient */
+            background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); 
             color: white;
             padding: 4rem 0;
             margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            /* Dezenter Schatten im Dark Mode */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
         }
         .hero-title {
             font-weight: 700;
@@ -30,16 +34,22 @@
         }
         .hero-subtitle {
             font-weight: 300;
-            opacity: 0.8;
+            opacity: 0.9; 
             font-size: 1.2rem;
         }
         .content-container {
-            max-width: 1140px; /* Standard Bootstrap Container */
+            max-width: 1140px;
             margin: 0 auto;
         }
         .card {
             border: none;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
+            /* Kartenschatten im Dark Mode dezenter */
+            box-shadow: 0 0 10px rgba(0,0,0,0.4); 
+            /* Hintergrundfarbe wird durch AdminLTE dark-mode gesetzt */
+        }
+        /* Akzentfarbe für den Universitäts-Icon im Dark Mode */
+        .navbar-brand .text-navy {
+            color: #42a5f5 !important; /* Helles Blau */
         }
     </style>
     @stack('styles')
@@ -47,8 +57,8 @@
 <body class="hold-transition layout-top-nav dark-mode">
 <div class="wrapper">
 
-  <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand-md shadow-sm">
+  <!-- Navbar - explizit 'navbar-dark' für besseren Kontrast im Dark Mode -->
+  <nav class="main-header navbar navbar-expand-md navbar-dark shadow">
     <div class="container">
       <a href="{{ url('/') }}" class="navbar-brand">
         <!-- Logo hier einfügen falls vorhanden -->
@@ -76,13 +86,14 @@
       <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
         @auth
             <li class="nav-item">
-                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-primary">
+                <!-- btn-outline-info für helleren Kontrast im Dark Mode -->
+                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-info">
                     <i class="fas fa-user-shield mr-1"></i> Zum Dienst-Dashboard
                 </a>
             </li>
         @else
             <li class="nav-item">
-                <a href="{{ route('login') }}" class="nav-link">Login</a>
+                <a href="{{ route('login') }}" class="nav-link btn btn-sm btn-outline-primary px-3 py-1">Login</a>
             </li>
         @endauth
       </ul>
@@ -102,7 +113,7 @@
         <div class="float-right d-none d-sm-inline">
             Offizielles Dokument
         </div>
-        <strong>Copyright &copy; {{ date('Y') }} <a href="#">Justizbehörde Hamburg</a>.</strong> Alle Rechte vorbehalten.
+        <strong>Copyright &copy; {{ date('Y') }} <a href="#" class="text-primary">Justizbehörde Hamburg</a>.</strong> Alle Rechte vorbehalten.
     </div>
   </footer>
 </div>

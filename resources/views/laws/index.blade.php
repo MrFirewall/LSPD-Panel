@@ -17,18 +17,18 @@
         
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                <!-- Navigation Tabs styled as Pills -->
-                <div class="card card-outline card-navy mb-4">
+                <!-- Navigation Tabs styled as Pills, Akzentfarbe: Info (helles Blau) für guten Kontrast -->
+                <div class="card card-outline card-info mb-4">
                     <div class="card-header p-2">
                         <ul class="nav nav-pills nav-fill" id="law-tabs" role="tablist">
                             @foreach($laws as $book => $entries)
                                 <li class="nav-item">
                                     <a class="nav-link {{ $loop->first ? 'active' : '' }}" 
-                                       id="tab-{{ Str::slug($book) }}" 
-                                       data-toggle="pill" 
-                                       href="#content-{{ Str::slug($book) }}" 
-                                       role="tab">
-                                        <i class="fas fa-book-open mr-2"></i> {{ $book }}
+                                        id="tab-{{ Str::slug($book) }}" 
+                                        data-toggle="pill" 
+                                        href="#content-{{ Str::slug($book) }}" 
+                                        role="tab">
+                                         <i class="fas fa-book-open mr-2 text-info"></i> {{ $book }}
                                     </a>
                                 </li>
                             @endforeach
@@ -46,15 +46,16 @@
                             <!-- Timeline Style for Laws -->
                             <div class="timeline">
                                 <div class="time-label">
-                                    <span class="bg-navy">{{ $book }}</span>
+                                    <span class="bg-info">{{ $book }}</span>
                                 </div>
 
                                 @foreach($entries as $law)
                                     <div>
-                                        <i class="fas fa-paragraph bg-gray"></i>
+                                        <!-- bg-secondary für Sichtbarkeit des Icons im Dark Mode -->
+                                        <i class="fas fa-paragraph bg-secondary"></i>
                                         <div class="timeline-item shadow-sm">
                                             <h3 class="timeline-header border-bottom-0" style="font-size: 1.1rem; font-weight: 600;">
-                                                <span class="text-navy mr-2">{{ $law->paragraph }}</span> {{ $law->title }}
+                                                <span class="text-info mr-2">{{ $law->paragraph }}</span> {{ $law->title }}
                                             </h3>
                                             <div class="timeline-body text-justify" style="font-size: 1.05rem; line-height: 1.6;">
                                                 {!! nl2br(e($law->content)) !!}
@@ -64,7 +65,7 @@
                                 @endforeach
                                 
                                 <div>
-                                    <i class="fas fa-gavel bg-navy"></i>
+                                    <i class="fas fa-gavel bg-info"></i>
                                 </div>
                             </div>
 
