@@ -4,8 +4,8 @@
 
 @section('content')
 
-{{-- 1. PROFILE HERO HEADER --}}
-<div class="content-header" style="padding-bottom: 6rem; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); position: relative; margin-bottom: -4rem !important; border-radius: 0 0 20px 20px;">
+{{-- 1. PROFILE HERO HEADER (Ohne Overlap-Tricks) --}}
+<div class="content-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col-md-8">
@@ -15,7 +15,7 @@
                 </p>
             </div>
             <div class="col-md-4 text-right">
-                <span class="badge badge-light badge-pill px-3 py-2" style="font-size: 1rem;">
+                <span class="badge badge-light badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     {{ $user->rankRelation->label ?? 'Mitarbeiter' }}
                 </span>
             </div>
@@ -24,25 +24,25 @@
 </div>
 
 {{-- 2. MAIN CONTENT --}}
-<section class="content" style="padding-top: 20px;">
+<section class="content">
     <div class="container-fluid">
         <div class="row">
             
             {{-- LINKE SPALTE: Profilbild & Stammdaten --}}
             <div class="col-md-3">
                 
-                {{-- Profilkarte (hochgeschoben in den Header) --}}
-                <div class="card card-outline card-primary shadow-lg" style="margin-top: -50px;">
+                {{-- Profilkarte --}}
+                <div class="card card-outline card-primary shadow-lg">
                     <div class="card-body box-profile text-center">
                         <div class="text-center mb-3">
                             <img class="profile-user-img img-fluid img-circle elevation-2"
                                  src="{{ $user->avatar }}"
                                  alt="Profilbild"
-                                 style="width: 140px; height: 140px; object-fit: cover; border: 4px solid #2d3748;">
+                                 style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #2d3748;">
                         </div>
 
                         <h3 class="profile-username text-center font-weight-bold">{{ $user->name }}</h3>
-                        <p class="text-muted text-center mb-3">
+                        <p class="text-muted text-center mb-4">
                             @forelse($user->getRoleNames() as $role)
                                 <span class="badge badge-info">{{ $role }}</span>
                             @empty
