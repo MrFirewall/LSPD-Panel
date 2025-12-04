@@ -110,6 +110,8 @@
                                                     <span class="badge badge-info px-2 py-1"><i class="fas fa-spinner fa-spin mr-1"></i> In Arbeit</span>
                                                 @elseif ($attempt->status === 'submitted')
                                                     <span class="badge badge-warning px-2 py-1"><i class="fas fa-hourglass-half mr-1"></i> Eingereicht</span>
+                                                @elseif ($attempt->status === 'new')
+                                                    <span class="badge badge-primary px-2 py-1"><i class="fas fa-hourglass-half mr-1"></i> Anmeldung</span>
                                                 @elseif ($attempt->status === 'evaluated')
                                                     @php $passed = optional($attempt->exam)->pass_mark !== null && $attempt->score >= $attempt->exam->pass_mark; @endphp
                                                     @if($passed)
