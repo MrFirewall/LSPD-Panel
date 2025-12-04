@@ -12,11 +12,11 @@
                 </tr>
             </thead>
             <tbody>
-                @php
+                <!-- @php
                     $assignedModules = $trainingModules->filter(function($module) {
                         return !is_null($module->pivot->assigned_by_user_id);
                     });
-                @endphp
+                @endphp -->
 
                 @forelse($assignedModules as $module)
                 <tr>
