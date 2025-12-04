@@ -141,33 +141,34 @@
 
                         @if($canEditUser)
                         {{-- 1. RÄNGE (Radio Buttons - Single Select) --}}
-                        @if (!empty($categorizedRoles['Ranks']))
-                            <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
-                            <div class="form-group">
-                                @foreach($categorizedRoles['Ranks'] as $role)
-                                    <div class="icheck-primary mb-2"> {{-- mb-2 für Abstand untereinander --}}
-                                        <input type="radio" 
-                                               name="roles[]" 
-                                               value="{{ $role->name }}" 
-                                               id="rank_{{ $role->id }}" 
-                                               {{-- Prüft, ob dieser Rang im Array der User-Rollen ist --}}
-                                               @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
-                                        <label for="rank_{{ $role->id }}" class="font-weight-normal">
-                                            {{ $role->label }}
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            {{-- FALLBACK: Wenn keine Ränge verfügbar sind (weil gefiltert oder leer) --}}
-                            <div class="callout callout-warning mt-3 shadow-sm">
-                                <h6 class="text-warning">
-                                    <i class="fas fa-lock mr-1"></i> Keine Ränge verfügbar
-                                </h6>
-                                <p class="small text-muted mb-0">
-                                    Du hast keine Berechtigung, Ränge in dieser Kategorie zu vergeben, oder alle verfügbaren Ränge sind höher als dein eigener.
-                                </p>
-                            </div>
+                            @if (!empty($categorizedRoles['Ranks']))
+                                <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
+                                <div class="form-group">
+                                    @foreach($categorizedRoles['Ranks'] as $role)
+                                        <div class="icheck-primary mb-2"> {{-- mb-2 für Abstand untereinander --}}
+                                            <input type="radio" 
+                                                name="roles[]" 
+                                                value="{{ $role->name }}" 
+                                                id="rank_{{ $role->id }}" 
+                                                {{-- Prüft, ob dieser Rang im Array der User-Rollen ist --}}
+                                                @if(in_array($role->name, old('roles', $user->getRoleNames()->toArray()))) checked @endif>
+                                            <label for="rank_{{ $role->id }}" class="font-weight-normal">
+                                                {{ $role->label }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                {{-- FALLBACK: Wenn keine Ränge verfügbar sind (weil gefiltert oder leer) --}}
+                                <div class="callout callout-warning mt-3 shadow-sm">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-lock mr-1"></i> Keine Ränge verfügbar
+                                    </h6>
+                                    <p class="small text-muted mb-0">
+                                        Du hast keine Berechtigung, Ränge in dieser Kategorie zu vergeben, oder alle verfügbaren Ränge sind höher als dein eigener.
+                                    </p>
+                                </div>
+                            @endif
                         @endif
                         {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
