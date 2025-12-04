@@ -175,7 +175,7 @@
                 <p class="mb-0 text-muted" style="font-size: 1.1rem;">
                     Sind Sie sicher, dass Sie Ihre Antworten jetzt einreichen möchten?
                 </p>
-                <p class="small text-danger mt-2">
+                <p class="text-danger font-weight-bold mt-2">
                     <i class="fas fa-exclamation-triangle mr-1"></i> Nach dem Absenden können keine Änderungen mehr vorgenommen werden.
                 </p>
             </div>
