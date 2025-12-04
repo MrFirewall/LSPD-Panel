@@ -53,39 +53,41 @@ class UserController extends Controller
 
         // 1. Lade Konfigurationen aus der DB
         $ranks = Rank::pluck('level', 'name');
-        $departments = Department::with('roles')->get(); // Lädt Abteilungen & deren Rollen
+        $departments = Department::with('roles')->get(); 
 
-        // Ausnahme: 'chief' (oder Super-Admin) dürfen immer alle Rollen verwalten (außer Super-Admin).
+        // Ausnahme: 'chief' (oder Super-Admin) dürfen immer alle Rollen verwalten.
         if ($admin->hasAnyRole('chief', $this->superAdminRole)) {
             return Role::where('name', '!=', $this->superAdminRole)->get();
         }
 
-        // $admin->rank ist ein STRING (z.B. 'captain'), basierend auf deiner store/update Logik
+        // Ermittle Admin Level
         $adminRankLevel = $ranks->get($admin->rank, 0);
         $adminRoleNames = $admin->getRoleNames();
 
-        $allRoles = Role::where('name', '!=', $this->superAdminRole)->get(); // Super-Admin ausschließen
+        $allRoles = Role::where('name', '!=', $this->superAdminRole)->get(); 
         $managableRoles = collect();
 
         foreach ($allRoles as $role) {
-            // 1. Rang-Rollen prüfen
+            // 1. RANG-ROLLEN PRÜFEN
             if ($ranks->has($role->name)) {
+                // WICHTIG: Nur Ränge, die ECHT KLEINER sind als das eigene Level
+                // Wenn Admin Level 14 ist, darf er Level 13 und tiefer sehen/vergeben.
                 if ($ranks[$role->name] < $adminRankLevel) {
                     $managableRoles->push($role);
                 }
                 continue; 
             }
 
-            // 2. Abteilungs-Rollen prüfen
+            // 2. ABTEILUNGS-ROLLEN PRÜFEN
             foreach ($departments as $department) {
                 if ($department->roles->contains('name', $role->name)) {
-                    // Ist es die Leitungsrolle?
                     if ($role->name === $department->leitung_role_name) {
+                        // Leitungsrollen nur, wenn Admin hoch genug im Rang ist
                         if ($adminRankLevel >= $department->min_rank_level_to_assign_leitung) {
                             $managableRoles->push($role);
                         }
                     } else {
-                        // Es ist eine "normale" Abteilungsrolle
+                        // Normale Rollen, wenn Admin Teil der Abteilungsleitung ist
                         if ($adminRoleNames->contains($department->leitung_role_name)) {
                             $managableRoles->push($role);
                         }
@@ -405,6 +407,27 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $adminUser = Auth::user();
+
+        // --- SCHRITT 0: HIERARCHIE-SCHUTZ (NEU) ---
+        // Prüfen, ob der Admin überhaupt berechtigt ist, DIESEN User anzufassen.
+        // Ein Level 14 darf keinen Level 14 oder Level 15 bearbeiten.
+        
+        if (!$adminUser->hasRole($this->superAdminRole) && $adminUser->rank !== 'chief') {
+            $ranks = Rank::pluck('level', 'name');
+            
+            // Level ermitteln
+            $adminLevel = $ranks->get($adminUser->rank, 0);
+            $targetUserLevel = $ranks->get($user->rank, 0);
+
+            // Wenn Ziel-User >= Admin Level -> Abbruch!
+            if ($targetUserLevel >= $adminLevel) {
+                return redirect()->back()
+                    ->with('error', 'Zugriff verweigert: Du kannst keine Mitarbeiter bearbeiten, die im Rang gleich oder höher stehen als du.');
+            }
+        }
+        // --- ENDE SCHUTZ ---
+
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'roles' => 'sometimes|array',
@@ -422,28 +445,29 @@ class UserController extends Controller
             'modules.*' => 'exists:training_modules,id',
         ]);
 
-        $adminUser = Auth::user(); 
-
         // --- START: ROLLEN-LOGIK ---
         $managableRoleNames = $this->getManagableRoles()->pluck('name')->toArray();
         $originalRoleNames = $user->getRoleNames()->toArray();
         $submittedRoleNames = $request->input('roles', []);
 
+        // Prüfen, ob der Admin versucht, Rollen zu vergeben, die er nicht darf
         $newlyAddedRoles = array_diff($submittedRoleNames, $originalRoleNames);
         foreach ($newlyAddedRoles as $addedRole) {
             if (!in_array($addedRole, $managableRoleNames)) {
                 return redirect()->back()
-                                ->withErrors(['roles' => 'Sie haben nicht die Berechtigung, die Rolle "' . $addedRole . '" zuzuweisen.'])
-                                ->withInput();
+                    ->withErrors(['roles' => 'Du hast nicht die Berechtigung, die Rolle "' . $addedRole . '" zuzuweisen.'])
+                    ->withInput();
             }
         }
         
+        // Rollen behalten, die der Admin nicht verwalten darf (z.B. wenn ein Admin eine Abteilung nicht leitet,
+        // darf er die Abteilungsrolle des Users nicht entfernen)
         $unmanagableRolesToKeep = array_diff($originalRoleNames, $managableRoleNames);
         $finalRolesToSync = array_unique(array_merge($submittedRoleNames, $unmanagableRolesToKeep));
         // --- ENDE: ROLLEN-LOGIK ---
 
 
-        // --- START: DETAILLIERTES LOGGING (Setup) ---
+        // --- START: LOGGING SETUP ---
         $userBeforeUpdate = clone $user;
         $userBeforeUpdate->load('trainingModules', 'permissions');
         
@@ -453,25 +477,22 @@ class UserController extends Controller
             'personal_number' => $userBeforeUpdate->personal_number,
             'employee_id' => $userBeforeUpdate->employee_id,
             'email' => $userBeforeUpdate->email,
-            // KORREKTUR: Carbon::parse() verwenden, da $birthday ein String sein kann
             'birthday' => $userBeforeUpdate->birthday ? Carbon::parse($userBeforeUpdate->birthday)->format('Y-m-d') : null,
             'discord_name' => $userBeforeUpdate->discord_name,
             'forum_name' => $userBeforeUpdate->forum_name,
             'special_functions' => $userBeforeUpdate->special_functions,
-            // KORREKTUR: Carbon::parse() zur Sicherheit auch hier anwenden
             'hire_date' => $userBeforeUpdate->hire_date ? Carbon::parse($userBeforeUpdate->hire_date)->format('Y-m-d') : null,
             'second_faction' => $userBeforeUpdate->second_faction,
             'rank' => $userBeforeUpdate->rank,
         ];
         
         $oldModuleIds = $userBeforeUpdate->trainingModules->pluck('id')->toArray();
-        $oldRoleNames = $originalRoleNames; // Bereits oben geholt
+        $oldRoleNames = $originalRoleNames;
         $oldPermissionNames = $userBeforeUpdate->getPermissionNames()->toArray();
-        // --- ENDE: DETAILLIERTES LOGGING (Setup) ---
+        // --- ENDE: LOGGING SETUP ---
 
 
-        // --- START: UPDATE-LOGIK ---
-
+        // --- UPDATE DURCHFÜHREN ---
         $validatedData['second_faction'] = $request->has('second_faction') ? 'Ja' : 'Nein';
         $newStatus = $validatedData['status']; 
 
@@ -483,7 +504,7 @@ class UserController extends Controller
             }
         }
 
-        // --- RANG-LOGIK ---
+        // Rang berechnen
         $newRank = 'praktikant'; 
         $highestLevel = 0;
         $rankLevels = Rank::whereIn('name', $finalRolesToSync)->pluck('level', 'name');
@@ -495,18 +516,12 @@ class UserController extends Controller
             }
         }
         $validatedData['rank'] = $newRank;
-        // --- ENDE RANG-LOGIK ---
 
-        // Hole neue Werte für den Vergleich
+        // Daten normalisieren
         $newValues = $validatedData;
-        if (isset($newValues['birthday'])) {
-            $newValues['birthday'] = $newValues['birthday'] ? Carbon::parse($newValues['birthday'])->format('Y-m-d') : null;
-        }
-        if (isset($newValues['hire_date'])) {
-             $newValues['hire_date'] = $newValues['hire_date'] ? Carbon::parse($newValues['hire_date'])->format('Y-m-d') : null;
-        }
+        if (isset($newValues['birthday'])) $newValues['birthday'] = $newValues['birthday'] ? Carbon::parse($newValues['birthday'])->format('Y-m-d') : null;
+        if (isset($newValues['hire_date'])) $newValues['hire_date'] = $newValues['hire_date'] ? Carbon::parse($newValues['hire_date'])->format('Y-m-d') : null;
 
-        // Aktionen durchführen
         $submittedPermissionNames = $request->permissions ?? [];
         $user->syncRoles($finalRolesToSync); 
         $user->syncPermissions($submittedPermissionNames);
@@ -515,15 +530,13 @@ class UserController extends Controller
         $validatedData['last_edited_by'] = $adminUser->name;
         $user->update($validatedData);
 
-        // --- Module synchronisieren ---
+        // Module Sync
         $submittedModuleIds = $request->input('modules', []);
         $modulesToSync = [];
-        $adminName = $adminUser->name;
         $timestamp = now();
 
         foreach ($submittedModuleIds as $moduleId) {
             $existingPivot = $userBeforeUpdate->trainingModules->firstWhere('id', $moduleId)?->pivot;
-
             if ($existingPivot) {
                 $modulesToSync[$moduleId] = [
                     'assigned_by_user_id' => $existingPivot->assigned_by_user_id ?? $adminUser->id,
@@ -535,22 +548,17 @@ class UserController extends Controller
                 $modulesToSync[$moduleId] = [
                     'assigned_by_user_id' => $adminUser->id,
                     'completed_at' => $timestamp->toDateString(),
-                    'notes' => "Manuell zugewiesen von {$adminName} am " . $timestamp->format('d.m.Y H:i')
+                    'notes' => "Manuell zugewiesen von {$adminUser->name} am " . $timestamp->format('d.m.Y H:i')
                 ];
             }
         }
         $user->trainingModules()->sync($modulesToSync);
-        // --- Ende Modul-Synchronisation ---
-
-        // --- ENDE: UPDATE-LOGIK ---
 
 
-        // --- START: DETAILLIERTES LOGGING (Generation) ---
+        // --- LOGGING GENERIEREN ---
         $user->load(['roles', 'trainingModules']);
-        
         $changes = [];
 
-        // 1. Vergleiche Stammdaten
         $fieldsToCompare = [
             'name' => 'Name', 'status' => 'Status', 'personal_number' => 'Dienstnummer',
             'employee_id' => 'Mitarbeiter-ID', 'email' => 'E-Mail', 'birthday' => 'Geburtstag',
@@ -561,7 +569,8 @@ class UserController extends Controller
         foreach ($fieldsToCompare as $key => $label) {
             $newValue = $newValues[$key] ?? null; 
             $oldValue = $oldValues[$key] ?? null;
-
+            
+            // Fix für Hire Date Vergleich bei Reaktivierung
             if ($key === 'hire_date' && in_array($oldValues['status'], $inactiveStatuses) && in_array($newStatus, $activeStatuses) && empty($request->hire_date)) {
                  $newValue = $validatedData['hire_date']->format('Y-m-d');
             }
@@ -571,89 +580,64 @@ class UserController extends Controller
             }
         }
 
-        // 2. Vergleiche Rollen
         $addedRoles = array_diff($finalRolesToSync, $oldRoleNames);
         $removedRoles = array_diff($oldRoleNames, $finalRolesToSync);
-        if (!empty($addedRoles)) {
-            $changes[] = "Rollen hinzugefügt: " . implode(', ', $addedRoles);
-        }
+        if (!empty($addedRoles)) $changes[] = "Rollen hinzugefügt: " . implode(', ', $addedRoles);
         if (!empty($removedRoles)) {
             $removedRoles = array_filter($removedRoles, fn($role) => $role !== $this->superAdminRole);
-            if(!empty($removedRoles)) {
-                $changes[] = "Rollen entfernt: " . implode(', ', $removedRoles);
-            }
+            if(!empty($removedRoles)) $changes[] = "Rollen entfernt: " . implode(', ', $removedRoles);
         }
 
-        // 3. Vergleiche Berechtigungen
         $addedPermissions = array_diff($submittedPermissionNames, $oldPermissionNames);
         $removedPermissions = array_diff($oldPermissionNames, $submittedPermissionNames);
-        if (!empty($addedPermissions)) {
-            $changes[] = "Berechtigungen hinzugefügt: " . implode(', ', $addedPermissions);
-        }
-        if (!empty($removedPermissions)) {
-            $changes[] = "Berechtigungen entfernt: " . implode(', ', $removedPermissions);
-        }
+        if (!empty($addedPermissions)) $changes[] = "Berechtigungen hinzugefügt: " . implode(', ', $addedPermissions);
+        if (!empty($removedPermissions)) $changes[] = "Berechtigungen entfernt: " . implode(', ', $removedPermissions);
 
-        // 4. Vergleiche Module
         $addedModules = array_diff($submittedModuleIds, $oldModuleIds); 
         $removedModules = array_diff($oldModuleIds, $submittedModuleIds);
         if (!empty($addedModules)) {
-            $addedModuleNames = TrainingModule::whereIn('id', $addedModules)->pluck('name')->implode(', ');
-            $changes[] = "Module manuell hinzugefügt/bestätigt: {$addedModuleNames}";
+            $names = TrainingModule::whereIn('id', $addedModules)->pluck('name')->implode(', ');
+            $changes[] = "Module hinzugefügt: {$names}";
         }
         if (!empty($removedModules)) {
-            $removedModuleNames = TrainingModule::whereIn('id', $removedModules)->pluck('name')->implode(', ');
-            $changes[] = "Module entfernt: {$removedModuleNames}";
+            $names = TrainingModule::whereIn('id', $removedModules)->pluck('name')->implode(', ');
+            $changes[] = "Module entfernt: {$names}";
         }
 
-        // 5. Log-Beschreibung erstellen
         $description = "Benutzerprofil von '{$user->name}' ({$user->id}) aktualisiert. ";
-        if (empty($changes)) {
-            $description .= "Keine Änderungen vorgenommen.";
-        } else {
-            $description .= "Änderungen: " . implode('. ', $changes) . ".";
-        }
+        $description .= empty($changes) ? "Keine Änderungen." : "Änderungen: " . implode('. ', $changes) . ".";
 
         ActivityLog::create([
              'user_id' => Auth::id(),
              'log_type' => 'USER',
              'action' => 'UPDATED',
-                 'target_id' => $user->id,
-                 'description' => $description,
-              ]);
+             'target_id' => $user->id,
+             'description' => $description,
+        ]);
         
-        // --- ENDE: DETAILLIERTES LOGGING (Generation) ---
-
+        // --- HIERARCHIE-LOGIK UND DISCORD (NUR WENN RANG SICH ÄNDERT) ---
         if ($oldValues['rank'] !== $newRank) {
-            
-            // 1. Wir laden die Rank-Informationen aus der 'ranks' Tabelle
-            // Wir brauchen Level UND Label
             $rankInfo = Rank::whereIn('name', [$oldValues['rank'], $newRank])->get()->keyBy('name');
 
             $currentRankData = $rankInfo->get($newRank);
             $oldRankData = $rankInfo->get($oldValues['rank']);
 
-            // Level ermitteln (Fallback auf 0 falls nicht gefunden)
             $currentRankLevel = $currentRankData ? $currentRankData->level : 0;
             $oldRankLevel = $oldRankData ? $oldRankData->level : 0;
 
-            // Labels ermitteln (Fallback auf technischen Namen)
             $newRankLabel = $currentRankData ? $currentRankData->label : ucfirst($newRank);
             $oldRankLabel = $oldRankData ? $oldRankData->label : ucfirst($oldValues['rank']);
 
-            // Entscheidung: Beförderung oder Degradierung?
             $recordType = $currentRankLevel > $oldRankLevel ? 'Beförderung' : ($currentRankLevel < $oldRankLevel ? 'Degradierung' : 'Rangänderung');
             
-            // 2. Service Record Eintrag
             ServiceRecord::create([
                 'user_id' => $user->id,
                 'author_id' => Auth::id(),
                 'type' => $recordType,
-                // Hier nutzen wir jetzt die schönen Labels aus der Ranks-Tabelle
                 'content' => "Rang geändert von '{$oldRankLabel}' zu '{$newRankLabel}'."
             ]);
 
-            // --- DISCORD LOGIK START ---
+            // Discord
             $discordActionMap = [
                 'Beförderung'  => 'rank.promotion',
                 'Degradierung' => 'rank.demotion',
@@ -663,34 +647,18 @@ class UserController extends Controller
                 $actionKey = $discordActionMap[$recordType];
                 $color = ($recordType === 'Beförderung') ? 5763719 : 15548997; 
 
-                $embeds = [
-                    [
-                        'title' => "📢 Neue " . $recordType,
-                        'description' => "Der Benutzer **{$user->name}** hat einen neuen Rang erhalten.",
-                        'color' => $color,
-                        'fields' => [
-                            [
-                                'name' => 'Alte Position', 
-                                'value' => $oldRankLabel, // <--- Schönes Label aus Ranks
-                                'inline' => true
-                            ],
-                            [
-                                'name' => 'Neue Position', 
-                                'value' => $newRankLabel, // <--- Schönes Label aus Ranks
-                                'inline' => true
-                            ],
-                            [
-                                'name' => 'Ausgeführt von', 
-                                'value' => Auth::check() ? Auth::user()->name : 'System', 
-                                'inline' => false
-                            ],
-                        ],
-                        'footer' => [
-                            'text' => config('app.name') . ' System Log',
-                        ],
-                        'timestamp' => now()->toIso8601String()
-                    ]
-                ];
+                $embeds = [[
+                    'title' => "📢 Neue " . $recordType,
+                    'description' => "Der Benutzer **{$user->name}** hat einen neuen Rang erhalten.",
+                    'color' => $color,
+                    'fields' => [
+                        ['name' => 'Alte Position', 'value' => $oldRankLabel, 'inline' => true],
+                        ['name' => 'Neue Position', 'value' => $newRankLabel, 'inline' => true],
+                        ['name' => 'Ausgeführt von', 'value' => Auth::user()->name, 'inline' => false],
+                    ],
+                    'footer' => ['text' => config('app.name') . ' System Log'],
+                    'timestamp' => now()->toIso8601String()
+                ]];
 
                 try {
                     (new \App\Services\DiscordService())->send($actionKey, "", $embeds);
@@ -698,28 +666,19 @@ class UserController extends Controller
                     \Log::error("Discord Webhook Fehler: " . $e->getMessage());
                 }
             }
-            // --- DISCORD LOGIK ENDE ---
         }
 
-        // Event auslösen
         PotentiallyNotifiableActionOccurred::dispatch(
-            'Admin\UserController@update',
-            $user,
-            $user,
-            Auth::user(),
+            'Admin\UserController@update', $user, $user, Auth::user(),
             [
-                // KORREKTUR: Die formatierte Beschreibung wird nun auch an das Event übergeben.
                 'description' => $description, 
-
-                // Die Rohdaten bleiben für eine detaillierte Verarbeitung erhalten
                 'old_values' => $oldValues, 'added_roles' => $addedRoles, 'removed_roles' => $removedRoles,
                 'added_modules' => $addedModules, 'removed_modules' => $removedModules,
                 'added_permissions' => $addedPermissions, 'removed_permissions' => $removedPermissions
             ]
         );
 
-
-        return redirect()->route('admin.users.index'); // Ohne success
+        return redirect()->route('admin.users.index')->with('success', 'Mitarbeiter erfolgreich aktualisiert.');
     }
 
     public function addRecord(Request $request, User $user)
