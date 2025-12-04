@@ -126,8 +126,8 @@
                                                     <span class="text-muted">-</span>
                                                 @endif
                                             </td>
-                                            <td class="text-xs text-muted">{{ $attempt->started_at ? $attempt->started_at->format('d.m.Y H:i') : '-' }}</td>
-                                            <td class="text-xs text-muted">{{ $attempt->completed_at ? $attempt->completed_at->format('d.m.Y H:i') : '-' }}</td>
+                                            <td class="text-muted">{{ $attempt->started_at ? $attempt->started_at->format('d.m.Y H:i') : '-' }}</td>
+                                            <td class="text-muted">{{ $attempt->completed_at ? $attempt->completed_at->format('d.m.Y H:i') : '-' }}</td>
                                             <td class="text-right pr-4">
                                                 <div class="btn-group btn-group-sm">
                                                     {{-- 1. Ansehen --}}
