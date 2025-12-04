@@ -7,32 +7,26 @@ use App\Models\ActivityLog;
 use App\Models\Citizen;
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Fine; // WICHTIG: Das Model importieren
+use App\Models\Fine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
-    /**
-     * Verknüpft den Controller mit der ReportPolicy.
-     */
     public function __construct()
     {
         $this->authorizeResource(Report::class, 'report');
     }
 
-    /**
-     * Zeigt eine Liste aller Einsatzberichte an, inkl. Suchfunktion.
-     */
     public function index(Request $request)
     {
-        $query = Report::with('user')->latest();
+        // Wir laden 'user.rank' mit, um das Label anzuzeigen
+        $query = Report::with(['user.rank'])->latest();
 
         if (Auth::user()->cannot('viewAny', Report::class)) {
              $query->where('user_id', Auth::id());
         }
 
-        // Suchfunktion
         if ($request->filled('search')) {
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
@@ -49,24 +43,17 @@ class ReportController extends Controller
         return view('reports.index', compact('reports'));
     }
 
-    /**
-     * Zeigt das Formular zum Erstellen eines neuen Berichts an.
-     */
     public function create()
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        $allStaff = User::orderBy('name')->get();
-
-        // FIX: Hier laden wir die Bußgelder für das Dropdown
+        // Hier auch Rang laden für die Anzeige im Dropdown
+        $allStaff = User::with('rank')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
 
         return view('reports.create', compact('templates', 'citizens', 'allStaff', 'fines'));
     }
 
-    /**
-     * Speichert einen neuen Bericht in der Datenbank.
-     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -77,8 +64,10 @@ class ReportController extends Controller
             'actions_taken' => 'required|string',
             'attending_staff' => 'nullable|array',
             'attending_staff.*' => 'exists:users,id',
-            'fines' => 'nullable|array',         // Validierung für Fines
-            'fines.*' => 'exists:fines,id',
+            // Wir erwarten nun ein Array von Bußgeldern mit ID und Bemerkung
+            'fines' => 'nullable|array', 
+            'fines.*.id' => 'exists:fines,id',
+            'fines.*.remark' => 'nullable|string',
         ]);
 
         /** @var User $creator */
@@ -96,18 +85,27 @@ class ReportController extends Controller
             $report->attendingStaff()->attach($request->input('attending_staff'));
         }
 
-        // Fines verknüpfen
+        // Fines verknüpfen mit individueller Bemerkung
         if ($request->has('fines')) {
-            $report->fines()->attach($request->input('fines'));
+            $syncData = [];
+            foreach ($request->input('fines') as $fineData) {
+                // Wir nutzen die ID als Key für sync, und übergeben die Pivot-Daten
+                // Da man theoretisch dasselbe Bußgeld 2x haben könnte, wäre attach() besser, 
+                // aber sync() ist sauberer beim Update. 
+                // Für multiple gleiche Einträge müsste man $report->fines()->attach(...) in Loop nutzen.
+                // Hier gehen wir erstmal von Unique pro Bericht aus oder nutzen die ID als Key.
+                
+                $syncData[$fineData['id']] = ['remark' => $fineData['remark'] ?? ''];
+            }
+            $report->fines()->sync($syncData);
         }
 
-        // Logging
         ActivityLog::create([
             'user_id' => $creator->id,
             'log_type' => 'REPORT',
             'action' => 'CREATED',
             'target_id' => $report->id,
-            'description' => "Einsatzbericht '{$report->title}' erstellt (Patient: {$report->patient_name}).",
+            'description' => "Einsatzbericht '{$report->title}' erstellt.",
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
@@ -120,26 +118,18 @@ class ReportController extends Controller
         return redirect()->route('reports.index');
     }
 
-    /**
-     * Zeigt einen einzelnen Bericht detailliert an.
-     */
     public function show(Report $report)
     {
-        // Fines Relation mitladen für die Ansicht
-        $report->load(['user', 'citizen', 'attendingStaff', 'fines']);
+        // User.rank laden
+        $report->load(['user.rank', 'citizen', 'attendingStaff.rank', 'fines']);
         return view('reports.show', compact('report'));
     }
 
-    /**
-     * Zeigt das Formular zum Bearbeiten eines Berichts an.
-     */
     public function edit(Report $report)
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        $allStaff = User::orderBy('name')->get();
-        
-        // FIX: Auch hier Fines laden
+        $allStaff = User::with('rank')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
         
         $report->load(['attendingStaff', 'fines']); 
@@ -147,9 +137,6 @@ class ReportController extends Controller
         return view('reports.edit', compact('report', 'templates', 'citizens', 'allStaff', 'fines'));
     }
 
-    /**
-     * Aktualisiert einen Bericht in der Datenbank.
-     */
     public function update(Request $request, Report $report)
     {
         $validatedData = $request->validate([
@@ -161,7 +148,8 @@ class ReportController extends Controller
             'attending_staff' => 'nullable|array',
             'attending_staff.*' => 'exists:users,id',
             'fines' => 'nullable|array',
-            'fines.*' => 'exists:fines,id',
+            'fines.*.id' => 'exists:fines,id',
+            'fines.*.remark' => 'nullable|string',
         ]);
 
         /** @var User $editor */
@@ -173,15 +161,23 @@ class ReportController extends Controller
         $report->update($validatedData);
         $report->attendingStaff()->sync($request->input('attending_staff', []));
         
-        // Fines synchronisieren
-        $report->fines()->sync($request->input('fines', []));
+        // Fines synchronisieren mit Bemerkung
+        if ($request->has('fines')) {
+            $syncData = [];
+            foreach ($request->input('fines') as $fineData) {
+                $syncData[$fineData['id']] = ['remark' => $fineData['remark'] ?? ''];
+            }
+            $report->fines()->sync($syncData);
+        } else {
+            $report->fines()->detach();
+        }
 
         ActivityLog::create([
             'user_id' => $editor->id,
             'log_type' => 'REPORT',
             'action' => 'UPDATED',
             'target_id' => $report->id,
-            'description' => "Einsatzbericht '{$report->title}' ({$report->id}) aktualisiert.",
+            'description' => "Einsatzbericht '{$report->title}' aktualisiert.",
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(
@@ -194,12 +190,8 @@ class ReportController extends Controller
         return redirect()->route('reports.index');
     }
 
-    /**
-     * Löscht einen Bericht aus der Datenbank.
-     */
     public function destroy(Report $report)
     {
-        /** @var User $deleter */
         $deleter = Auth::user();
         $reportTitle = $report->title;
         $reportId = $report->id;
@@ -212,7 +204,7 @@ class ReportController extends Controller
             'log_type' => 'REPORT',
             'action' => 'DELETED',
             'target_id' => $reportId,
-            'description' => "Einsatzbericht '{$reportTitle}' ({$reportId}) gelöscht.",
+            'description' => "Einsatzbericht '{$reportTitle}' gelöscht.",
         ]);
 
         PotentiallyNotifiableActionOccurred::dispatch(

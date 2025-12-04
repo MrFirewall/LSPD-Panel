@@ -20,8 +20,9 @@
             <div class="col-12">
                 
                 <!-- Main Report Card -->
-                <div class="invoice p-3 mb-3">
-                    <!-- title row -->
+                <div class="invoice p-3 mb-3" style="background-color: transparent;"> <!-- BG transparent für Dark Mode Adaption wenn Card verwendet wird -->
+                    <!-- In AdminLTE ist .invoice meist weiß, im Dark Mode dunkel. Wir nutzen hier die Standardklassen -->
+                    
                     <div class="row">
                         <div class="col-12">
                             <h4>
@@ -31,14 +32,11 @@
                         </div>
                     </div>
                     
-                    <!-- info row -->
                     <div class="row invoice-info mt-4">
                         <div class="col-sm-4 invoice-col">
                             Verantwortlicher Beamter
                             <address>
-                                <!-- Rang aus DB nutzen -->
-                                <strong>{{ $report->user->rank }} {{ $report->user->name }}</strong><br>
-                                Rang: {{ $report->user->rank }}<br>
+                                <strong>{{ optional($report->user->rank)->label ?? 'Officer' }} {{ $report->user->name }}</strong><br>
                                 Dienstnummer: {{ $report->user->id }}
                             </address>
                         </div>
@@ -57,22 +55,22 @@
                             <b>Einsatzort:</b> {{ $report->location }}<br>
                             <b>Beteiligte Einheiten:</b><br>
                             @foreach($report->attendingStaff as $staff)
-                                <span class="badge badge-info">{{ $staff->rank }} {{ $staff->name }}</span>
+                                <span class="badge badge-info">{{ optional($staff->rank)->label }} {{ $staff->name }}</span>
                             @endforeach
                         </div>
                     </div>
 
-                    <!-- Description Row -->
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <p class="lead">Vorfallhergang:</p>
-                            <div class="text-muted well well-sm shadow-none" style="background: #f8f9fa; padding: 15px; border-radius: 5px; min-height: 150px;">
+                            <!-- Hintergrund entfernen oder an Dark Mode anpassen -->
+                            <div class="border rounded p-3" style="min-height: 150px;">
                                 {!! nl2br(e($report->incident_description)) !!}
                             </div>
                         </div>
                         <div class="col-md-6">
                             <p class="lead">Maßnahmen:</p>
-                            <div class="text-muted well well-sm shadow-none" style="background: #f8f9fa; padding: 15px; border-radius: 5px; min-height: 150px;">
+                            <div class="border rounded p-3" style="min-height: 150px;">
                                 {!! nl2br(e($report->actions_taken)) !!}
                             </div>
                         </div>
@@ -87,7 +85,7 @@
                                     <tr>
                                         <th>Tatbestand</th>
                                         <th>Haftzeit (HE)</th>
-                                        <th>Bemerkung</th>
+                                        <th>Individuelle Bemerkung</th>
                                         <th class="text-right">Betrag</th>
                                     </tr>
                                 </thead>
@@ -102,7 +100,14 @@
                                                     -
                                                 @endif
                                             </td>
-                                            <td><small class="text-muted">{{ $fine->remark }}</small></td>
+                                            <td>
+                                                <!-- Hier holen wir uns die Bemerkung aus der Pivot Tabelle -->
+                                                @if(!empty($fine->pivot->remark))
+                                                    {{ $fine->pivot->remark }}
+                                                @else
+                                                    <span class="text-muted font-italic">- keine -</span>
+                                                @endif
+                                            </td>
                                             <td class="text-right text-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
                                         </tr>
                                     @empty
@@ -116,13 +121,11 @@
                     </div>
 
                     <div class="row">
-                        <!-- accepted payments column -->
                         <div class="col-6">
-                            <p class="text-muted well well-sm shadow-none" style="margin-top: 10px;">
+                            <p class="text-muted small mt-3">
                                 <i class="fas fa-info-circle"></i> Haftzeit-Hinweis: 1 HE entspricht 1 Minute im Bundesgefängnis.
                             </p>
                         </div>
-                        <!-- totals -->
                         <div class="col-6">
                             <div class="table-responsive">
                                 <table class="table">
@@ -139,7 +142,6 @@
                         </div>
                     </div>
 
-                    <!-- buttons -->
                     <div class="row no-print mt-4">
                         <div class="col-12">
                              @can('delete', $report)

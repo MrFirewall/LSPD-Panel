@@ -1,9 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Einsatzberichte')
-@php
-@dump($report)
-@endphp
+
 @section('content')
     <div class="content-header">
         <div class="container-fluid">
@@ -21,8 +19,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Suchformular -->
     <div class="card card-outline card-info">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-search"></i> Berichtsarchiv durchsuchen</h3>
@@ -59,25 +55,23 @@
                                 <td>{{ $report->title }}</td>
                                 <td>{{ $report->patient_name }}</td>
                                 <td>
-                                    <!-- Hier nutzen wir den Rang aus der Datenbank -->
-                                    <span class="badge badge-light">{{ $report->user->rank }}</span> {{ $report->user->name }}
+                                    <!-- Rang Label aus Relation -->
+                                    <span class="badge badge-secondary">{{ optional($report->user->rank)->label ?? 'N/A' }}</span> 
+                                    {{ $report->user->name }}
                                 </td>
                                 <td class="text-right">
-                                    {{-- Policy Check: view --}}
                                     @can('view', $report)
                                         <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-default btn-flat" title="Ansehen">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     @endcan
                                     
-                                    {{-- Policy Check: update --}}
                                     @can('update', $report)
                                         <a href="{{ route('reports.edit', $report) }}" class="btn btn-sm btn-primary btn-flat" title="Bearbeiten">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     @endcan
 
-                                    {{-- Policy Check: delete --}}
                                     @can('delete', $report)
                                         <form action="{{ route('reports.destroy', $report) }}" method="POST" class="d-inline" onsubmit="return confirm('Bist du sicher, dass du diesen Bericht löschen möchtest?')">
                                             @csrf

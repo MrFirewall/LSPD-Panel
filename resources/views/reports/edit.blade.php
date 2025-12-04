@@ -3,7 +3,6 @@
 @section('title', 'Einsatzbericht bearbeiten')
 
 @push('styles')
-    <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
 @endpush
@@ -25,8 +24,7 @@
                 @csrf
                 @method('PUT')
 
-                <!-- VORLAGENAUSWAHL -->
-                <div class="form-group row align-items-center bg-light p-2 rounded">
+                <div class="form-group row align-items-center bg-dark p-2 rounded">
                     <label for="template-selector" class="col-sm-3 col-form-label mb-0">Vorlage anwenden (überschreibt Inhalt)</label>
                     <div class="col-sm-9">
                         <select class="form-control" id="template-selector">
@@ -55,8 +53,6 @@
                                         {{ $citizen->name }}
                                     </option>
                                 @endforeach
-                                
-                                {{-- Fallback: Wenn Name nicht in Bürgerliste, trotzdem als Option hinzufügen --}}
                                 @if (!in_array($report->patient_name, $citizens->pluck('name')->toArray()))
                                      <option value="{{ $report->patient_name }}" selected>{{ $report->patient_name }}</option>
                                 @endif
@@ -71,27 +67,65 @@
 
                     <!-- RECHTE SPALTE -->
                     <div class="col-md-6">
-                         <!-- Bußgelder Auswahl -->
                         <div class="form-group">
-                            <label for="fines">Tatvorwürfe / Bußgelder</label>
-                            <select class="form-control select2" id="fines" name="fines[]" multiple="multiple" data-placeholder="Bußgelder suchen...">
-                                @php 
-                                    $selectedFines = $report->fines->pluck('id')->toArray(); 
-                                    $currentSection = '';
-                                @endphp
-                                @foreach($fines as $fine)
-                                    @if($fine->catalog_section != $currentSection)
-                                        @if($currentSection != '') </optgroup> @endif
-                                        <optgroup label="{{ $fine->catalog_section }}">
-                                        @php $currentSection = $fine->catalog_section; @endphp
-                                    @endif
-                                    <option value="{{ $fine->id }}" {{ in_array($fine->id, $selectedFines) ? 'selected' : '' }}>
-                                        {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€)
-                                    </option>
-                                @endforeach
-                                @if($currentSection != '') </optgroup> @endif
-                            </select>
+                            <label>Bußgeld hinzufügen</label>
+                            <div class="input-group">
+                                <select class="form-control select2-fines" id="fine-selector" data-placeholder="Bußgeld suchen...">
+                                    <option value=""></option>
+                                    @php $currentSection = ''; @endphp
+                                    @foreach($fines as $fine)
+                                        @if($fine->catalog_section != $currentSection)
+                                            @if($currentSection != '') </optgroup> @endif
+                                            <optgroup label="{{ $fine->catalog_section }}">
+                                            @php $currentSection = $fine->catalog_section; @endphp
+                                        @endif
+                                        <option value="{{ $fine->id }}" 
+                                                data-offense="{{ $fine->offense }}" 
+                                                data-remark="{{ $fine->remark }}">
+                                            {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€)
+                                        </option>
+                                    @endforeach
+                                    @if($currentSection != '') </optgroup> @endif
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-success" id="add-fine-btn"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Dynamische Liste mit vorbefüllten Werten -->
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-sm table-striped" id="selected-fines-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tatbestand</th>
+                                        <th>Bemerkung (Editierbar)</th>
+                                        <th style="width: 40px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($report->fines as $assignedFine)
+                                        <tr id="row-fine-{{ $assignedFine->id }}">
+                                            <td>
+                                                {{ $assignedFine->offense }}
+                                                <input type="hidden" name="fines[{{ $assignedFine->id }}][id]" value="{{ $assignedFine->id }}">
+                                            </td>
+                                            <td>
+                                                <!-- Hier nutzen wir den Pivot-Wert -->
+                                                <input type="text" name="fines[{{ $assignedFine->id }}][remark]" class="form-control form-control-sm" value="{{ $assignedFine->pivot->remark }}">
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-xs btn-danger remove-fine-btn" data-id="{{ $assignedFine->id }}">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <hr>
 
                         <div class="form-group">
                             <label for="attending_staff">Beteiligte Mitarbeiter</label>
@@ -101,7 +135,7 @@
                                 @endphp
                                 @foreach($allStaff as $staff)
                                     <option value="{{ $staff->id }}" {{ in_array($staff->id, $selectedStaffIds) ? 'selected' : '' }}>
-                                        {{ $staff->rank }} {{ $staff->name }}
+                                        {{ optional($staff->rank)->label ?? '??' }} {{ $staff->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -131,30 +165,17 @@
 @endsection
 
 @push('scripts')
-    <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         const templates = @json($templates);
 
         $(document).ready(function() {
-            // Initialisiert Select2 Felder
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%'
-            });
-
-            // Spezifisch für Bürger (mit Tags für freie Eingabe)
-            $('.select2-citizen').select2({
-                theme: 'bootstrap4',
-                placeholder: 'Bürger suchen oder Namen eingeben',
-                tags: true,
-                width: '100%'
-            });
+            $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+            $('.select2-citizen').select2({ theme: 'bootstrap4', placeholder: 'Bürger suchen oder Namen eingeben', tags: true, width: '100%' });
+            $('.select2-fines').select2({ theme: 'bootstrap4', width: '100%', placeholder: "Bußgeld auswählen..." });
             
-            // Event Listener für die Vorlagen-Auswahl
             $('#template-selector').on('change', function() {
                 const selectedKey = $(this).val();
-                
                 if (selectedKey && templates[selectedKey]) {
                     if(confirm('Möchtest du wirklich die Vorlage anwenden? Der aktuelle Text wird überschrieben.')) {
                         const template = templates[selectedKey];
@@ -162,9 +183,49 @@
                         $('#incident_description').val(template.incident_description);
                         $('#actions_taken').val(template.actions_taken);
                     } else {
-                        $(this).val(''); // Reset
+                        $(this).val('');
                     }
                 }
+            });
+
+            // Gleiche JS Logik wie im Create View
+            $('#add-fine-btn').click(function() {
+                const selector = $('#fine-selector');
+                const id = selector.val();
+                if (!id) return;
+
+                const option = selector.find(':selected');
+                const offense = option.data('offense');
+                const remark = option.data('remark') || '';
+
+                if ($(`#row-fine-${id}`).length > 0) {
+                    alert('Dieses Bußgeld wurde bereits hinzugefügt.');
+                    return;
+                }
+
+                const html = `
+                    <tr id="row-fine-${id}">
+                        <td>
+                            ${offense}
+                            <input type="hidden" name="fines[${id}][id]" value="${id}">
+                        </td>
+                        <td>
+                            <input type="text" name="fines[${id}][remark]" class="form-control form-control-sm" value="${remark}">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-xs btn-danger remove-fine-btn" data-id="${id}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $('#selected-fines-table tbody').append(html);
+                selector.val('').trigger('change');
+            });
+
+            $(document).on('click', '.remove-fine-btn', function() {
+                const id = $(this).data('id');
+                $(`#row-fine-${id}`).remove();
             });
         });
     </script>

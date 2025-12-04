@@ -18,7 +18,7 @@
             <div class="row">
                 <!-- Left Column -->
                 <div class="col-md-6">
-                    <div class="card card-primary">
+                    <div class="card card-primary card-outline">
                         <div class="card-header">
                             <h3 class="card-title">Allgemeine Informationen</h3>
                         </div>
@@ -56,7 +56,7 @@
                         </div>
                     </div>
 
-                    <!-- Vorlagen Box (Optional) -->
+                    <!-- Vorlagen Box -->
                     <div class="card card-secondary collapsed-card">
                         <div class="card-header">
                             <h3 class="card-title">Schnellvorlagen</h3>
@@ -80,36 +80,64 @@
 
                 <!-- Right Column -->
                 <div class="col-md-6">
-                    <div class="card card-danger">
+                    <div class="card card-danger card-outline">
                         <div class="card-header">
                             <h3 class="card-title">Strafregister & Beamte</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-group">
-                                <label>Tatvorwürfe / Bußgelder auswählen</label>
-                                <select name="fines[]" class="form-control select2" multiple="multiple" style="width: 100%;" data-placeholder="Bußgelder suchen...">
-                                    @php $currentSection = ''; @endphp
-                                    @foreach($fines as $fine)
-                                        @if($fine->catalog_section != $currentSection)
-                                            @if($currentSection != '') </optgroup> @endif
-                                            <optgroup label="{{ $fine->catalog_section }}">
-                                            @php $currentSection = $fine->catalog_section; @endphp
-                                        @endif
-                                        <option value="{{ $fine->id }}">
-                                            {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€ @if($fine->jail_time > 0) - {{ $fine->jail_time }} HE @endif)
-                                        </option>
-                                    @endforeach
-                                    @if($currentSection != '') </optgroup> @endif
-                                </select>
-                                <small class="form-text text-muted">Mehrfachauswahl möglich.</small>
+                                <label>Bußgeld hinzufügen</label>
+                                <div class="input-group">
+                                    <select class="form-control select2-fines" id="fine-selector" data-placeholder="Bußgeld suchen...">
+                                        <option value=""></option>
+                                        @php $currentSection = ''; @endphp
+                                        @foreach($fines as $fine)
+                                            @if($fine->catalog_section != $currentSection)
+                                                @if($currentSection != '') </optgroup> @endif
+                                                <optgroup label="{{ $fine->catalog_section }}">
+                                                @php $currentSection = $fine->catalog_section; @endphp
+                                            @endif
+                                            <!-- Wir speichern die Standard-Bemerkung im data-Attribut -->
+                                            <option value="{{ $fine->id }}" 
+                                                    data-offense="{{ $fine->offense }}" 
+                                                    data-amount="{{ $fine->amount }}" 
+                                                    data-jail="{{ $fine->jail_time }}"
+                                                    data-remark="{{ $fine->remark }}">
+                                                {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€)
+                                            </option>
+                                        @endforeach
+                                        @if($currentSection != '') </optgroup> @endif
+                                    </select>
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-success" id="add-fine-btn"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- Dynamische Liste -->
+                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-sm table-striped" id="selected-fines-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tatbestand</th>
+                                            <th>Bemerkung (Editierbar)</th>
+                                            <th style="width: 40px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Hier werden die Rows per JS eingefügt -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <hr>
 
                             <div class="form-group">
                                 <label>Beteiligte Beamte</label>
                                 <select name="attending_staff[]" class="form-control select2" multiple="multiple" style="width: 100%;" data-placeholder="Beamte auswählen...">
                                     @foreach($allStaff as $staff)
                                         <option value="{{ $staff->id }}" {{ Auth::id() == $staff->id ? 'selected' : '' }}>
-                                            {{ $staff->rank }} {{ $staff->name }}
+                                            {{ optional($staff->rank)->label ?? '??' }} {{ $staff->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -129,36 +157,75 @@
 @endsection
 
 @push('scripts')
-    <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         const templates = @json($templates);
 
         $(document).ready(function() {
-            // Standard Select2
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%'
-            });
+            // Init Select2
+            $('.select2').select2({ theme: 'bootstrap4', width: '100%' });
+            $('.select2-citizen').select2({ theme: 'bootstrap4', width: '100%', tags: true, placeholder: "Bürger suchen oder Name eingeben" });
+            $('.select2-fines').select2({ theme: 'bootstrap4', width: '100%', placeholder: "Bußgeld auswählen..." });
 
-            // Bürger Auswahl mit Tags (neue Namen erstellen)
-            $('.select2-citizen').select2({
-                theme: 'bootstrap4',
-                width: '100%',
-                tags: true,
-                placeholder: "Bürger suchen oder Name eingeben"
-            });
-            
-            // Vorlagen Logik
+            // Vorlagen
             $('#template-selector').on('change', function() {
                 const selectedKey = $(this).val();
-                
                 if (selectedKey && templates[selectedKey]) {
                     const template = templates[selectedKey];
                     $('input[name="title"]').val(template.title);
                     $('#incident_description').val(template.incident_description);
                     $('#actions_taken').val(template.actions_taken);
                 }
+            });
+
+            // --- Bußgeld Logik ---
+            $('#add-fine-btn').click(function() {
+                const selector = $('#fine-selector');
+                const id = selector.val();
+                
+                if (!id) return;
+
+                // Daten aus dem Option-Tag holen
+                const option = selector.find(':selected');
+                const offense = option.data('offense');
+                const remark = option.data('remark') || ''; // Standard Bemerkung
+
+                // Prüfen ob schon vorhanden
+                if ($(`#row-fine-${id}`).length > 0) {
+                    alert('Dieses Bußgeld wurde bereits hinzugefügt.');
+                    return;
+                }
+
+                // Neue Zeile einfügen
+                // Wichtig: name="fines[index][id]" und name="fines[index][remark]"
+                // Wir nutzen die ID als Index, um es einfach zu halten
+                const html = `
+                    <tr id="row-fine-${id}">
+                        <td>
+                            ${offense}
+                            <input type="hidden" name="fines[${id}][id]" value="${id}">
+                        </td>
+                        <td>
+                            <input type="text" name="fines[${id}][remark]" class="form-control form-control-sm" value="${remark}">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-xs btn-danger remove-fine-btn" data-id="${id}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                $('#selected-fines-table tbody').append(html);
+                
+                // Reset Selection
+                selector.val('').trigger('change');
+            });
+
+            // Entfernen Button
+            $(document).on('click', '.remove-fine-btn', function() {
+                const id = $(this).data('id');
+                $(`#row-fine-${id}`).remove();
             });
         });
     </script>
