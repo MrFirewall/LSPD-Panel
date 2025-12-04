@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Evaluation;
 use App\Models\User;
 use App\Models\ActivityLog;
-use App\Models\TrainingModule; // Wird für Model-Bezüge benötigt
-use App\Models\Exam; // Wird für Model-Bezüge benötigt
-use App\Models\ExamAttempt; // Wird für Berechtigungsprüfung benötigt
+use App\Models\TrainingModule;
+use App\Models\Exam;
+use App\Models\ExamAttempt;
+use App\Models\Rank; // Rank Model importieren
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\PotentiallyNotifiableActionOccurred;
@@ -44,7 +45,7 @@ class EvaluationController extends Controller
 
         // 1. Lade ALLE Anträge (nicht nur 'pending'), paginiert
         $applicationsQuery = Evaluation::whereIn('evaluation_type', self::$applicationTypes)
-                                        ->latest('created_at'); // Neueste zuerst
+                                        ->latest('created_at');
 
         if (!$canViewAll) {
             $applicationsQuery->where('user_id', $userId); // Nur eigene Anträge
@@ -53,7 +54,7 @@ class EvaluationController extends Controller
 
         // 2. Lade letzte eingereichte Bewertungen (paginiert)
         $evaluationsQuery = Evaluation::whereIn('evaluation_type', self::$evaluationTypes)
-                                       ->latest('created_at'); // Neueste zuerst
+                                       ->latest('created_at');
          if (!$canViewAll) {
             $evaluationsQuery->where(function ($query) use ($userId) {
                 $query->where('user_id', $userId)
@@ -65,7 +66,12 @@ class EvaluationController extends Controller
         // 3. Lade alle User für das "Link generieren"-Modal (nur wenn benötigt und berechtigt)
         $usersForModal = collect();
          if ($canViewAll && Auth::user()->can('generateExamLink', ExamAttempt::class)) {
-             $usersForModal = User::orderBy('name')->get(['id', 'name']);
+             // Hierarchie-Sortierung nutzen
+             $usersForModal = User::leftJoin('ranks', 'users.rank', '=', 'ranks.name')
+                 ->orderByDesc('ranks.level') // Höchster Rang zuerst
+                 ->orderBy('users.name')
+                 ->select('users.id', 'users.name')
+                 ->get();
          }
 
         // Counts optional
@@ -122,7 +128,20 @@ class EvaluationController extends Controller
 
     public function azubi()
     {
-        $users = User::role('trainee')->orderBy('name')->get(['id', 'name']);
+        // Wir suchen alle Ränge, die "Azubi" implizieren (Anwärter, Schüler etc.)
+        // Anhand deiner DB-Daten: polizeischueler, polizeimeister_anwaerter, etc.
+        $traineeRankNames = Rank::where('name', 'LIKE', '%anwaerter%')
+                                ->orWhere('name', 'LIKE', '%schueler%')
+                                ->pluck('name');
+
+        // Suche User mit diesen Rängen und sortiere sie nach Hierarchie (Level)
+        $users = User::whereIn('rank', $traineeRankNames)
+            ->leftJoin('ranks', 'users.rank', '=', 'ranks.name')
+            ->orderByDesc('ranks.level') // Höhere Anwärter oben
+            ->orderBy('users.name')
+            ->select('users.id', 'users.name')
+            ->get();
+
         return view('forms.evaluations.azubi', ['users' => $users, 'evaluationType' => 'azubi']);
     }
 
@@ -133,16 +152,32 @@ class EvaluationController extends Controller
 
     public function leitstelle()
     {
-        $users = User::orderBy('name')->get(['id', 'name']);
+        // Alle User, aber nach Rang sortiert
+        $users = User::leftJoin('ranks', 'users.rank', '=', 'ranks.name')
+            ->orderByDesc('ranks.level')
+            ->orderBy('users.name')
+            ->select('users.id', 'users.name')
+            ->get();
+
         return view('forms.evaluations.leitstelle', ['users' => $users, 'evaluationType' => 'leitstelle']);
     }
 
     public function mitarbeiter()
     {
-        $exemptRoles = ['trainee', 'praktikant'];
-        $users = User::whereDoesntHave('roles', function ($query) use ($exemptRoles) {
-            $query->whereIn('name', $exemptRoles);
-        })->orderBy('name')->get(['id', 'name']);
+        // Wir schließen die Azubi-Ränge aus (siehe azubi() Methode)
+        $traineeRankNames = Rank::where('name', 'LIKE', '%anwaerter%')
+                                ->orWhere('name', 'LIKE', '%schueler%')
+                                ->pluck('name');
+        
+        // Praktikanten schließen wir auch aus (falls es diesen Rang gäbe, oder wir filtern nach Namen/Status)
+        // Hier nehmen wir alle, die KEINE Trainee-Ränge sind.
+        $users = User::whereNotIn('rank', $traineeRankNames)
+            ->leftJoin('ranks', 'users.rank', '=', 'ranks.name')
+            ->orderByDesc('ranks.level')
+            ->orderBy('users.name')
+            ->select('users.id', 'users.name')
+            ->get();
+
         return view('forms.evaluations.mitarbeiter', ['users' => $users, 'evaluationType' => 'mitarbeiter']);
     }
 
