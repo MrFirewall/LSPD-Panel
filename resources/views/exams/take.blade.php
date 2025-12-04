@@ -1,104 +1,152 @@
 @extends('layouts.app')
-{{-- Titel angepasst, da Modulbezug fehlt --}}
+
 @section('title', 'Prüfung ablegen: ' . $attempt->exam->title)
 
 @section('content')
-    {{-- AdminLTE Content Header --}}
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0"><i class="fas fa-file-signature nav-icon"></i> Prüfung: {{ $attempt->exam->title }}</h1>
-                    {{-- ZEILE ENTFERNT: <p class="text-muted mb-0">Modul: {{ $attempt->exam->trainingModule->name }}</p> --}}
-                    {{-- Optional: Beschreibung der Prüfung anzeigen --}}
+
+{{-- 1. HERO HEADER --}}
+<div class="content-header" style="background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 2rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="text-uppercase font-weight-bold mb-1" style="opacity: 0.8; letter-spacing: 1px;">Prüfung</h5>
+                <h1 class="display-4 font-weight-bold mb-0">{{ $attempt->exam->title }}</h1>
+                <p class="lead mb-0 mt-2" style="opacity: 0.9;">
+                    <i class="fas fa-info-circle mr-1"></i> 
                     @if($attempt->exam->description)
-                        <p class="text-muted mb-0">{{ $attempt->exam->description }}</p>
+                        {{ $attempt->exam->description }}
+                    @else
+                        Bitte beantworten Sie alle Fragen gewissenhaft.
                     @endif
-                </div>
-                {{-- Breadcrumb kann bleiben oder angepasst werden --}}
-                {{-- <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Prüfung</li>
-                    </ol>
-                </div> --}}
+                </p>
+            </div>
+            <div class="col-md-4 text-right d-none d-md-block">
+                <i class="fas fa-pencil-alt fa-4x" style="opacity: 0.3;"></i>
             </div>
         </div>
     </div>
+</div>
 
-    {{-- Main Content --}}
-    <div class="content">
-        <div class="container-fluid">
-             <div class="row">
-                <div class="col-12">
-                    <form action="{{ route('exams.submit', $attempt) }}" method="POST" id="exam-form">
-                        @csrf
-                        <div class="card card-primary card-outline">
-                            <div class="card-header">
-                                <h3 class="card-title">Fragebogen ({{ $attempt->exam->questions->count() }} Fragen)</h3>
-                                {{-- Optional: Timer hinzufügen? --}}
-                            </div>
-                            <div class="card-body">
-                                @if($attempt->exam->questions->isEmpty())
-                                     <p class="text-center text-warning">Diese Prüfung enthält noch keine Fragen.</p>
-                                @else
-                                    @foreach($attempt->exam->questions as $index => $question)
-                                        <div class="question-block mb-4 p-3 border rounded">
-                                            <h5>Frage {{ $index + 1 }}: {{ $question->question_text }}</h5>
-                                            <div class="form-group mt-3">
-
-                                                @switch($question->type)
-
-                                                    @case('single_choice')
-                                                        @forelse($question->options as $option)
-                                                            <div class="custom-control custom-radio">
-                                                                <input type="radio" id="option_{{ $option->id }}" name="answers[{{ $question->id }}]" value="{{ $option->id }}" class="custom-control-input" required>
-                                                                <label class="custom-control-label" for="option_{{ $option->id }}">{{ $option->option_text }}</label>
-                                                            </div>
-                                                        @empty
-                                                             <p class="text-danger">Keine Antwortoptionen für diese Frage vorhanden.</p>
-                                                        @endforelse
-                                                        @break
-
-                                                    @case('multiple_choice')
-                                                         {{-- Hinweis hinzufügen, dass mindestens eine Antwort erforderlich ist, falls gewünscht --}}
-                                                         <small class="form-text text-muted mb-2">Mehrere Antworten können korrekt sein.</small>
-                                                        @forelse($question->options as $option)
-                                                            <div class="custom-control custom-checkbox">
-                                                                <input type="checkbox" id="option_{{ $option->id }}" name="answers[{{ $question->id }}][]" value="{{ $option->id }}" class="custom-control-input">
-                                                                <label class="custom-control-label" for="option_{{ $option->id }}">{{ $option->option_text }}</label>
-                                                            </div>
-                                                         @empty
-                                                              <p class="text-danger">Keine Antwortoptionen für diese Frage vorhanden.</p>
-                                                         @endforelse
-                                                        @break
-
-                                                    @case('text_field')
-                                                        <textarea name="answers[{{ $question->id }}]" class="form-control" rows="3" placeholder="Ihre Antwort..." required></textarea>
-                                                        @break
-
-                                                    @default
-                                                         <p class="text-danger">Unbekannter Fragetyp.</p>
-                                                @endswitch
-
-                                            </div>
-                                        </div>
-                                        @if(!$loop->last) <hr class="my-4"> @endif
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div class="card-footer">
-                                {{-- Button nur aktivieren, wenn Fragen vorhanden sind --}}
-                                <button type="submit" class="btn btn-success float-right" @if($attempt->exam->questions->isEmpty()) disabled @endif
-                                    {{-- Zusätzliche Bestätigung beim Absenden? --}}
-                                    onclick="return confirm('Möchten Sie die Prüfung wirklich abschließen und einreichen? Sie können danach keine Änderungen mehr vornehmen.');">
-                                    <i class="fas fa-check-circle"></i> Prüfung abschließen und einreichen
-                                </button>
+{{-- 2. MAIN CONTENT --}}
+<div class="content">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                <form action="{{ route('exams.submit', $attempt) }}" method="POST" id="exam-form">
+                    @csrf
+                    
+                    <div class="card card-outline card-primary shadow-lg border-0" style="margin-top: -3rem;">
+                        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                            <h3 class="card-title font-weight-bold text-dark">
+                                <i class="fas fa-list-ol mr-2 text-primary"></i> Fragebogen
+                            </h3>
+                            <div class="card-tools">
+                                <span class="badge badge-primary px-3 py-2" style="font-size: 0.9rem;">
+                                    {{ $attempt->exam->questions->count() }} Fragen
+                                </span>
                             </div>
                         </div>
-                    </form>
-                </div>
+
+                        <div class="card-body">
+                            
+                            @if($attempt->exam->questions->isEmpty())
+                                <div class="text-center py-5">
+                                    <i class="fas fa-exclamation-circle text-warning fa-3x mb-3"></i>
+                                    <h5>Diese Prüfung enthält noch keine Fragen.</h5>
+                                    <p class="text-muted">Bitte wenden Sie sich an die Ausbildungsleitung.</p>
+                                    <a href="{{ route('dashboard') }}" class="btn btn-secondary mt-3">Zurück zum Dashboard</a>
+                                </div>
+                            @else
+                                @foreach($attempt->exam->questions as $index => $question)
+                                    
+                                    {{-- Frage Container --}}
+                                    <div class="question-block mb-5 p-4 rounded" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                                        
+                                        <h5 class="font-weight-bold mb-3">
+                                            <span class="text-primary mr-2">#{{ $index + 1 }}</span>
+                                            {{ $question->question_text }}
+                                        </h5>
+
+                                        <div class="ml-1 pl-3 border-left border-primary" style="border-width: 2px !important;">
+                                            @switch($question->type)
+
+                                                @case('single_choice')
+                                                    @forelse($question->options as $option)
+                                                        <div class="custom-control custom-radio mb-2">
+                                                            <input type="radio" 
+                                                                   id="option_{{ $option->id }}" 
+                                                                   name="answers[{{ $question->id }}]" 
+                                                                   value="{{ $option->id }}" 
+                                                                   class="custom-control-input" 
+                                                                   required>
+                                                            <label class="custom-control-label font-weight-normal" for="option_{{ $option->id }}" style="cursor: pointer;">
+                                                                {{ $option->option_text }}
+                                                            </label>
+                                                        </div>
+                                                    @empty
+                                                        <p class="text-danger small"><i class="fas fa-exclamation-triangle"></i> Fehler: Keine Optionen vorhanden.</p>
+                                                    @endforelse
+                                                    @break
+
+                                                @case('multiple_choice')
+                                                    <small class="text-muted d-block mb-3"><i class="fas fa-check-double mr-1"></i> Mehrere Antworten möglich</small>
+                                                    @forelse($question->options as $option)
+                                                        <div class="custom-control custom-checkbox mb-2">
+                                                            <input type="checkbox" 
+                                                                   id="option_{{ $option->id }}" 
+                                                                   name="answers[{{ $question->id }}][]" 
+                                                                   value="{{ $option->id }}" 
+                                                                   class="custom-control-input">
+                                                            <label class="custom-control-label font-weight-normal" for="option_{{ $option->id }}" style="cursor: pointer;">
+                                                                {{ $option->option_text }}
+                                                            </label>
+                                                        </div>
+                                                    @empty
+                                                        <p class="text-danger small"><i class="fas fa-exclamation-triangle"></i> Fehler: Keine Optionen vorhanden.</p>
+                                                    @endforelse
+                                                    @break
+
+                                                @case('text_field')
+                                                    <div class="form-group mb-0">
+                                                        <textarea name="answers[{{ $question->id }}]" 
+                                                                  class="form-control" 
+                                                                  rows="4" 
+                                                                  placeholder="Geben Sie hier Ihre Antwort ein..." 
+                                                                  required 
+                                                                  style="background-color: rgba(0,0,0,0.2); color: white; border: 1px solid #4a5568;"></textarea>
+                                                    </div>
+                                                    @break
+
+                                                @default
+                                                    <p class="text-danger">Unbekannter Fragetyp.</p>
+                                            @endswitch
+                                        </div>
+                                    </div>
+
+                                @endforeach
+                            @endif
+
+                        </div>
+
+                        {{-- Footer Actions --}}
+                        @if($attempt->exam->questions->isNotEmpty())
+                            <div class="card-footer bg-white text-center py-4 border-top-0">
+                                <button type="submit" 
+                                        class="btn btn-success btn-lg px-5 rounded-pill font-weight-bold shadow-sm" 
+                                        onclick="return confirm('Sind Sie sicher, dass Sie die Prüfung jetzt einreichen möchten? Änderungen sind danach nicht mehr möglich.');">
+                                    <i class="fas fa-paper-plane mr-2"></i> Prüfung einreichen
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">Überprüfen Sie Ihre Antworten sorgfältig, bevor Sie absenden.</small>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </form>
+
             </div>
         </div>
     </div>
+</div>
 @endsection
