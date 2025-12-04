@@ -74,42 +74,22 @@ class ExamAttemptController extends Controller
                      ->with('secure_url', $secureUrl);
     }
 
-public function show(ExamAttempt $attempt)
-{
-    $this->authorize('viewResult', $attempt);
-    
-    // Sicherstellen, dass die Optionen ÜBER die Fragen-Relation des Exams geladen werden
-    // UND die Antworten des Users geladen werden.
-    $attempt->load([
-        'exam.questions.options', // Wichtig: Lädt $attempt->exam->questions mit $question->options
-        'user', 
-        'answers.question', 
-        'answers.option', 
-        'evaluator'
-    ]);
-    
-    // --- DEBUG-SCHRITT HIER EINFÜGEN ---
-    // Wir prüfen die geladenen Fragen und deren Optionen:
-    $questionsWithOptions = $attempt->exam->questions->map(function ($question) {
-        return [
-            'id' => $question->id,
-            'type' => $question->type,
-            'question_text' => $question->question_text,
-            'options_count' => $question->options->count(), // Zählt, wie viele Optionen geladen wurden
-            'options_data' => $question->options->pluck('option_text', 'is_correct')->toArray(), // Zeigt die Texte
-            'user_answers' => $attempt->answers->where('question_id', $question->id)->pluck('option_id')
-        ];
-    });
-
-    // Stoppt die Ausführung und zeigt die geladenen Daten im Browser an
-     dd($questionsWithOptions); 
-    // --- ENDE DEBUG-SCHRITT ---
-    
-    // Wenn Sie den Code oben ausführen, können Sie sehen, ob 'options_count' > 0 ist.
-    // Entfernen Sie das dd() nach dem Testen.
-    
-    return view('exams.result', compact('attempt'));
-}
+    public function show(ExamAttempt $attempt)
+    {
+        $this->authorize('viewResult', $attempt);
+        
+        // KORREKTUR für das ursprüngliche Problem "Keine Optionen definiert!": 
+        // Laden der Optionen über die Exam->Questions-Relation.
+        $attempt->load([
+            'exam.questions.options', // Wichtig: Lädt Fragen und Optionen des Exams
+            'user', 
+            'answers.question', 
+            'answers.option', // Lädt die spezifisch gewählte Option
+            'evaluator'
+        ]);
+        
+        return view('exams.result', compact('attempt'));
+    }
 
     public function update(FinalizeExamRequest $request, ExamAttempt $attempt)
     {
@@ -184,36 +164,36 @@ public function show(ExamAttempt $attempt)
 
     public function setEvaluated(Request $request, ExamAttempt $attempt)
     {
-         $this->authorize('setEvaluated', $attempt);
-         $validated = $request->validate(['score' => 'required|integer|min:0|max:100']);
+           $this->authorize('setEvaluated', $attempt);
+           $validated = $request->validate(['score' => 'required|integer|min:0|max:100']);
 
-         $isPassed = $validated['score'] >= $attempt->exam->pass_mark;
-         $resultText = $isPassed ? 'Bestanden' : 'Nicht bestanden';
+           $isPassed = $validated['score'] >= $attempt->exam->pass_mark;
+           $resultText = $isPassed ? 'Bestanden' : 'Nicht bestanden';
 
-         $attempt->update([
-             'status' => 'evaluated', // Nur Status und Score setzen
-             'score' => $validated['score'],
-             'evaluator_id' => Auth::id(), // KORREKTUR: Bewerter hier auch setzen
-         ]);
+           $attempt->update([
+               'status' => 'evaluated', // Nur Status und Score setzen
+               'score' => $validated['score'],
+               'evaluator_id' => Auth::id(), // KORREKTUR: Bewerter hier auch setzen
+           ]);
 
-         $message = "Prüfungsversuch #{$attempt->id} von {$attempt->user->name} wurde manuell bewertet: Score {$validated['score']}% ({$resultText}).";
-         ActivityLog::create([
-             'user_id' => Auth::id(),
-             'log_type' => 'EXAM',
-             'action' => 'EVALUATED_MANUAL', // Eigener Action-Typ?
-             'target_id' => $attempt->id,
-             'description' => $message
-         ]);
+           $message = "Prüfungsversuch #{$attempt->id} von {$attempt->user->name} wurde manuell bewertet: Score {$validated['score']}% ({$resultText}).";
+           ActivityLog::create([
+               'user_id' => Auth::id(),
+               'log_type' => 'EXAM',
+               'action' => 'EVALUATED_MANUAL', // Eigener Action-Typ?
+               'target_id' => $attempt->id,
+               'description' => $message
+           ]);
 
-         PotentiallyNotifiableActionOccurred::dispatch(
-             'Admin\ExamAttemptController@setEvaluated',
-             $attempt->user, // Der Student
-             $attempt,
-             Auth::user(), // Der Admin
-             ['isPassed' => $isPassed] // Zusätzliche Info für Listener
-         );
+           PotentiallyNotifiableActionOccurred::dispatch(
+               'Admin\ExamAttemptController@setEvaluated',
+               $attempt->user, // Der Student
+               $attempt,
+               Auth::user(), // Der Admin
+               ['isPassed' => $isPassed] // Zusätzliche Info für Listener
+           );
 
-         return back()->with('success', 'Score manuell gesetzt.'); // Optional: Erfolgsmeldung
+           return back()->with('success', 'Score manuell gesetzt.'); // Optional: Erfolgsmeldung
     }
 
     public function destroy(ExamAttempt $attempt)
@@ -243,10 +223,9 @@ public function show(ExamAttempt $attempt)
              (object) $deletedAttemptData, // Alte Daten
              Auth::user(),
              // Zusätzliche Daten für den Listener
-              ['id' => $attemptId, 'exam_title' => $attemptTitle, 'user_name' => $attemptUser]
-         );
+             ['id' => $attemptId, 'exam_title' => $attemptTitle, 'user_name' => $attemptUser]
+        );
 
         return redirect()->route('admin.exams.attempts.index')->with('success', 'Prüfungsversuch wurde endgültig gelöscht.');
     }
 }
-
