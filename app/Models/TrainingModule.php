@@ -10,10 +10,14 @@ class TrainingModule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
         'user_id',
-        'description',
+        'name',
         'category',
+        'description',
+        'instructor_name',
+        'date',
+        'created_at',
+        'updated_at',
     ];
 
     /**
