@@ -12,7 +12,6 @@
                 <h1 class="display-4 font-weight-bold mb-0"><i class="fas fa-tasks mr-3"></i>Prüfungsversuche</h1>
             </div>
             <div class="col-sm-6 text-right">
-                {{-- Platzhalter für zukünftige Aktionen, z.B. Export --}}
                 <span class="badge badge-light badge-pill px-3 py-2 text-dark font-weight-bold shadow-sm">
                     {{ $attempts->total() }} Einträge gesamt
                 </span>
@@ -37,7 +36,8 @@
                             <div class="mt-3 p-2 rounded" style="background-color: rgba(0,0,0,0.2);">
                                 <small class="d-block mb-1 text-uppercase font-weight-bold" style="opacity: 0.8;">Manueller Link:</small>
                                 <code id="secure-link" class="text-white user-select-all">{{ session('secure_url') }}</code>
-                                <button type="button" class="btn btn-xs btn-light text-success ml-2 font-weight-bold rounded-pill px-2" onclick="copyLink()">
+                                {{-- Kopier-Button mit 'this' Parameter für Feedback --}}
+                                <button type="button" class="btn btn-xs btn-light text-success ml-2 font-weight-bold rounded-pill px-2" onclick="copyLink(this)">
                                     <i class="fas fa-copy mr-1"></i> Kopieren
                                 </button>
                             </div>
@@ -131,7 +131,8 @@
                                             <td class="text-right pr-4">
                                                 <div class="btn-group btn-group-sm">
                                                     {{-- 1. Ansehen --}}
-                                                    <a href="{{ route('admin.exams.attempts.show', $attempt) }}" class="btn btn-default" title="Details / Bewerten">
+                                                    {{-- d-flex justify-content-center align-items-center sorgt für mittige Icons --}}
+                                                    <a href="{{ route('admin.exams.attempts.show', $attempt) }}" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Details / Bewerten">
                                                         <i class="fas fa-eye text-primary"></i>
                                                     </a>
 
@@ -139,7 +140,7 @@
                                                     @can('sendLink', $attempt)
                                                         <form action="{{ route('admin.exams.attempts.sendLink', $attempt) }}" method="POST" class="d-inline">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-default" title="Link kopieren/senden">
+                                                            <button type="submit" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Link kopieren/senden">
                                                                 <i class="fas fa-link text-secondary"></i>
                                                             </button>
                                                         </form>
@@ -147,7 +148,7 @@
 
                                                     {{-- 3. Schnellbewertung --}}
                                                     @can('setEvaluated', $attempt)
-                                                        <button type="button" class="btn btn-default" title="Schnellbewertung" data-toggle="modal" data-target="#evaluateModal{{ $attempt->id }}">
+                                                        <button type="button" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Schnellbewertung" data-toggle="modal" data-target="#evaluateModal{{ $attempt->id }}">
                                                             <i class="fas fa-clipboard-check text-success"></i>
                                                         </button>
                                                     @endcan
@@ -156,7 +157,7 @@
                                                     @can('resetAttempt', $attempt)
                                                         <form action="{{ route('admin.exams.attempts.reset', $attempt) }}" method="POST" class="d-inline">
                                                             @csrf
-                                                            <button type="submit" class="btn btn-default" title="Zurücksetzen" onclick="return confirm('ACHTUNG: Alle Antworten werden gelöscht. Fortfahren?');">
+                                                            <button type="submit" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Zurücksetzen" onclick="return confirm('ACHTUNG: Alle Antworten werden gelöscht. Fortfahren?');">
                                                                 <i class="fas fa-undo text-warning"></i>
                                                             </button>
                                                         </form>
@@ -167,7 +168,7 @@
                                                         <form action="{{ route('admin.exams.attempts.destroy', $attempt) }}" method="POST" class="d-inline">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button type="submit" class="btn btn-default" title="Löschen" onclick="return confirm('ACHTUNG: Endgültig löschen?');">
+                                                            <button type="submit" class="btn btn-default d-flex justify-content-center align-items-center" style="width: 32px; height: 30px;" title="Löschen" onclick="return confirm('ACHTUNG: Endgültig löschen?');">
                                                                 <i class="fas fa-trash-alt text-danger"></i>
                                                             </button>
                                                         </form>
@@ -200,7 +201,7 @@
     </div>
 </div>
 
-{{-- MODALS für Schnellbewertung (Dark Mode Optimized) --}}
+{{-- MODALS für Schnellbewertung --}}
 @foreach ($attempts as $attempt)
     @can('setEvaluated', $attempt)
     <div class="modal fade" id="evaluateModal{{ $attempt->id }}" tabindex="-1" role="dialog" aria-hidden="true">
@@ -252,24 +253,43 @@
 
 @push('scripts')
 <script>
-function copyLink() {
+// Funktion zum Kopieren des Links mit visuellem Feedback
+function copyLink(btnElement) {
     const linkElement = document.getElementById('secure-link');
     if (!linkElement) return;
 
     const textToCopy = linkElement.textContent.trim();
+    // Originalen Button-Inhalt speichern (für Reset)
+    const originalHtml = btnElement.innerHTML;
+
+    // Hilfsfunktion für Erfolgs-Feedback
+    const showSuccess = () => {
+        btnElement.innerHTML = '<i class="fas fa-check mr-1"></i> Kopiert!';
+        btnElement.classList.remove('btn-light', 'text-success');
+        btnElement.classList.add('btn-success', 'text-white');
+        
+        // Nach 2 Sekunden zurücksetzen
+        setTimeout(() => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.classList.remove('btn-success', 'text-white');
+            btnElement.classList.add('btn-light', 'text-success');
+        }, 2000);
+        
+        // Toastr Nachricht (optional, falls toastr vorhanden)
+        if(typeof toastr !== 'undefined') toastr.success('Link kopiert!');
+    };
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            toastr.success('Link in die Zwischenablage kopiert!');
-        }).catch(err => {
-            fallbackCopyLink(textToCopy);
+        navigator.clipboard.writeText(textToCopy).then(showSuccess).catch(err => {
+            fallbackCopyLink(textToCopy, btnElement, originalHtml);
         });
     } else {
-        fallbackCopyLink(textToCopy);
+        fallbackCopyLink(textToCopy, btnElement, originalHtml);
     }
 }
 
-function fallbackCopyLink(text) {
+// Fallback für ältere Browser
+function fallbackCopyLink(text, btnElement, originalHtml) {
     const tempInput = document.createElement('textarea');
     tempInput.value = text;
     tempInput.style.position = 'absolute';
@@ -278,9 +298,18 @@ function fallbackCopyLink(text) {
     tempInput.select();
     try {
         document.execCommand('copy');
-        toastr.success('Link in die Zwischenablage kopiert!');
+        // Auch hier visuelles Feedback geben
+        btnElement.innerHTML = '<i class="fas fa-check mr-1"></i> Kopiert!';
+        btnElement.classList.remove('btn-light', 'text-success');
+        btnElement.classList.add('btn-success', 'text-white');
+        setTimeout(() => {
+            btnElement.innerHTML = originalHtml;
+            btnElement.classList.remove('btn-success', 'text-white');
+            btnElement.classList.add('btn-light', 'text-success');
+        }, 2000);
+        if(typeof toastr !== 'undefined') toastr.success('Link kopiert!');
     } catch (err) {
-        toastr.error('Kopieren fehlgeschlagen.');
+        if(typeof toastr !== 'undefined') toastr.error('Kopieren fehlgeschlagen.');
     }
     document.body.removeChild(tempInput);
 }
