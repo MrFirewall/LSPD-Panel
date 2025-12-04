@@ -39,6 +39,38 @@
         border-radius: 0 4px 4px 0;
         color: #fff !important;
     }
+
+    /* --- FIXES FÜR SCROLLING & LOGO --- */
+    
+    /* 1. Scrolling Fix: Genug Platz unten garantieren */
+    .nav-sidebar {
+        padding-bottom: 100px !important; /* Viel Platz zum Scrollen */
+        overflow-x: hidden; /* Verhindert horizontales Wackeln bei Animationen */
+    }
+
+    /* 2. Logo Fix für eingeklappten Zustand (Sidebar Mini) */
+    /* Wir überschreiben AdminLTE Styles, wenn die Sidebar zugeklappt ist (.sidebar-collapse) */
+    body.sidebar-collapse .brand-link {
+        width: 4.6rem !important; /* Standard AdminLTE Mini-Breite */
+        padding: 0.8125rem 0 !important; /* Vertikales Padding beibehalten, seitliches weg */
+        display: flex !important;
+        justify-content: center !important; /* Horizontal zentrieren */
+        align-items: center !important; /* Vertikal zentrieren */
+        transition: width 0.3s ease-in-out;
+    }
+    
+    /* Icon zentrieren: WICHTIG - Margin rechts entfernen, das sonst das Icon verschiebt */
+    body.sidebar-collapse .brand-link i {
+        margin-right: 0 !important; 
+        font-size: 1.25rem; /* Icon Größe stabilisieren */
+    }
+    
+    /* Text hart ausblenden, damit er keinen Platz wegnimmt */
+    body.sidebar-collapse .brand-link .brand-text {
+        display: none !important;
+        width: 0 !important;
+        opacity: 0 !important;
+    }
 </style>
 
 @php
@@ -338,4 +370,7 @@
         @endcanany
 
     @endcan
+    
+    {{-- Extra Spacer am Ende für sicheres Scrollen --}}
+    <li class="nav-item" style="height: 50px;"></li>
 </ul>
