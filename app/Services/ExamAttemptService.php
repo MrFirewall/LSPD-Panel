@@ -18,8 +18,8 @@ class ExamAttemptService
         return ExamAttempt::create([
             'exam_id' => $exam->id, // Direkt die ID der Prüfung verwenden
             'user_id' => $user->id,
-            'started_at' => now(),
-            'status' => 'in_progress',
+            'started_at' => null,
+            'status' => 'new',
         ]);
     }
 
