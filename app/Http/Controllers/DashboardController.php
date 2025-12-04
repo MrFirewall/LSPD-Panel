@@ -6,7 +6,8 @@ use App\Models\ActivityLog;
 use App\Models\Announcement;
 use App\Models\Report;
 use App\Models\User;
-use App\Models\Rank; // Importiere das Rank Model
+use App\Models\Rank;
+use App\Models\Citizen; // Wichtig: Citizen Model importieren
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -17,41 +18,62 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // 1. ANKÜNDIGUNGEN
+        // --- 1. DATEN FÜR DIE TOP-STATS CARDS ---
+
+        // A) Meine Berichte (Anzahl der Berichte des aktuellen Users)
+        $myReportCount = Report::where('user_id', $user->id)->count();
+
+        // B) Offene Akten
+        // Hinweis: Da wir aktuell keine 'status'-Spalte haben, zählen wir hier alle Berichte.
+        // Wenn du später einen Status einbaust, ändere dies zu: Report::where('status', 'open')->count();
+        $openCasesCount = Report::count();
+
+        // C) Bußgelder (Heute)
+        // Wir holen alle Berichte von heute und summieren die verknüpften Bußgelder (über die fines Relation)
+        $dailyFinesAmount = Report::whereDate('created_at', Carbon::today())
+            ->with('fines') // Eager Loading der Fines Relation
+            ->get()
+            ->flatMap(function ($report) {
+                return $report->fines;
+            })
+            ->sum('amount');
+
+        // D) Gesuchte Personen
+        // Wir zählen Einträge in der citizens Tabelle, wo 'is_wanted' true ist.
+        // Falls die Spalte bei dir anders heißt (z.B. 'wanted'), bitte anpassen.
+        // Falls die Spalte noch nicht existiert, gibt dies 0 zurück oder einen Fehler (je nach DB-Modus).
+        // Um Fehler zu vermeiden, prüfen wir hier einfachhalber auf Existenz oder nehmen 0 an, 
+        // aber für echte Funktion brauchst du: $table->boolean('is_wanted')->default(false); in der citizens Migration.
+        try {
+            $wantedCount = Citizen::where('is_wanted', true)->count();
+        } catch (\Exception $e) {
+            $wantedCount = 0; // Fallback, falls Spalte nicht existiert
+        }
+
+
+        // --- 2. BESTEHENDE LOGIK (ANKÜNDIGUNGEN, RÄNGE, STUNDEN) ---
+
+        // Ankündigungen
         $announcements = Announcement::where('is_active', true)->with('user')->latest()->take(5)->get();
 
-        // 2. RANGVERTEILUNG
-        // Wir holen alle Ränge, sortiert nach Level (höchster zuerst: 19 -> 1)
+        // Rangverteilung
         $ranks = Rank::orderBy('level', 'desc')->get();
-        
         $allUsers = User::with('roles')->get();
-        
         $rankCounts = [];
 
         foreach ($allUsers as $u) {
-            // Schritt A: "Den wirklichen Rank in der User Tabelle nehmen"
-            // Wir greifen auf die Spalte 'rank' im User-Model zu.
-            // Dort sollte der 'slug' (z.B. 'polizeimeister') stehen.
             $userRankSlug = $u->rank;
-
-            // Schritt B: Fallback (Falls die Spalte 'rank' leer ist)
-            // Wir suchen in den Rollen nach einem gültigen Polizeirang.
-            // 'super-admin' wird hier automatisch ignoriert, da er nicht in der $ranks Liste ist.
+            
             if (empty($userRankSlug)) {
                 $userRankSlug = $u->getRoleNames()->first(function ($roleName) use ($ranks) {
                     return $ranks->contains('name', $roleName);
                 });
             }
 
-            // Schritt C: Wenn wir einen gültigen Slug gefunden haben (der in der ranks Tabelle existiert)
             if ($userRankSlug) {
-                // Wir suchen das passende Rank-Objekt aus unserer geladenen Liste
                 $rankObj = $ranks->firstWhere('name', $userRankSlug);
-                
                 if ($rankObj) {
-                    // Wir nutzen das LABEL für die Zählung/Anzeige
                     $label = $rankObj->label;
-                    
                     if (!isset($rankCounts[$label])) {
                         $rankCounts[$label] = 0;
                     }
@@ -60,27 +82,23 @@ class DashboardController extends Controller
             }
         }
 
-        // Schritt D: Das Array für die View bauen, basierend auf der korrekten Hierarchie-Reihenfolge
         $sortedRankDistribution = [];
         foreach ($ranks as $rank) {
-            // Nur Ränge aufnehmen, die auch mindestens einen User haben
             if (isset($rankCounts[$rank->label])) {
                 $sortedRankDistribution[$rank->label] = $rankCounts[$rank->label];
             }
         }
 
-        // Berechne Total Users basierend auf den gezählten Rängen (ohne reine Admins)
         $totalUsers = array_sum($sortedRankDistribution);
         
-        // 3. PERSÖNLICHE ÜBERSICHT
+        // Letzte Berichte (Persönliche Übersicht)
         $lastReports = Report::where('user_id', $user->id)->latest()->take(3)->get();
             
-        // 4. NEU: BERECHNUNG DER WOCHENSTUNDEN
+        // Wochenstunden Berechnung
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
         $totalSeconds = 0;
 
-        // Hole alle relevanten Logs für den User in der aktuellen Woche
         $dutyLogs = ActivityLog::where('user_id', $user->id)
             ->whereIn('log_type', ['DUTY_START', 'DUTY_END'])
             ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
@@ -91,26 +109,28 @@ class DashboardController extends Controller
 
         foreach ($dutyLogs as $log) {
             if ($log->log_type === 'DUTY_START') {
-                // Speichere den Start-Log
                 $lastStartLog = $log;
             } elseif ($log->log_type === 'DUTY_END' && $lastStartLog) {
-                // Wenn ein End-Log gefunden wird und ein Start-Log existiert, berechne die Differenz
                 $totalSeconds += $lastStartLog->created_at->diffInSeconds($log->created_at);
-                // Setze den Start-Log zurück, um Paare zu bilden
                 $lastStartLog = null; 
             }
         }
 
-        // Sonderfall: User ist aktuell im Dienst (letzter Log war DUTY_START)
         if ($lastStartLog) {
             $totalSeconds += $lastStartLog->created_at->diffInSeconds(Carbon::now());
         }
 
-        // Formatiere die Gesamtsekunden in ein lesbares Format (HH:MM:SS)
         $weeklyHours = gmdate("H:i:s", $totalSeconds);
 
-        // 5. DATEN AN DIE VIEW ÜBERGEBEN
+        // --- 3. VIEW RETURN ---
         return view('dashboard', [
+            // Neue Variablen
+            'myReportCount' => $myReportCount,
+            'openCasesCount' => $openCasesCount,
+            'dailyFinesAmount' => $dailyFinesAmount,
+            'wantedCount' => $wantedCount,
+            
+            // Bestehende Variablen
             'announcements' => $announcements,
             'rankDistribution' => $sortedRankDistribution,
             'totalUsers' => $totalUsers,

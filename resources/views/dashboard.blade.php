@@ -4,7 +4,7 @@
 
 @section('content')
 
-<!-- 1. Hero Section (Design definiert in app.blade.php) -->
+<!-- 1. Hero Section -->
 <div class="content-header">
     <div class="container-fluid">
         <div class="row align-items-center">
@@ -20,7 +20,7 @@
                 </p>
             </div>
             <div class="col-md-4 text-right d-none d-md-block">
-                {{-- IDs für JS hinzugefügt --}}
+                {{-- Live-Uhrzeit (wird via JS aktualisiert) --}}
                 <h4 class="mb-0 font-weight-bold">
                     <span id="live-clock">{{ \Carbon\Carbon::now()->format('H:i') }}</span> <small>Uhr</small>
                 </h4>
@@ -54,7 +54,7 @@
                 </div>
             </div>
             
-            <!-- Offene Akten -->
+            <!-- Offene Akten / Gesamt -->
             <div class="col-lg-3 col-6">
                 <div class="card stat-card" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%); border: none;">
                     <div class="card-body">
@@ -62,9 +62,11 @@
                             <i class="fas fa-folder-open"></i>
                         </div>
                         <h3 class="font-weight-bold">{{ $openCasesCount ?? 0 }}</h3>
-                        <p class="mb-0 text-uppercase font-weight-bold small" style="letter-spacing: 1px;">Offene Akten</p>
+                        <p class="mb-0 text-uppercase font-weight-bold small" style="letter-spacing: 1px;">Akten im System</p>
                         <div class="mt-3">
-                            <small class="text-white-50">Aktuell in Bearbeitung</small>
+                            <a href="{{ route('reports.index') }}" class="text-white small" style="text-decoration: underline;">
+                                Zum Archiv <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -80,7 +82,7 @@
                         <h3 class="font-weight-bold">{{ number_format($dailyFinesAmount ?? 0, 0, ',', '.') }} €</h3>
                         <p class="mb-0 text-uppercase font-weight-bold small" style="letter-spacing: 1px;">Bußgelder (Heute)</p>
                         <div class="mt-3">
-                            <span class="text-white small"><i class="fas fa-chart-line"></i> +12% zum Vortag</span>
+                            <small class="text-white-50">Summe aller heutigen Einträge</small>
                         </div>
                     </div>
                 </div>
@@ -96,8 +98,9 @@
                         <h3 class="font-weight-bold">{{ $wantedCount ?? 0 }}</h3>
                         <p class="mb-0 text-uppercase font-weight-bold small" style="letter-spacing: 1px;">Gesuchte Personen</p>
                          <div class="mt-3">
-                            <a href="#" class="text-white small" style="text-decoration: underline;">
-                                Fahndungsliste <i class="fas fa-arrow-right ml-1"></i>
+                            {{-- Link zur Bürgerliste, da Fahndung dort meist gefiltert wird --}}
+                            <a href="{{ route('citizens.index') }}" class="text-white small" style="text-decoration: underline;">
+                                Bürgerdatenbank <i class="fas fa-arrow-right ml-1"></i>
                             </a>
                         </div>
                     </div>
@@ -106,13 +109,17 @@
         </div>
 
         <div class="row mt-4">
-            <!-- Linke Spalte -->
+            <!-- Linke Spalte: Ankündigungen & Letzte Berichte -->
             <div class="col-lg-8">
+                
+                <!-- Ankündigungen -->
                 <div class="card">
                     <div class="card-header border-0 d-flex justify-content-between align-items-center">
                         <h3 class="card-title font-weight-bold"><i class="fas fa-bullhorn mr-2 text-primary"></i> Ankündigungen</h3>
                          <div class="card-tools">
-                            <span class="badge badge-primary">Neu</span>
+                            @if(count($announcements) > 0)
+                                <span class="badge badge-primary">{{ count($announcements) }} Neu</span>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body p-0">
@@ -136,9 +143,10 @@
                     </div>
                 </div>
                 
+                <!-- Letzte Berichte -->
                  <div class="card">
                     <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-file-contract mr-2 text-info"></i> Letzte Berichte</h3>
+                        <h3 class="card-title font-weight-bold"><i class="fas fa-file-contract mr-2 text-info"></i> Letzte Berichte (Persönlich)</h3>
                     </div>
                     <div class="card-body p-0 table-responsive">
                          <table class="table table-hover text-nowrap">
@@ -146,7 +154,6 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Titel</th>
-                                    <th>Ersteller</th>
                                     <th>Datum</th>
                                     <th></th>
                                 </tr>
@@ -156,14 +163,6 @@
                                     <tr>
                                         <td><span class="text-muted">#{{ $report->id }}</span></td>
                                         <td class="font-weight-bold">{{ $report->title }}</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-stack mr-2">
-                                                    <img src="{{ $report->user->avatar ?? asset('img/default-avatar.png') }}" class="img-circle" style="width: 25px; height: 25px;">
-                                                </div>
-                                                {{ $report->user->name }}
-                                            </div>
-                                        </td>
                                         <td class="text-muted small">{{ $report->created_at->format('d.m.Y H:i') }}</td>
                                         <td class="text-right">
                                             <a href="{{ route('reports.show', $report) }}" class="btn btn-xs btn-outline-light rounded-pill px-3">
@@ -173,7 +172,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">Keine Berichte gefunden.</td>
+                                        <td colspan="4" class="text-center py-4 text-muted">Sie haben noch keine Berichte verfasst.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -182,7 +181,7 @@
                 </div>
             </div>
 
-            <!-- Rechte Spalte -->
+            <!-- Rechte Spalte: Dienst & Personal -->
             <div class="col-lg-4">
                 
                 <!-- Dienst Status -->
@@ -207,10 +206,15 @@
                         <button id="toggle-duty-btn" class="btn btn-block btn-lg {{ Auth::user()->on_duty ? 'btn-outline-danger' : 'btn-outline-success' }} rounded-pill font-weight-bold">
                             {{ Auth::user()->on_duty ? 'Dienst beenden' : 'Dienst antreten' }}
                         </button>
+                        
+                        <div class="mt-4 pt-3 border-top border-secondary">
+                            <span class="text-muted small">Ihre Dienstzeit diese Woche:</span>
+                            <h5 class="font-weight-bold text-white mt-1">{{ $weeklyHours ?? '00:00:00' }}</h5>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Rangverteilung -->
+                <!-- Personal Übersicht -->
                 <div class="card">
                     <div class="card-header border-0">
                         <h3 class="card-title font-weight-bold">Personal Übersicht</h3>
@@ -244,27 +248,22 @@ $(document).ready(function() {
     // --- LIVE UHRZEIT FUNKTION ---
     function updateClock() {
         const now = new Date();
-        // Zeit formatieren (HH:MM)
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const timeString = `${hours}:${minutes}`;
         
-        // Datum formatieren (DD.MM.YYYY)
         const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0'); // Monate sind 0-basiert
+        const month = String(now.getMonth() + 1).padStart(2, '0');
         const year = now.getFullYear();
         const dateString = `${day}.${month}.${year}`;
 
         $('#live-clock').text(timeString);
         $('#live-date').text(dateString);
     }
-
-    // Starten und jede Sekunde aktualisieren
     updateClock(); 
     setInterval(updateClock, 1000);
 
-
-    // --- DIENST TOGGLE (Bestehender Code) ---
+    // --- DIENST TOGGLE ---
     $('#toggle-duty-btn').on('click', function() {
         var button = $(this);
         button.prop('disabled', true); 
@@ -278,7 +277,6 @@ $(document).ready(function() {
             success: function(response) {
                 if(response.success) {
                     var statusTextContainer = $('#duty-status-text');
-                    
                     if(response.new_status) {
                         statusTextContainer.html('<span class="text-success" style="text-shadow: 0 0 15px rgba(40, 167, 69, 0.4);">IM DIENST</span>');
                         button.text('Dienst beenden').removeClass('btn-outline-success').addClass('btn-outline-danger');
