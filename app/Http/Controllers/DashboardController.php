@@ -6,25 +6,14 @@ use App\Models\ActivityLog;
 use App\Models\Announcement;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\Rank; // Importiere das Rank Model
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon; // Carbon für Datumsberechnungen importieren
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    private array $rankHierarchy = [
-        'chief'         => 'Chief',
-        'deputy chief'  => 'Deputy Chief',
-        'doctor'        => 'Doctor',
-        'captain'       => 'Captain',
-        'lieutenant'    => 'Lieutenant',
-        'supervisor'    => 'Supervisor',
-        's-emt'         => 'S-EMT (Senior EMT)',
-        'paramedic'     => 'Paramedic',
-        'a-emt'         => 'A-EMT (Advanced EMT)',
-        'emt'           => 'EMT (Emergency Medical Technician)',
-        'trainee'       => 'Trainee',
-    ];
+    // Die harte Array-Definition ($rankHierarchy) wurde entfernt, da wir nun die Datenbank nutzen.
 
     public function index()
     {
@@ -33,28 +22,47 @@ class DashboardController extends Controller
         // 1. ANKÜNDIGUNGEN
         $announcements = Announcement::where('is_active', true)->with('user')->latest()->take(5)->get();
 
-        // 2. RANGVERTEILUNG (unverändert)
+        // 2. RANGVERTEILUNG (Dynamisch aus der DB)
         $allUsers = User::with('roles')->get();
         $totalUsers = $allUsers->count();
-        $rankDistribution = [];
 
+        // Hole alle Ränge aus der Datenbank, sortiert nach Level (höchster zuerst)
+        // Level 19 (Präsident) steht oben, Level 1 unten.
+        $dbRanks = Rank::orderBy('level', 'desc')->get();
+
+        // Zähle zuerst die Benutzer pro Rolle (basierend auf dem internen Rollennamen/Slug)
+        $userCountsByRole = [];
         foreach ($allUsers as $u) {
-            $role = $u->getRoleNames()->first();
+            $role = $u->getRoleNames()->first(); // Holt den ersten Rollennamen (z.B. 'polizeipraesident')
             if ($role) {
-                $rankName = $this->rankHierarchy[$role] ?? ucwords(str_replace('-', ' ', $role));
-                $rankDistribution[$rankName] = ($rankDistribution[$rankName] ?? 0) + 1;
+                if (!isset($userCountsByRole[$role])) {
+                    $userCountsByRole[$role] = 0;
+                }
+                $userCountsByRole[$role]++;
             }
         }
-        
+
+        // Baue das Anzeige-Array basierend auf der Sortierung der Rank-Tabelle
         $sortedRankDistribution = [];
-        $rankHierarchyNames = array_values($this->rankHierarchy);
-        foreach ($rankHierarchyNames as $name) {
-             if (isset($rankDistribution[$name])) {
-                 $sortedRankDistribution[$name] = $rankDistribution[$name];
-                 unset($rankDistribution[$name]);
-             }
+
+        foreach ($dbRanks as $rank) {
+            // $rank->name ist der Slug (z.B. 'polizeipraesident')
+            // $rank->label ist der Anzeigename (z.B. 'Polizeipräsident/in')
+            
+            // Wenn Benutzer mit diesem Rang existieren, füge sie zur Liste hinzu
+            if (isset($userCountsByRole[$rank->name])) {
+                $sortedRankDistribution[$rank->label] = $userCountsByRole[$rank->name];
+                
+                // Entferne diesen Rang aus den Zählungen, um zu sehen, ob Ränge übrig bleiben, die nicht in der DB sind
+                unset($userCountsByRole[$rank->name]);
+            }
         }
-        $sortedRankDistribution = array_merge($sortedRankDistribution, $rankDistribution);
+
+        // Optional: Falls User Rollen haben, die NICHT in der Rank-Tabelle stehen (Fallback), hängen wir diese unten an
+        foreach ($userCountsByRole as $roleName => $count) {
+            $formattedName = ucwords(str_replace(['-', '_'], ' ', $roleName));
+            $sortedRankDistribution[$formattedName] = $count;
+        }
         
         // 3. PERSÖNLICHE ÜBERSICHT
         $lastReports = Report::where('user_id', $user->id)->latest()->take(3)->get();
@@ -99,7 +107,7 @@ class DashboardController extends Controller
             'rankDistribution' => $sortedRankDistribution,
             'totalUsers' => $totalUsers,
             'lastReports' => $lastReports,
-            'weeklyHours' => $weeklyHours, // Hier wird die berechnete Zeit übergeben
+            'weeklyHours' => $weeklyHours,
         ]);
     }
 }
