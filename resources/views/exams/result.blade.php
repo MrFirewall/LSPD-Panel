@@ -145,21 +145,6 @@
                                     }
                                 @endphp
 
-                                {{-- DEBUG-CODE HINZUGEFÜGT --}}
-                                @if($index === 0)
-                                    @php
-                                        // Nur die Optionen der ersten Frage zum Debugging ausgeben
-                                        $debugData = [
-                                            'question_id' => $question->id,
-                                            'options_loaded' => $question->relationLoaded('options'),
-                                            'options_count' => optional($question->options)->count(),
-                                            'options_raw' => optional($question->options)->pluck('option_text')->toArray()
-                                        ];
-                                    @endphp
-                                    {{ dd($debugData) }}
-                                @endif
-                                {{-- ENDE DEBUG-CODE --}}
-
                                 {{-- Verwende Standard Callout ohne benutzerdefinierte Klassen --}}
                                 <div class="callout callout-{{ str_replace('alert-', '', $answerFeedbackClass) }} mb-4">
                                     {{-- Verwende alert Klassen für den inneren Hintergrund --}}
@@ -174,7 +159,8 @@
                                             @case('single_choice')
                                                 @php $userOptionId = $userAnswersForQuestion->first()->option_id ?? null; @endphp
                                                 <ul class="list-unstyled ml-4">
-                                                    @forelse(optional($question->options) as $option)
+                                                    {{-- KORREKTUR: optional() entfernt, da Daten geladen sind --}}
+                                                    @forelse($question->options as $option) 
                                                         <li>
                                                             @if($option->is_correct)
                                                                 <i class="fas fa-check-circle text-success mr-1"></i>
@@ -186,7 +172,7 @@
                                                             <span class="{{ $userOptionId == $option->id ? 'font-weight-bold' : '' }}">{{ $option->option_text }}</span>
                                                         </li>
                                                     @empty
-                                                        <li>Keine Optionen definiert!</li>
+                                                        <li>Keine Optionen definiert! (Fehler in der Datenbank)</li>
                                                     @endforelse
                                                 </ul>
                                                 @break
@@ -194,7 +180,8 @@
                                             @case('multiple_choice')
                                                 @php $userOptionIds = $userAnswersForQuestion->pluck('option_id'); @endphp
                                                 <ul class="list-unstyled ml-4">
-                                                    @forelse(optional($question->options) as $option)
+                                                    {{-- KORREKTUR: optional() entfernt, da Daten geladen sind --}}
+                                                    @forelse($question->options as $option)
                                                         <li>
                                                             @if($option->is_correct && $userOptionIds->contains($option->id))
                                                                 <i class="fas fa-check-square text-success mr-1"></i>
@@ -208,7 +195,7 @@
                                                             <span>{{ $option->option_text }}</span>
                                                         </li>
                                                     @empty
-                                                        <li>Keine Optionen definiert!</li>
+                                                        <li>Keine Optionen definiert! (Fehler in der Datenbank)</li>
                                                     @endforelse
                                                 </ul>
                                                 @break
