@@ -209,7 +209,7 @@
                             <h3 class="card-title font-weight-bold"><i class="fas fa-user-tag mr-2 text-info"></i> Rang & Gruppen</h3>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted small mb-4 bg-light p-2 rounded" style="background-color: rgba(255,255,255,0.05) !important;">
+                            <p class="text-muted small mb-4 p-2 rounded" style="background-color: rgba(255,255,255,0.05) !important;">
                                 <i class="fas fa-info-circle mr-1"></i> Bitte wählen Sie <strong>einen</strong> Haupt-Rang und optional weitere Zusatzrollen.
                             </p>
                             

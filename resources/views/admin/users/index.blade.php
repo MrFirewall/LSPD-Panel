@@ -4,6 +4,38 @@
 
 @section('content')
 
+{{-- Styles für DataTables Pagination im Dark Mode --}}
+<style>
+    /* Pagination Container & Links */
+    .dataTables_wrapper .page-item .page-link {
+        background-color: #2d3748 !important; /* Card Dark Color */
+        border-color: rgba(255,255,255,0.08) !important; /* Glass Border */
+        color: #e2e8f0 !important; /* Text Light */
+    }
+
+    /* Aktiver Button */
+    .dataTables_wrapper .page-item.active .page-link {
+        background-color: #28a745 !important; /* Success Color passend zum "Erstellen" Button */
+        border-color: #28a745 !important;
+        color: #fff !important;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.4);
+    }
+
+    /* Deaktivierte Buttons (Vorherige/Nächste wenn am Ende) */
+    .dataTables_wrapper .page-item.disabled .page-link {
+        background-color: #1a202c !important; /* Background Dark */
+        color: #6c757d !important; /* Muted Text */
+        border-color: rgba(255,255,255,0.05) !important;
+    }
+
+    /* Hover Status */
+    .dataTables_wrapper .page-item:not(.active):not(.disabled) .page-link:hover {
+        background-color: #4a5568 !important; /* Lighter Dark */
+        color: #fff !important;
+        border-color: rgba(255,255,255,0.2) !important;
+    }
+</style>
+
 {{-- 1. HERO HEADER --}}
 <div class="content-header" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <div class="container-fluid">
