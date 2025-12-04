@@ -57,7 +57,8 @@
                                     <tr>
                                         <th>ID</th>
                                         <th>Prüfling</th>
-                                        <th>Prüfung</th> {{-- Modul entfernt --}}
+                                        <th>Ausbilder</th>
+                                        <th>Prüfung</th>
                                         <th>Status</th>
                                         <th>Score</th>
                                         <th>Gestartet</th>
@@ -72,6 +73,13 @@
                                             <td>
                                                 @if($attempt->user)
                                                 <a href="{{ route('admin.users.show', $attempt->user) }}">{{ $attempt->user->name }}</a>
+                                                @else
+                                                <span class="text-muted">Unbekannt</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($attempt->user)
+                                                <a href="{{ route('admin.users.show', $attempt->evaluator) }}">{{ $attempt->evaluator->name }}</a>
                                                 @else
                                                 <span class="text-muted">Unbekannt</span>
                                                 @endif
