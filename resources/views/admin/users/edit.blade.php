@@ -157,7 +157,8 @@
                                             </label>
                                         </div>
                                     @endforeach
-                                </div>
+                                </div>                            
+                            @endif
                             @else
                                 {{-- FALLBACK: Wenn keine Ränge verfügbar sind (weil gefiltert oder leer) --}}
                                 <div class="callout callout-warning mt-3 shadow-sm">
@@ -169,7 +170,6 @@
                                     </p>
                                 </div>
                             @endif
-                        @endif
                         {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
                             <h6 class="text-primary mt-4 border-bottom pb-2">Abteilungen & Zusatzrollen</h6>
