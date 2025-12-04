@@ -13,23 +13,24 @@
                     <i class="fas fa-layer-group mr-2" style="opacity: 0.6;"></i> Dashboard
                 </h1>
                 <p class="lead mb-0 mt-2" style="opacity: 0.9;">
-                    Willkommen zurück, <strong>{{ Auth::user()->name }}</strong>.                    
+                    Willkommen zurück, <strong>{{ Auth::user()->name }}</strong>.
                 </p>
-                <p class="lead mb-0 mt-2" style="opacity: 0.9;">
-                    Ihr aktuelle Position: <strong>{{ Auth::user()->rankRelation->label ?? 'Mitarbeiter' }}</strong>.                    
+                <p class="mb-0" style="opacity: 0.9;">
+                    Ihre aktuelle Position: <strong>{{ Auth::user()->rankRelation->label ?? 'Mitarbeiter' }}</strong>.
                 </p>
-
-                
             </div>
             <div class="col-md-4 text-right d-none d-md-block">
-                <h4 class="mb-0 font-weight-bold">{{ \Carbon\Carbon::now()->format('H:i') }} <small>Uhr</small></h4>
-                <span class="text-white-50">{{ \Carbon\Carbon::now()->format('d.m.Y') }}</span>
+                {{-- IDs für JS hinzugefügt --}}
+                <h4 class="mb-0 font-weight-bold">
+                    <span id="live-clock">{{ \Carbon\Carbon::now()->format('H:i') }}</span> <small>Uhr</small>
+                </h4>
+                <span class="text-white-50" id="live-date">{{ \Carbon\Carbon::now()->format('d.m.Y') }}</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- 2. Main Content (Startet automatisch höher durch negatives Margin im Layout) -->
+<!-- 2. Main Content -->
 <section class="content">
     <div class="container-fluid">
         
@@ -37,7 +38,6 @@
         <div class="row">
             <!-- Eigene Berichte -->
             <div class="col-lg-3 col-6">
-                <!-- Stat Card: Nutzt jetzt Standard CSS mit Custom Gradient -->
                 <div class="card stat-card" style="background: linear-gradient(45deg, #4b6cb7 0%, #182848 100%); border: none;">
                     <div class="card-body">
                         <div style="position: absolute; right: -10px; top: -10px; font-size: 5rem; opacity: 0.1; transform: rotate(15deg);">
@@ -159,7 +159,6 @@
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-stack mr-2">
-                                                    <!-- Placeholder Avatar if needed, or just icon -->
                                                     <img src="{{ $report->user->avatar ?? asset('img/default-avatar.png') }}" class="img-circle" style="width: 25px; height: 25px;">
                                                 </div>
                                                 {{ $report->user->name }}
@@ -241,10 +240,34 @@
 @push('scripts')
 <script>
 $(document).ready(function() {
+    
+    // --- LIVE UHRZEIT FUNKTION ---
+    function updateClock() {
+        const now = new Date();
+        // Zeit formatieren (HH:MM)
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
+        
+        // Datum formatieren (DD.MM.YYYY)
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Monate sind 0-basiert
+        const year = now.getFullYear();
+        const dateString = `${day}.${month}.${year}`;
+
+        $('#live-clock').text(timeString);
+        $('#live-date').text(dateString);
+    }
+
+    // Starten und jede Sekunde aktualisieren
+    updateClock(); 
+    setInterval(updateClock, 1000);
+
+
+    // --- DIENST TOGGLE (Bestehender Code) ---
     $('#toggle-duty-btn').on('click', function() {
         var button = $(this);
         button.prop('disabled', true); 
-        // Simpler Spinner beim Klicken
         var originalText = button.text();
         button.html('<i class="fas fa-spinner fa-spin"></i>');
 
@@ -259,7 +282,6 @@ $(document).ready(function() {
                     if(response.new_status) {
                         statusTextContainer.html('<span class="text-success" style="text-shadow: 0 0 15px rgba(40, 167, 69, 0.4);">IM DIENST</span>');
                         button.text('Dienst beenden').removeClass('btn-outline-success').addClass('btn-outline-danger');
-                        // Optional: Icon oben auch ändern
                         $('.fa-user-shield').removeClass('text-danger').addClass('text-success');
                     } else {
                         statusTextContainer.html('<span class="text-danger" style="text-shadow: 0 0 15px rgba(220, 53, 69, 0.4);">AUSSER DIENST</span>');
