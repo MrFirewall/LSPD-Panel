@@ -1,3 +1,46 @@
+{{-- Design-Anpassungen speziell für die Sidebar --}}
+<style>
+    /* Header (z.B. EINSATZWESEN) dezenter gestalten */
+    .nav-sidebar .nav-header {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255,255,255,0.4) !important;
+        margin-top: 15px;
+        padding-bottom: 5px;
+        font-weight: 600;
+    }
+    
+    /* Icons etwas aufhübschen */
+    .nav-sidebar .nav-icon {
+        width: 1.6rem;
+        text-align: center;
+        opacity: 0.75;
+        transition: all 0.3s ease;
+    }
+    .nav-sidebar .nav-link:hover .nav-icon,
+    .nav-sidebar .nav-link.active .nav-icon {
+        opacity: 1;
+        color: #fff;
+        transform: translateX(2px);
+        text-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+
+    /* Sub-Menü Links (eingerückt & feinerer Active-State) */
+    .nav-treeview > .nav-item > .nav-link {
+        padding-left: 2.2rem;
+        font-size: 0.9rem;
+    }
+    /* Sub-Menü Active State: Nur leichter Hintergrund + Border links */
+    .nav-treeview > .nav-item > .nav-link.active {
+        background-color: rgba(255,255,255,0.05) !important;
+        box-shadow: none !important;
+        border-left: 3px solid #6366f1; /* Indigo Accent passend zum Theme */
+        border-radius: 0 4px 4px 0;
+        color: #fff !important;
+    }
+</style>
+
 @php
     /*
     |--------------------------------------------------------------------------
@@ -65,7 +108,6 @@
     </li>
     @endcan
 
-    {{-- NEU HINZUGEFÜGT (BASIEREND AUF WEB.PHP) --}}
     <li class="nav-item">
         <a href="{{ route('notifications.index') }}" class="nav-link {{ $isNotificationsActive ? 'active' : '' }}">
             <i class="nav-icon fas fa-bell"></i>
@@ -79,7 +121,7 @@
     @can('reports.view')
     <li class="nav-item">
         <a href="{{ route('reports.index') }}" class="nav-link {{ Request::routeIs('reports.*') ? 'active' : '' }}">
-            <i class="nav-icon fas fa-hospital-alt"></i>
+            <i class="nav-icon fas fa-file-contract"></i> {{-- Icon geändert zu Akte --}}
             <p>Einsatzberichte</p>
         </a>
     </li>
@@ -87,7 +129,7 @@
      @can('citizens.view')
      <li class="nav-item">
         <a href="{{ route('citizens.index') }}" class="nav-link {{ Request::routeIs('citizens.*') ? 'active' : '' }}">
-            <i class="nav-icon fas fa-address-book"></i>
+            <i class="nav-icon fas fa-users"></i> {{-- Icon geändert zu Users --}}
             <p>Patientenakten</p>
         </a>
     </li>
@@ -95,7 +137,7 @@
     @endcanany
 
     {{-- AUSBILDUNG GRUPPE (USER) --}}
-    @can('training.view') {{-- Ggf. Berechtigung anpassen --}}
+    @can('training.view') 
     <li class="nav-item has-treeview {{ $isAusbildungUserActive ? 'menu-open' : '' }}">
         <a href="#" class="nav-link {{ $isAusbildungUserActive ? 'active' : '' }}">
             <i class="nav-icon fas fa-graduation-cap"></i>
@@ -117,7 +159,7 @@
     @canany(['evaluations.create', 'vacations.create'])
     <li class="nav-item has-treeview {{ $isFormsUserActive ? 'menu-open' : '' }}">
         <a href="#" class="nav-link {{ $isFormsUserActive ? 'active' : '' }}">
-            <i class="nav-icon fas fa-file-alt"></i>
+            <i class="nav-icon fas fa-paste"></i> {{-- Icon geändert zu Paste --}}
             <p>
                 Formulare & Anträge
                 <i class="right fas fa-angle-left"></i>
@@ -129,7 +171,7 @@
             @can('evaluations.create')
             <li class="nav-item has-treeview {{ $isEvaluationsActive ? 'menu-open' : '' }}">
                 <a href="#" class="nav-link {{ $isEvaluationsActive ? 'active' : '' }}">
-                    <i class="far fa-circle nav-icon"></i>
+                    <i class="far fa-star nav-icon"></i> {{-- Icon geändert zu Star --}}
                     <p>
                         Bewertungen
                         <i class="right fas fa-angle-left"></i>
@@ -148,7 +190,7 @@
             @can('vacations.create')
             <li class="nav-item">
                 <a href="{{ route('vacations.create') }}" class="nav-link {{ Request::routeIs('vacations.create') ? 'active' : '' }}">
-                    <i class="far fa-circle nav-icon"></i>
+                    <i class="far fa-calendar-alt nav-icon"></i> {{-- Icon geändert --}}
                     <p>Urlaubsantrag</p>
                 </a>
             </li>
@@ -168,7 +210,7 @@
         @canany(['users.view', 'vacations.manage', 'roles.view'])
         <li class="nav-item has-treeview {{ $isAdminPersonalActive ? 'menu-open' : '' }}">
             <a href="#" class="nav-link {{ $isAdminPersonalActive ? 'active' : '' }}">
-                <i class="nav-icon fas fa-users-cog"></i>
+                <i class="nav-icon fas fa-id-card-alt"></i> {{-- Icon geändert --}}
                 <p>Personalverwaltung<i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
@@ -201,13 +243,12 @@
         @canany(['evaluations.view.all', 'exams.manage', 'training.view']) 
         <li class="nav-item has-treeview {{ $isAdminAusbildungActive ? 'menu-open' : '' }}">
             <a href="#" class="nav-link {{ $isAdminAusbildungActive ? 'active' : '' }}">
-                <i class="nav-icon fas fa-book-reader"></i>
+                <i class="nav-icon fas fa-chalkboard-teacher"></i> {{-- Icon geändert --}}
                 <p>Ausbildungsleitung<i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
                 @can('evaluations.view.all')
                 <li class="nav-item">
-                    {{-- Diese Route ist NICHT im Admin-Prefix, daher route('forms.evaluations.index') --}}
                     <a href="{{ route('forms.evaluations.index') }}" class="nav-link {{ Request::routeIs('forms.evaluations.index') ? 'active' : '' }}">
                         <i class="far fa-circle nav-icon"></i><p>Eing. Formulare</p>
                     </a>
@@ -216,7 +257,6 @@
                 
                 @can('training.view') 
                 <li class="nav-item">
-                     {{-- Diese Route ist NICHT im Admin-Prefix, daher route('modules.index') --}}
                     <a href="{{ route('modules.index') }}" class="nav-link {{ Request::routeIs('modules.*') ? 'active' : '' }}">
                         <i class="far fa-circle nav-icon"></i>
                         <p>Ausbildungsmodule</p>
@@ -252,7 +292,7 @@
         @canany(['announcements.view', 'permissions.view', 'logs.view', 'notification.rules.manage'])
         <li class="nav-item has-treeview {{ $isAdminSystemActive ? 'menu-open' : '' }}">
             <a href="#" class="nav-link {{ $isAdminSystemActive ? 'active' : '' }}">
-                <i class="nav-icon fas fa-cogs"></i>
+                <i class="nav-icon fas fa-server"></i> {{-- Icon geändert --}}
                 <p>System & Konfiguration<i class="right fas fa-angle-left"></i></p>
             </a>
             <ul class="nav nav-treeview">
@@ -288,8 +328,8 @@
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('admin.discord.index') ? 'active' : '' }}" 
                     href="{{ route('admin.discord.index') }}">
-                        <i class="fab fa-discord"></i>
-                        <span>Discord Einstellungen</span>
+                        <i class="fab fa-discord nav-icon"></i>
+                        <p>Discord Einstellungen</p>
                     </a>
                 </li>
                 @endcan
