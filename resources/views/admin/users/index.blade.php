@@ -144,7 +144,7 @@
             "language": {
                 "url": "{{ asset('js/i18n/de-DE.json') }}"
             },
-            "order": [[0, 'asc']], // Sortiere nach Name
+            "order": [[1, 'asc']], // Sortiere nach Personalnr. aufsteigend
             "responsive": true,
             "autoWidth": false,
             "paging": true,
@@ -160,7 +160,7 @@
             // AdminLTE/Bootstrap 4 Style Integration
             "dom": "<'row'<'col-sm-12 col-md-10'l><'col-sm-12 col-md-2'f>>" +
                    "<'row'<'col-sm-12'tr>>" +
-                   "<'row'<'col-sm-12 col-md-9'i><'col-sm-12 col-md-3'p>>",
+                   "<'row'<'col-sm-12 col-md-10'i><'col-sm-12 col-md-2'p>>",
             "renderer": "bootstrap"
         });
     });
