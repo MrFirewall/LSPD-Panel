@@ -13,9 +13,13 @@
                     <i class="fas fa-layer-group mr-2" style="opacity: 0.6;"></i> Dashboard
                 </h1>
                 <p class="lead mb-0 mt-2" style="opacity: 0.9;">
-                    Willkommen zurück, <strong>{{ Auth::user()->name }}</strong>. 
-                    <span class="badge badge-light badge-pill ml-2 text-dark">{{ Auth::user()->rankRelation->label ?? 'Mitarbeiter' }}</span>
+                    Willkommen zurück, <strong>{{ Auth::user()->name }}</strong>.                    
                 </p>
+                <p class="lead mb-0 mt-2" style="opacity: 0.9;">
+                    Ihr aktuelle Position: <strong>{{ Auth::user()->rankRelation->label ?? 'Mitarbeiter' }}</strong>.                    
+                </p>
+
+                
             </div>
             <div class="col-md-4 text-right d-none d-md-block">
                 <h4 class="mb-0 font-weight-bold">{{ \Carbon\Carbon::now()->format('H:i') }} <small>Uhr</small></h4>
