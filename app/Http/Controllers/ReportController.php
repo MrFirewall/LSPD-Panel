@@ -29,7 +29,9 @@ class ReportController extends Controller
         if ($request->filled('search')) {
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', "%{$searchTerm}%")
+                // HIER: Suche nach exakter ID hinzugefügt
+                $q->where('id', $searchTerm)
+                  ->orWhere('title', 'like', "%{$searchTerm}%")
                   ->orWhere('patient_name', 'like', "%{$searchTerm}%")
                   ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
                       $userQuery->where('name', 'like', "%{$searchTerm}%");
@@ -39,6 +41,9 @@ class ReportController extends Controller
 
         $reports = $query->paginate(15)->withQueryString();
 
+        // Wenn es ein AJAX Request ist (Live Suche), geben wir nur die Tabelle zurück? 
+        // Wir machen es simpel: Der Controller gibt immer die ganze View zurück,
+        // das JavaScript filtert sich den Tabellen-Teil heraus. Das ist robuster.
         return view('reports.index', compact('reports'));
     }
 
@@ -98,7 +103,6 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$report->title}' erstellt.",
         ]);
 
-        // Fix: Argumente in korrekter Reihenfolge (String Action, TriggerUser, Model, Actor)
         PotentiallyNotifiableActionOccurred::dispatch(
             'ReportController@store',
             $citizen ?? (object)['name' => $report->patient_name],
@@ -169,7 +173,6 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$report->title}' aktualisiert.",
         ]);
 
-        // Fix: Argumente in korrekter Reihenfolge
         PotentiallyNotifiableActionOccurred::dispatch(
             'ReportController@update',
             $citizen ?? (object)['name' => $report->patient_name],
@@ -197,7 +200,6 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$reportTitle}' gelöscht.",
         ]);
 
-        // Fix: Argumente in korrekter Reihenfolge, null für gelöschtes Model, Daten im Array
         PotentiallyNotifiableActionOccurred::dispatch(
             'ReportController@destroy',
             (object)['name' => $patientName],

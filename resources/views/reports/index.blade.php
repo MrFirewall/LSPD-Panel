@@ -23,26 +23,33 @@
 <section class="content">
     <div class="container-fluid">
         
-        <!-- Filter Box (Immer sichtbar, keine Accordion-Logik) -->
+        <!-- Live Suchleiste (Immer sichtbar) -->
         <div class="card card-outline card-info mb-3">
-            <div class="card-header border-0">
-                <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter & Suche</h3>
-            </div>
-            <div class="card-body pt-2 pb-3">
+            <div class="card-body p-3">
                 <form method="GET" action="{{ route('reports.index') }}">
                     <div class="row">
-                        <div class="col-md-10 mb-2">
-                            <div class="input-group">
+                        <div class="col-12">
+                            <div class="input-group input-group-lg">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 </div>
-                                <input type="text" name="search" class="form-control" placeholder="Suche nach Stichwort, Akten-ID, Bürgername oder Beamter..." value="{{ request('search') }}">
+                                <!-- ID für JavaScript Selector -->
+                                <input type="text" 
+                                       id="live-search-input"
+                                       name="search" 
+                                       class="form-control" 
+                                       placeholder="Live-Suche: Tippe ID (z.B. 3), Titel, Bürger oder Beamter..." 
+                                       value="{{ request('search') }}"
+                                       autocomplete="off">
+                                <div class="input-group-append" id="search-loading" style="display: none;">
+                                     <span class="input-group-text bg-white"><i class="fas fa-spinner fa-spin text-primary"></i></span>
+                                </div>
+                                <div class="input-group-append">
+                                    <button class="btn btn-info" type="submit">
+                                        Suchen
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-info btn-block" type="submit">
-                                Filtern
-                            </button>
                         </div>
                     </div>
                 </form>
@@ -50,15 +57,16 @@
         </div>
 
         <!-- Haupttabelle -->
-        <div class="card card-outline card-primary elevation-2">
+        <div class="card card-outline card-primary elevation-2" id="reports-card">
             <div class="card-header border-0">
                 <h3 class="card-title">Aktenverzeichnis</h3>
-                <div class="card-tools">
+                <div class="card-tools" id="pagination-top">
                     {{ $reports->links('pagination::simple-bootstrap-4') }}
                 </div>
             </div>
             <div class="card-body p-0 table-responsive">
-                <table class="table table-hover table-striped text-nowrap align-middle">
+                <!-- ID für JS-Targeting -->
+                <table class="table table-hover table-striped text-nowrap align-middle" id="reports-table">
                     <thead class="bg-light">
                         <tr>
                             <th style="width: 10px">#</th>
@@ -129,10 +137,53 @@
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer clearfix">
+            <div class="card-footer clearfix" id="pagination-bottom">
                 {{ $reports->links() }}
             </div>
         </div>
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        let timer;
+        const input = $('#live-search-input');
+        const spinner = $('#search-loading');
+
+        input.on('keyup', function() {
+            clearTimeout(timer);
+            
+            const query = $(this).val();
+            // Optional: Erst ab 1-2 Zeichen suchen, aber für ID suche ist auch 1 Zeichen ok
+            
+            spinner.show();
+
+            timer = setTimeout(function() {
+                $.ajax({
+                    url: "{{ route('reports.index') }}",
+                    type: "GET",
+                    data: { search: query },
+                    success: function(response) {
+                        // Wir extrahieren die neuen Teile aus der kompletten HTML Antwort
+                        const newTableBody = $(response).find('#reports-table tbody').html();
+                        const newPaginationTop = $(response).find('#pagination-top').html();
+                        const newPaginationBottom = $(response).find('#pagination-bottom').html();
+
+                        $('#reports-table tbody').html(newTableBody);
+                        $('#pagination-top').html(newPaginationTop);
+                        $('#pagination-bottom').html(newPaginationBottom);
+                        
+                        spinner.hide();
+                    },
+                    error: function() {
+                        console.error('Fehler bei der Live-Suche');
+                        spinner.hide();
+                    }
+                });
+            }, 300); // 300ms warten (Debounce)
+        });
+    });
+</script>
+@endpush
