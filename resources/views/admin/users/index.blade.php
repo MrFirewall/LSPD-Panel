@@ -146,7 +146,7 @@
             },
             "order": [[1, 'asc']], // Sortiere nach Personalnr. aufsteigend
             "responsive": true,
-            "autoWidth": falsed,
+            "autoWidth": false,
             "paging": true,
             "lengthChange": true,
             "searching": true,
