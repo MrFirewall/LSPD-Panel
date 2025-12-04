@@ -4,7 +4,7 @@
 
 @section('content')
 
-{{-- 1. PROFILE HERO HEADER (Ohne Overlap-Tricks) --}}
+{{-- 1. PROFILE HERO HEADER --}}
 <div class="content-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <div class="container-fluid">
         <div class="row align-items-center">
@@ -15,7 +15,7 @@
                 </p>
             </div>
             <div class="col-md-4 text-right">
-                <span class="badge badge-dark badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <span class="badge badge-light badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     {{ $user->rankRelation->label ?? 'Mitarbeiter' }}
                 </span>
             </div>
@@ -68,59 +68,39 @@
 
             </div>
 
-            {{-- RECHTE SPALTE: Tabs & Details --}}
+            {{-- RECHTE SPALTE: Dashboard-Style Layout (Keine Tabs mehr) --}}
             <div class="col-md-9">
-                <div class="card card-outline card-primary card-tabs shadow-lg">
-                    <div class="card-header p-0 pt-1 border-bottom-0">
-                        <ul class="nav nav-tabs" id="custom-tabs-three-tab" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="overview-tab" data-toggle="pill" href="#overview" role="tab">
-                                    <i class="fas fa-tachometer-alt mr-2"></i> Übersicht
-                                </a>
-                            </li>
-                            @can('users.manage.record')
-                                <li class="nav-item">
-                                    <a class="nav-link" id="service-records-tab-link" data-toggle="pill" href="#service-records-tab" role="tab">
-                                        <i class="fas fa-folder-open mr-2"></i> Personalakte
-                                    </a>
-                                </li>
-                            @endcan
-                        </ul>
+                
+                {{-- Sektion 1: Stunden & Statistiken --}}
+                <div class="mb-4">
+                    @include('profile.partials.hours', ['hourData' => $hourData])
+                </div>
+
+                {{-- Sektion 2: Details Grid --}}
+                <div class="row">
+                    <div class="col-md-6">
+                        @include('profile.partials.examinations', ['examinations' => $user->examinations])
+                        @include('profile.partials.training-modules', ['trainingModules' => $user->trainingModules])
                     </div>
-                    
-                    <div class="card-body">
-                        <div class="tab-content" id="custom-tabs-three-tabContent">
-                            
-                            {{-- TAB 1: ÜBERSICHT --}}
-                            <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                                
-                                {{-- Stundenstatistik --}}
-                                @include('profile.partials.hours', ['hourData' => $hourData])
-
-                                <hr class="my-4" style="border-color: rgba(255,255,255,0.1);">
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        @include('profile.partials.examinations', ['examinations' => $user->examinations])
-                                        @include('profile.partials.training-modules', ['trainingModules' => $user->trainingModules])
-                                    </div>
-                                    <div class="col-md-6">
-                                        @include('profile.partials.evaluations', ['evaluationCounts' => $evaluationCounts])
-                                        @include('profile.partials.vacations', ['vacations' => $user->vacations])
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- TAB 2: PERSONALAKTE --}}
-                            @can('users.manage.record')
-                                <div class="tab-pane fade" id="service-records-tab" role="tabpanel">
-                                    @include('profile.partials.service-records', ['user' => $user, 'serviceRecords' => $serviceRecords])
-                                </div>
-                            @endcan
-
-                        </div>
+                    <div class="col-md-6">
+                        @include('profile.partials.evaluations', ['evaluationCounts' => $evaluationCounts])
+                        @include('profile.partials.vacations', ['vacations' => $user->vacations])
                     </div>
                 </div>
+
+                {{-- Sektion 3: Personalakte (Admin Only) - Jetzt untereinander angeordnet --}}
+                @can('users.manage.record')
+                    <div class="mt-5">
+                        {{-- Eleganter Trenner --}}
+                        <div class="d-flex align-items-center mb-3">
+                            <h4 class="font-weight-bold mb-0 text-white"><i class="fas fa-folder-open text-primary mr-2"></i> Interne Personalakte</h4>
+                            <div class="ml-3 border-bottom flex-grow-1" style="border-color: rgba(255,255,255,0.1) !important;"></div>
+                        </div>
+                        
+                        @include('profile.partials.service-records', ['user' => $user, 'serviceRecords' => $serviceRecords])
+                    </div>
+                @endcan
+
             </div>
 
         </div>
