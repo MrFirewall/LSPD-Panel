@@ -20,7 +20,6 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        // Wir laden 'user.rankRelation' für das Label
         $query = Report::with(['user.rankRelation'])->latest();
 
         if (Auth::user()->cannot('viewAny', Report::class)) {
@@ -47,7 +46,6 @@ class ReportController extends Controller
     {
         $templates = config('report_templates', []);
         $citizens = Citizen::orderBy('name')->get();
-        // rankRelation laden für Dropdown-Labels
         $allStaff = User::with('rankRelation')->orderBy('name')->get();
         $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
 
@@ -84,11 +82,9 @@ class ReportController extends Controller
             $report->attendingStaff()->attach($request->input('attending_staff'));
         }
 
-        // Fines speichern mit Bemerkung
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {
-                // Wir nutzen die ID als Key für sync
                 $syncData[$fineData['id']] = ['remark' => $fineData['remark'] ?? ''];
             }
             $report->fines()->sync($syncData);
@@ -102,11 +98,12 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$report->title}' erstellt.",
         ]);
 
+        // Fix: Argumente in korrekter Reihenfolge (String Action, TriggerUser, Model, Actor)
         PotentiallyNotifiableActionOccurred::dispatch(
+            'ReportController@store',
             $citizen ?? (object)['name' => $report->patient_name],
             $report,
-            $creator,
-            ['action' => 'ReportController@store']
+            $creator
         );
 
         return redirect()->route('reports.index');
@@ -154,7 +151,6 @@ class ReportController extends Controller
         $report->update($validatedData);
         $report->attendingStaff()->sync($request->input('attending_staff', []));
         
-        // Fines synchronisieren
         if ($request->has('fines')) {
             $syncData = [];
             foreach ($request->input('fines') as $fineData) {
@@ -173,11 +169,12 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$report->title}' aktualisiert.",
         ]);
 
+        // Fix: Argumente in korrekter Reihenfolge
         PotentiallyNotifiableActionOccurred::dispatch(
+            'ReportController@update',
             $citizen ?? (object)['name' => $report->patient_name],
             $report,
-            $editor,
-            ['action' => 'ReportController@update']
+            $editor
         );
 
         return redirect()->route('reports.index');
@@ -200,15 +197,13 @@ class ReportController extends Controller
             'description' => "Einsatzbericht '{$reportTitle}' gelöscht.",
         ]);
 
+        // Fix: Argumente in korrekter Reihenfolge, null für gelöschtes Model, Daten im Array
         PotentiallyNotifiableActionOccurred::dispatch(
+            'ReportController@destroy',
             (object)['name' => $patientName],
             null,
             $deleter,
-            [
-                'action' => 'ReportController@destroy',
-                'title' => $reportTitle, 
-                'patient_name' => $patientName
-            ]
+            ['title' => $reportTitle, 'patient_name' => $patientName]
         );
 
         return redirect()->route('reports.index');
