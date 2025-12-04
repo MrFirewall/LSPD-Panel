@@ -14,7 +14,8 @@
             </div>
             <div class="col-sm-6 text-right">
                 @can('users.create')
-                    <a href="{{ route('admin.users.create') }}" class="btn btn-light text-primary font-weight-bold rounded-pill px-4 shadow-sm">
+                    {{-- FIX: Button Farbe angepasst (Success statt Light) für besseren Kontrast --}}
+                    <a href="{{ route('admin.users.create') }}" class="btn btn-success font-weight-bold rounded-pill px-4 shadow-sm border-0">
                         <i class="fas fa-plus mr-2"></i> Mitarbeiter anlegen
                     </a>
                 @endcan
@@ -40,9 +41,8 @@
                     </div>
                     
                     <div class="card-body">
-                        {{-- WICHTIG: style="width:100%" direkt am Table Tag hilft DataTables bei der Berechnung --}}
                         <table id="usersTable" class="table table-hover table-striped nowrap w-100" style="width: 100%;">
-                            <thead style="background-color: rgba(0,0,0,0.1);">
+                            <thead style="background-color: rgba(0,0,0,0.2); border-bottom: 2px solid rgba(255,255,255,0.1);">
                                 <tr>
                                     <th scope="col">Name</th>
                                     <th scope="col">Personalnr.</th>
@@ -106,18 +106,19 @@
                                     <td class="text-right align-middle">
                                         <div class="btn-group btn-group-sm">
                                             @can('users.edit')
-                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-dark" title="Personalakte öffnen">
-                                                    <i class="fas fa-file-alt text-primary"></i>
+                                                {{-- FIX: Outline-Buttons statt btn-default für Dark Mode --}}
+                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-outline-info" title="Personalakte öffnen">
+                                                    <i class="fas fa-file-alt"></i>
                                                 </a>
-                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-dark" title="Bearbeiten">
-                                                    <i class="fas fa-pencil-alt text-warning"></i>
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-outline-warning" title="Bearbeiten">
+                                                    <i class="fas fa-pencil-alt"></i>
                                                 </a>
                                             @endcan
                                             
                                             @canImpersonate
                                                 @if($user->canBeImpersonated() && $user->id !== auth()->id())
-                                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-dark" title="Als {{ $user->name }} einloggen">
-                                                        <i class="fas fa-user-secret text-danger"></i>
+                                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-outline-secondary" title="Als {{ $user->name }} einloggen">
+                                                        <i class="fas fa-user-secret"></i>
                                                     </a>
                                                 @endif
                                             @endCanImpersonate
@@ -141,7 +142,6 @@
 @push('scripts')
 <script>
     $(function () {
-        // DataTable in Variable speichern
         var table = $("#usersTable").DataTable({
             "language": {
                 "url": "{{ asset('js/i18n/de-DE.json') }}"
@@ -184,16 +184,14 @@
             }
         });
 
-        // FIX: Erzwinge Neuberechnung bei Fenstergrößenänderung
         $(window).on('resize', function () {
             table.columns.adjust().responsive.recalc();
         });
         
-        // FIX: Auch beim Sidebar-Toggle (falls AdminLTE Sidebar Animation die Breite ändert)
         $(document).on('collapsed.lte.pushmenu shown.lte.pushmenu', function() {
             setTimeout(function(){
                 table.columns.adjust().responsive.recalc();
-            }, 300); // Kleine Verzögerung für die Animation
+            }, 300);
         });
     });
 </script>
