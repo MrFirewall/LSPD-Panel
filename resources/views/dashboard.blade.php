@@ -114,13 +114,13 @@
                 
                 <!-- Ankündigungen -->
                 <div class="card">
-                    <div class="card-header border-0 d-flex justify-content-between align-items-center">
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-bullhorn mr-2 text-primary"></i> Ankündigungen</h3>
-                         <div class="card-tools">
+                    <div class="card-header border-0">
+                        <h3 class="card-title font-weight-bold">
+                            <i class="fas fa-bullhorn mr-2 text-primary"></i> Ankündigungen
                             @if(count($announcements) > 0)
-                                <span class="badge badge-primary">{{ count($announcements) }} Neu</span>
+                                <span class="badge badge-primary ml-2" style="font-size: 0.9rem; vertical-align: middle;">{{ count($announcements) }} Neu</span>
                             @endif
-                        </div>
+                        </h3>
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
