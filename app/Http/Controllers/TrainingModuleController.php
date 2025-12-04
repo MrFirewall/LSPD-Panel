@@ -70,11 +70,9 @@ class TrainingModuleController extends Controller
         /** @var User $creator */
         $creator = Auth::user();
 
-        // --- FIX START ---
-        // Add the user_id to the validated array before creating the model
         $validated['user_id'] = $creator->id;
         $validated['instructor_name'] = $creator->name;
-        // --- FIX END ---
+        $validated['date'] = now();
 
         $module = TrainingModule::create($validated);
 
@@ -140,6 +138,9 @@ class TrainingModuleController extends Controller
 
         /** @var User $editor */
         $editor = Auth::user();
+
+        $validated['user_id'] = $editor->id;
+        $validated['instructor_name'] = $editor->name;
         $module->update($validated);
 
         // Log the activity
