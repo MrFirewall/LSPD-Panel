@@ -12,7 +12,7 @@
                 <h1 class="display-4 font-weight-bold mb-0"><i class="fas fa-tasks mr-3"></i>Prüfungsversuche</h1>
             </div>
             <div class="col-sm-6 text-right">
-                <span class="badge badge-light badge-pill px-3 py-2 text-dark font-weight-bold shadow-sm">
+                <span class="badge badge-dark badge-pill px-3 py-2 text-dark font-weight-bold shadow-sm">
                     {{ $attempts->total() }} Einträge gesamt
                 </span>
             </div>
