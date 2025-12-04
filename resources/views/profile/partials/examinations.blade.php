@@ -13,7 +13,10 @@
             </thead>
             <tbody>
                 @php
-                    $passedAttempts = $examinations->filter(function($attempt) {
+                    // FIX: Sicherstellen, dass $examinations eine Collection ist, falls null übergeben wird.
+                    $examsCollection = $examinations ?? collect();
+
+                    $passedAttempts = $examsCollection->filter(function($attempt) {
                         return $attempt->status === 'evaluated' && $attempt->exam && $attempt->score >= $attempt->exam->pass_mark;
                     });
                 @endphp
