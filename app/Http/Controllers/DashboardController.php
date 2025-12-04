@@ -13,8 +13,6 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    // Die harte Array-Definition ($rankHierarchy) wurde entfernt, da wir nun die Datenbank nutzen.
-
     public function index()
     {
         $user = Auth::user();
@@ -22,47 +20,57 @@ class DashboardController extends Controller
         // 1. ANKÜNDIGUNGEN
         $announcements = Announcement::where('is_active', true)->with('user')->latest()->take(5)->get();
 
-        // 2. RANGVERTEILUNG (Dynamisch aus der DB)
+        // 2. RANGVERTEILUNG
+        // Wir holen alle Ränge, sortiert nach Level (höchster zuerst: 19 -> 1)
+        $ranks = Rank::orderBy('level', 'desc')->get();
+        
         $allUsers = User::with('roles')->get();
-        $totalUsers = $allUsers->count();
+        
+        $rankCounts = [];
 
-        // Hole alle Ränge aus der Datenbank, sortiert nach Level (höchster zuerst)
-        // Level 19 (Präsident) steht oben, Level 1 unten.
-        $dbRanks = Rank::orderBy('level', 'desc')->get();
-
-        // Zähle zuerst die Benutzer pro Rolle (basierend auf dem internen Rollennamen/Slug)
-        $userCountsByRole = [];
         foreach ($allUsers as $u) {
-            $role = $u->getRoleNames()->first(); // Holt den ersten Rollennamen (z.B. 'polizeipraesident')
-            if ($role) {
-                if (!isset($userCountsByRole[$role])) {
-                    $userCountsByRole[$role] = 0;
-                }
-                $userCountsByRole[$role]++;
+            // Schritt A: "Den wirklichen Rank in der User Tabelle nehmen"
+            // Wir greifen auf die Spalte 'rank' im User-Model zu.
+            // Dort sollte der 'slug' (z.B. 'polizeimeister') stehen.
+            $userRankSlug = $u->rank;
+
+            // Schritt B: Fallback (Falls die Spalte 'rank' leer ist)
+            // Wir suchen in den Rollen nach einem gültigen Polizeirang.
+            // 'super-admin' wird hier automatisch ignoriert, da er nicht in der $ranks Liste ist.
+            if (empty($userRankSlug)) {
+                $userRankSlug = $u->getRoleNames()->first(function ($roleName) use ($ranks) {
+                    return $ranks->contains('name', $roleName);
+                });
             }
-        }
 
-        // Baue das Anzeige-Array basierend auf der Sortierung der Rank-Tabelle
-        $sortedRankDistribution = [];
-
-        foreach ($dbRanks as $rank) {
-            // $rank->name ist der Slug (z.B. 'polizeipraesident')
-            // $rank->label ist der Anzeigename (z.B. 'Polizeipräsident/in')
-            
-            // Wenn Benutzer mit diesem Rang existieren, füge sie zur Liste hinzu
-            if (isset($userCountsByRole[$rank->name])) {
-                $sortedRankDistribution[$rank->label] = $userCountsByRole[$rank->name];
+            // Schritt C: Wenn wir einen gültigen Slug gefunden haben (der in der ranks Tabelle existiert)
+            if ($userRankSlug) {
+                // Wir suchen das passende Rank-Objekt aus unserer geladenen Liste
+                $rankObj = $ranks->firstWhere('name', $userRankSlug);
                 
-                // Entferne diesen Rang aus den Zählungen, um zu sehen, ob Ränge übrig bleiben, die nicht in der DB sind
-                unset($userCountsByRole[$rank->name]);
+                if ($rankObj) {
+                    // Wir nutzen das LABEL für die Zählung/Anzeige
+                    $label = $rankObj->label;
+                    
+                    if (!isset($rankCounts[$label])) {
+                        $rankCounts[$label] = 0;
+                    }
+                    $rankCounts[$label]++;
+                }
             }
         }
 
-        // Optional: Falls User Rollen haben, die NICHT in der Rank-Tabelle stehen (Fallback), hängen wir diese unten an
-        foreach ($userCountsByRole as $roleName => $count) {
-            $formattedName = ucwords(str_replace(['-', '_'], ' ', $roleName));
-            $sortedRankDistribution[$formattedName] = $count;
+        // Schritt D: Das Array für die View bauen, basierend auf der korrekten Hierarchie-Reihenfolge
+        $sortedRankDistribution = [];
+        foreach ($ranks as $rank) {
+            // Nur Ränge aufnehmen, die auch mindestens einen User haben
+            if (isset($rankCounts[$rank->label])) {
+                $sortedRankDistribution[$rank->label] = $rankCounts[$rank->label];
+            }
         }
+
+        // Berechne Total Users basierend auf den gezählten Rängen (ohne reine Admins)
+        $totalUsers = array_sum($sortedRankDistribution);
         
         // 3. PERSÖNLICHE ÜBERSICHT
         $lastReports = Report::where('user_id', $user->id)->latest()->take(3)->get();
