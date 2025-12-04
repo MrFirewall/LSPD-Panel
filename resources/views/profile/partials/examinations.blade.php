@@ -14,7 +14,7 @@
             <tbody>
                 @php
                     // FIX: Sicherstellen, dass $examinations eine Collection ist, falls null übergeben wird.
-                    $examsCollection = $examinations ?? collect();
+                    $examsCollection = $examAttempts ?? collect();
 
                     $passedAttempts = $examsCollection->filter(function($attempt) {
                         return $attempt->status === 'evaluated' && $attempt->exam && $attempt->score >= $attempt->exam->pass_mark;
