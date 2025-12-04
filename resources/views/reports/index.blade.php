@@ -29,7 +29,7 @@
                 <form method="GET" action="{{ route('reports.index') }}">
                     <div class="row">
                         <div class="col-12">
-                            <div class="input-group input-group-lg">
+                            <div class="input-group input-group">
                                 <div class="input-group-prepend">
                                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                                 </div>
