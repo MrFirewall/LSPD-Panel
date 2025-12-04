@@ -1,12 +1,12 @@
-<div class="card card-info card-outline mb-4">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-star me-2"></i> Bewertungsübersicht</h3>
+<div class="card card-outline card-info mb-4">
+    <div class="card-header border-0">
+        <h3 class="card-title font-weight-bold"><i class="fas fa-star mr-2 text-warning"></i> Bewertungen</h3>
     </div>
     <div class="card-body p-0">
-        <table class="table table-sm mb-0 table-striped">
+        <table class="table table-sm table-hover text-nowrap mb-0">
             <thead>
                 <tr>
-                    <th>Kategorie</th>
+                    <th class="pl-3">Kategorie</th>
                     <th class="text-center">Erhalten</th>
                     <th class="text-center">Verfasst</th>
                 </tr>
@@ -17,9 +17,21 @@
                 @endphp
                 @foreach($labels as $type => $label)
                     <tr>
-                        <td>{{ $label }}</td>
-                        <td class="text-center">{{ $evaluationCounts['erhalten'][$type] ?? 0 }}</td>
-                        <td class="text-center">{{ $evaluationCounts['verfasst'][$type] ?? 0 }}</td>
+                        <td class="pl-3 font-weight-bold text-muted">{{ $label }}</td>
+                        <td class="text-center">
+                            @if(($evaluationCounts['erhalten'][$type] ?? 0) > 0)
+                                <span class="badge badge-success">{{ $evaluationCounts['erhalten'][$type] }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="text-center">
+                            @if(($evaluationCounts['verfasst'][$type] ?? 0) > 0)
+                                <span class="badge badge-info">{{ $evaluationCounts['verfasst'][$type] }}</span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

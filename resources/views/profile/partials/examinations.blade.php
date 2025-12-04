@@ -1,43 +1,40 @@
-<div class="card card-primary card-outline mb-4">
-    <div class="card-header">
-        <h3 class="card-title"><i class="fas fa-file-signature me-2"></i> Prüfungen</h3>
+<div class="card card-outline card-primary mb-4">
+    <div class="card-header border-0">
+        <h3 class="card-title font-weight-bold"><i class="fas fa-file-signature mr-2 text-primary"></i> Prüfungen</h3>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-sm mb-0 table-striped">
+    <div class="card-body p-0 table-responsive">
+        <table class="table table-sm table-hover text-nowrap mb-0">
             <thead>
                 <tr>
-                    <th>Datum</th>
+                    <th class="pl-3">Datum</th>
                     <th>Titel</th>
-                    <th>Ausbilder</th>
+                    <th>Prüfer</th>
                 </tr>
             </thead>
             <tbody>
                 @php
-                    $passedAttempts = $examAttempts->filter(function($attempt) {
+                    $passedAttempts = $examinations->filter(function($attempt) {
                         return $attempt->status === 'evaluated' && $attempt->exam && $attempt->score >= $attempt->exam->pass_mark;
                     });
                 @endphp
                 
                 @forelse($passedAttempts as $attempt)
                     <tr>
-                        <td>{{ $attempt->completed_at->format('d.m.Y') }}</td>
+                        <td class="pl-3 text-muted">{{ $attempt->completed_at->format('d.m.Y') }}</td>
                         <td>
-                            <strong>{{ $attempt->exam->title ?? 'N/A' }}</strong>
-                            <!-- <small class="text-muted d-block">({{ $attempt->exam->description ?? 'N/A' }})</small> -->
+                            <strong class="text-white">{{ $attempt->exam->title ?? 'Unbekannt' }}</strong>
                         </td>
-                        <td>{{ $attempt->evaluator->name ?? 'System' }}</td>
+                        <td>
+                            <span class="badge badge-dark border border-secondary">
+                                {{ $attempt->evaluator->name ?? 'System' }}
+                            </span>
+                        </td>
                     </tr>
                 @empty
-                    {{-- Das @empty ist leer, WIE IM ORIGINAL --}}
-                @endforelse
-
-                {{-- Fallback: Angepasst an die NEUE $passedAttempts Variable --}}
-                {{-- (Nimmt an, dass $examinations eine separate, vielleicht manuelle Liste ist) --}}
-                @if($passedAttempts->isEmpty() && (!isset($examinations) || $examinations->isEmpty()))
                     <tr>
-                        <td colspan="3" class="text-center text-muted p-3">Keine bestandenen Prüfungseinträge.</td>
+                        <td colspan="3" class="text-center text-muted py-3">Keine bestandenen Prüfungen.</td>
                     </tr>
-                @endif
+                @endforelse
             </tbody>
         </table>
     </div>

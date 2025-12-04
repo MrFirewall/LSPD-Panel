@@ -1,64 +1,68 @@
-<div class="card card-outline card-secondary">
-    <div class="card-header">
-        <h3 class="card-title">Stammdaten</h3>
+<div class="card card-outline card-secondary mb-3">
+    <div class="card-header border-0">
+        <h3 class="card-title font-weight-bold text-muted"><i class="fas fa-id-card mr-2"></i> Stammdaten</h3>
     </div>
     <div class="card-body p-0">
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item">
-                <b>Personalnr.</b> <a class="float-right">{{ $user->personal_number ?? '-' }}</a>
+        <ul class="list-group list-group-flush bg-transparent">
+            
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Personalnr.</span>
+                <span class="font-weight-bold">{{ $user->personal_number ?? '-' }}</span>
             </li>
-            <li class="list-group-item">
-                <b>Status</b>
-                <a class="float-right">
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Status</span>
+                <span>
                     @php
-                        $statusClass = 'bg-dark'; // Standard-Farbe
-                        switch ($user->status) {
-                            case 'Aktiv':
-                                $statusClass = 'bg-success';
-                                break;
-                            case 'Probezeit':
-                            case 'Beobachtung':
-                                $statusClass = 'bg-info';
-                                break;
-                            case 'Beurlaubt':
-                            case 'Krankgeschrieben':
-                                $statusClass = 'bg-warning';
-                                break;
-                            case 'Suspendiert':
-                                $statusClass = 'bg-danger';
-                                break;
-                            case 'Ausgetreten':
-                                $statusClass = 'bg-secondary';
-                                break;
-                            case 'Bewerbungsphase':
-                                $statusClass = 'bg-light text-dark';
-                                break;
-                        }
+                        $statusClass = match ($user->status) {
+                            'Aktiv' => 'bg-success',
+                            'Probezeit', 'Beobachtung' => 'bg-info',
+                            'Beurlaubt', 'Krankgeschrieben' => 'bg-warning',
+                            'Suspendiert' => 'bg-danger',
+                            'Ausgetreten' => 'bg-secondary',
+                            'Bewerbungsphase' => 'bg-light text-dark',
+                            default => 'bg-dark'
+                        };
                     @endphp
-                    <span class="badge {{ $statusClass }}">{{ $user->status }}</span>
-                </a>
+                    <span class="badge {{ $statusClass }} px-2 py-1">{{ $user->status }}</span>
+                </span>
             </li>
-            <li class="list-group-item">
-                <b>Mitarbeiter ID</b> <span class="float-right">{{ $user->employee_id ?? '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Mitarbeiter ID</span>
+                <span class="font-weight-bold text-monospace">{{ $user->employee_id ?? '-' }}</span>
             </li>
-            <li class="list-group-item">
-                <b>CFX.re ID</b> <span class="float-right">{{ $user->cfx_id }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">CFX.re ID</span>
+                <span class="text-truncate" style="max-width: 150px;" title="{{ $user->cfx_id }}">{{ $user->cfx_id }}</span>
             </li>
-            <li class="list-group-item">
-                <b>E-Mail</b> <span class="float-right">{{ $user->email ?? '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">E-Mail</span>
+                <span>{{ $user->email ?? '-' }}</span>
             </li>
-            <li class="list-group-item">
-                <b>Geburtstag</b> <span class="float-right">{{ $user->birthday ? \Carbon\Carbon::parse($user->birthday)->format('d.m.Y') : '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Geburtstag</span>
+                <span>{{ $user->birthday ? \Carbon\Carbon::parse($user->birthday)->format('d.m.Y') : '-' }}</span>
             </li>
-            <li class="list-group-item">
-                <b>Discord</b> <span class="float-right">{{ $user->discord_name ?? '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Discord</span>
+                <span>{{ $user->discord_name ?? '-' }}</span>
             </li>
-            <li class="list-group-item">
-                <b>Forum</b> <span class="float-right">{{ $user->forum_name ?? '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
+                <span class="text-muted">Forum</span>
+                <span>{{ $user->forum_name ?? '-' }}</span>
             </li>
-             <li class="list-group-item">
-                <b>Einstellungsdatum</b> <span class="float-right">{{ $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('d.m.Y') : '-' }}</span>
+
+            <li class="list-group-item d-flex justify-content-between bg-transparent">
+                <span class="text-muted">Einstellung</span>
+                <span>{{ $user->hire_date ? \Carbon\Carbon::parse($user->hire_date)->format('d.m.Y') : '-' }}</span>
             </li>
+
         </ul>
     </div>
 </div>

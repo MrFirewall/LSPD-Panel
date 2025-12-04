@@ -162,7 +162,7 @@
      <li class="nav-item">
         <a href="{{ route('citizens.index') }}" class="nav-link {{ Request::routeIs('citizens.*') ? 'active' : '' }}">
             <i class="nav-icon fas fa-users"></i> {{-- Icon geändert zu Users --}}
-            <p>Patientenakten</p>
+            <p>Bürgerakten</p>
         </a>
     </li>
     @endcan
