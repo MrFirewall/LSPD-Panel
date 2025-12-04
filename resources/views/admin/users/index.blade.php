@@ -3,148 +3,166 @@
 @section('title', 'Mitarbeiter verwalten')
 
 @section('content')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Mitarbeiter verwalten</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    @can('users.create')
-                        <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-flat">
-                            <i class="fas fa-plus"></i> Mitarbeiter anlegen
-                        </a>
-                    @endcan
-                </div>
+
+{{-- 1. HERO HEADER --}}
+<div class="content-header" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-sm-6">
+                <h5 class="text-uppercase font-weight-bold mb-1" style="opacity: 0.8; letter-spacing: 1px;">Personalabteilung</h5>
+                <h1 class="display-4 font-weight-bold mb-0"><i class="fas fa-users-cog mr-3"></i>Mitarbeiter</h1>
+            </div>
+            <div class="col-sm-6 text-right">
+                @can('users.create')
+                    <a href="{{ route('admin.users.create') }}" class="btn btn-light text-primary font-weight-bold rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-plus mr-2"></i> Mitarbeiter anlegen
+                    </a>
+                @endcan
             </div>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-body">
-            <table id="usersTable" class="table table-hover nowrap">
-                <thead>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Personalnr.</th>
-                        <th scope="col">Mitarbeiternr.</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Gruppen</th>
-                        <th scope="col">2. Fraktion</th>
-                        <th scope="col" class="text-right no-sort no-search">Aktionen</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($users as $user)
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                {{-- Avatar Fallback Logik --}}
-                                <img src="{{ $user->avatar ?? 'https://placehold.co/32x32/6c757d/FFFFFF?text=' . substr($user->name, 0, 1) }}" 
-                                     alt="{{ $user->name }}" 
-                                     width="32" height="32" 
-                                     class="img-circle me-2 elevation-1">
-                                <span>{{ $user->name }}</span>
-                            </div>
-                        </td>
-                        <td>{{ $user->personal_number ?? '-' }}</td>        
-                        <td>{{ $user->employee_id ?? '-' }}</td>
-                        <td>
-                            @php
-                                $statusColors = [
-                                    'Aktiv' => 'success',
-                                    'Probezeit' => 'info',
-                                    'Beobachtung' => 'info',
-                                    'Beurlaubt' => 'warning',
-                                    'Krankgeschrieben' => 'warning',
-                                    'Suspendiert' => 'danger',
-                                    'Ausgetreten' => 'secondary',
-                                    'Bewerbungsphase' => 'light text-dark'
-                                ];
-                                $color = $statusColors[$user->status] ?? 'dark';
-                            @endphp
-                            <span class="badge bg-{{ $color }}">{{ $user->status }}</span>
-                        </td>
-                        <td>
-                            @forelse($user->roles as $role)
-                                {{-- Wir zeigen das Label (falls vorhanden) oder den Namen --}}
-                                <span class="badge bg-primary">{{ $role->label ?? ucfirst($role->name) }}</span>
-                            @empty
-                                <span class="badge bg-light text-dark">Keine</span>
-                            @endforelse
-                        </td>
-                        <td>{{ $user->second_faction }}</td>
-                        <td class="text-right">
-                            @can('users.edit')
-                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-default btn-flat" data-toggle="tooltip" title="Personalakte einsehen">
-                                    <i class="fas fa-file-alt"></i>
-                                </a>
-                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary btn-flat" data-toggle="tooltip" title="Mitarbeiter bearbeiten">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                            @endcan
-                            @canImpersonate
-                                @if($user->canBeImpersonated())
-                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-sm btn-secondary btn-flat" title="Als {{ $user->name }} einloggen">
-                                        <i class="fas fa-user-secret"></i>
-                                    </a>
-                                @endif
-                            @endCanImpersonate
-                        </td>
-                    </tr>
-                    @empty
-                    {{-- DataTables füllt das, aber für Blade lassen wir es leer --}}
-                    @endforelse
-                </tbody>
-            </table>
+{{-- 2. MAIN CONTENT --}}
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                
+                <div class="card card-outline card-primary shadow-lg border-0">
+                    <div class="card-header border-0">
+                        <h3 class="card-title font-weight-bold">
+                            <i class="fas fa-list mr-2 text-primary"></i> Personalliste
+                        </h3>
+                        <div class="card-tools">
+                            <span class="badge badge-primary">{{ count($users) }} Akten</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <table id="usersTable" class="table table-hover table-striped nowrap w-100">
+                            <thead style="background-color: rgba(0,0,0,0.1);">
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Personalnr.</th>
+                                    <th scope="col">Mitarbeiternr.</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Gruppen</th>
+                                    <th scope="col">2. Fraktion</th>
+                                    <th scope="col" class="text-right no-sort no-search">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($users as $user)
+                                <tr>
+                                    <td class="align-middle">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ $user->avatar ?? 'https://placehold.co/40x40/6c757d/FFFFFF?text=' . substr($user->name, 0, 1) }}" 
+                                                 alt="{{ $user->name }}" 
+                                                 width="40" height="40" 
+                                                 class="img-circle mr-3 border border-secondary elevation-1"
+                                                 style="object-fit: cover;">
+                                            <div>
+                                                <span class="font-weight-bold d-block">{{ $user->name }}</span>
+                                                <small class="text-muted">{{ $user->rankRelation->label ?? 'Kein Rang' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle text-monospace">{{ $user->personal_number ?? '-' }}</td>        
+                                    <td class="align-middle text-monospace">{{ $user->employee_id ?? '-' }}</td>
+                                    <td class="align-middle">
+                                        @php
+                                            $statusColors = [
+                                                'Aktiv' => 'success',
+                                                'Probezeit' => 'info',
+                                                'Beobachtung' => 'info',
+                                                'Beurlaubt' => 'warning',
+                                                'Krankgeschrieben' => 'warning',
+                                                'Suspendiert' => 'danger',
+                                                'Ausgetreten' => 'secondary',
+                                                'Bewerbungsphase' => 'light text-dark'
+                                            ];
+                                            $color = $statusColors[$user->status] ?? 'secondary';
+                                        @endphp
+                                        <span class="badge bg-{{ $color }} px-2 py-1">{{ $user->status }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex flex-wrap" style="gap: 4px;">
+                                            @forelse($user->roles as $role)
+                                                <span class="badge badge-primary" style="font-weight: normal;">{{ $role->label ?? ucfirst($role->name) }}</span>
+                                            @empty
+                                                <span class="text-muted text-xs font-italic">Keine</span>
+                                            @endforelse
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        @if($user->second_faction)
+                                            <span class="badge badge-dark border border-secondary">{{ $user->second_faction }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-right align-middle">
+                                        <div class="btn-group btn-group-sm">
+                                            @can('users.edit')
+                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-default" title="Personalakte öffnen">
+                                                    <i class="fas fa-file-alt text-primary"></i>
+                                                </a>
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-default" title="Bearbeiten">
+                                                    <i class="fas fa-pencil-alt text-warning"></i>
+                                                </a>
+                                            @endcan
+                                            
+                                            @canImpersonate
+                                                @if($user->canBeImpersonated() && $user->id !== auth()->id())
+                                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-default" title="Als {{ $user->name }} einloggen">
+                                                        <i class="fas fa-user-secret text-danger"></i>
+                                                    </a>
+                                                @endif
+                                            @endCanImpersonate
+                                        </div>
+                                    </td>
+                                </tr>
+                                @empty
+                                    {{-- DataTables handled empty state, but fallback --}}
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
     $(function () {
-      $("#usersTable").DataTable({
-        "language": {
-            "url": "{{ asset('js/i18n/de-DE.json') }}"
-        },
-        "order": [[1, 'asc']] , 
-        "responsive": {
-            details: {
-                display: DataTable.Responsive.display.modal({
-                    header: function (row) {
-                        var data = row.data();
-                        return 'Details für ' + data[0]; // Nur Name im Modal Header
-                    }
-                }),
-                renderer: DataTable.Responsive.renderer.tableAll({
-                    tableClass: 'table'
-                })
-            }
-        },
-        "autoWidth": true,
-        "paging": true,
-        "ordering": true,
-        "info": true,        
-        "searching": true,         
-        "lengthChange": true,
-        "lengthMenu": [10, 25, 50, -1],
-        "columnDefs": [ {
-            "targets": 'no-sort',
-            "orderable": false
-          },
-          {
-            "targets": 'no-search',
-            "searchable": false
-        }],
-        "layout": {
-            bottomEnd: {
-                paging: {
-                    firstLast: false
-                }
-            }
-        }
-      });
+        $("#usersTable").DataTable({
+            "language": {
+                "url": "{{ asset('js/i18n/de-DE.json') }}"
+            },
+            "order": [[0, 'asc']], // Sortiere nach Name
+            "responsive": true,
+            "autoWidth": false,
+            "paging": true,
+            "lengthChange": true,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "lengthMenu": [10, 25, 50, 100],
+            "columnDefs": [
+                { "orderable": false, "targets": "no-sort" },
+                { "searchable": false, "targets": "no-search" }
+            ],
+            // AdminLTE/Bootstrap 4 Style Integration
+            "dom": "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+                   "<'row'<'col-sm-12'tr>>" +
+                   "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+            "renderer": "bootstrap"
+        });
     });
 </script>
 @endpush
