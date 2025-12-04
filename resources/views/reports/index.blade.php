@@ -23,21 +23,25 @@
 <section class="content">
     <div class="container-fluid">
         
-        <!-- Suchleiste als Info-Box integriert für besseres Styling -->
-        <div class="card card-outline card-info collapsed-card">
-            <div class="card-header">
-                <h3 class="card-title"><i class="fas fa-search mr-1"></i> Filter & Suche</h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
-                </div>
+        <!-- Filter Box (Immer sichtbar, keine Accordion-Logik) -->
+        <div class="card card-outline card-info mb-3">
+            <div class="card-header border-0">
+                <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter & Suche</h3>
             </div>
-            <div class="card-body" style="display: none;"> <!-- Default collapsed via CSS class but JS helps -->
+            <div class="card-body pt-2 pb-3">
                 <form method="GET" action="{{ route('reports.index') }}">
-                    <div class="input-group input-group-lg">
-                        <input type="text" name="search" class="form-control" placeholder="Stichwort, Akten-ID, Bürger oder Beamter..." value="{{ request('search') }}">
-                        <div class="input-group-append">
-                            <button class="btn btn-info" type="submit">
-                                <i class="fas fa-search"></i> Suchen
+                    <div class="row">
+                        <div class="col-md-10 mb-2">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                </div>
+                                <input type="text" name="search" class="form-control" placeholder="Suche nach Stichwort, Akten-ID, Bürgername oder Beamter..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-info btn-block" type="submit">
+                                Filtern
                             </button>
                         </div>
                     </div>

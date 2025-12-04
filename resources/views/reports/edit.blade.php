@@ -196,10 +196,10 @@
 
             <div class="card mt-2">
                 <div class="card-body">
-                    <button type="submit" class="btn btn-primary btn-lg float-right elevation-2">
+                    <button type="submit" class="btn btn-primary float-right elevation-2">
                         <i class="fas fa-save me-1"></i> Änderungen speichern
                     </button>
-                    <a href="{{ route('reports.index') }}" class="btn btn-default btn-lg">Abbrechen</a>
+                    <a href="{{ route('reports.index') }}" class="btn btn-default">Abbrechen</a>
                 </div>
             </div>
         </form>

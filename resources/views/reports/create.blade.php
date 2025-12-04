@@ -168,10 +168,10 @@
             <!-- Footer Action Bar -->
             <div class="card">
                 <div class="card-body">
-                    <button type="submit" class="btn btn-success btn-lg float-right elevation-2">
+                    <button type="submit" class="btn btn-success float-right elevation-2">
                         <i class="fas fa-save mr-1"></i> Bericht speichern
                     </button>
-                    <a href="{{ route('reports.index') }}" class="btn btn-default btn-lg">Abbrechen</a>
+                    <a href="{{ route('reports.index') }}" class="btn btn-default">Abbrechen</a>
                 </div>
             </div>
         </form>
