@@ -28,8 +28,8 @@ class ExamAttemptController extends Controller
     public function index()
     {
         $attempts = ExamAttempt::with(['exam', 'user', 'evaluator']) 
-                            ->orderBy('updated_at', 'desc')
-                            ->paginate(25);
+                            ->orderBy('id', 'desc')
+                            ->paginate(2);
         return view('admin.exams.attempts-index', compact('attempts'));
     }
 
