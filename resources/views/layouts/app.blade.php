@@ -236,8 +236,8 @@
     </nav>
 
     {{-- MAIN SIDEBAR --}}
-    <aside class="main-sidebar sidebar-dark-primary elevation-4" id="mainSidebar" style="background-color: #0f111a !important;">
-        <a href="{{ route('dashboard') }}" class="brand-link d-flex align-items-center justify-content-center" style="border-bottom: 1px solid var(--glass-border);">
+    <aside class="main-sidebar sidebar-dark-primary elevation-4" id="mainSidebar">
+        <a href="{{ route('dashboard') }}" class="brand-link d-flex align-items-center justify-content-center" style="background-color: #0f111a !important;border-bottom: 1px solid var(--glass-border);">
             <i class="fas fa-user-shield fa-lg elevation-3 mr-3 text-white" style="opacity: .9"></i>            
             <span class="brand-text font-weight-bold">LSPD Panel</span>
         </a>
