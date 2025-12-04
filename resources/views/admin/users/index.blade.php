@@ -40,7 +40,8 @@
                     </div>
                     
                     <div class="card-body">
-                        <table id="usersTable" class="table table-hover table-striped nowrap w-100">
+                        {{-- WICHTIG: style="width:100%" direkt am Table Tag hilft DataTables bei der Berechnung --}}
+                        <table id="usersTable" class="table table-hover table-striped nowrap w-100" style="width: 100%;">
                             <thead style="background-color: rgba(0,0,0,0.1);">
                                 <tr>
                                     <th scope="col">Name</th>
@@ -124,7 +125,7 @@
                                     </td>
                                 </tr>
                                 @empty
-                                    {{-- DataTables handled empty state, but fallback --}}
+                                    {{-- DataTables handled empty state --}}
                                 @endforelse
                             </tbody>
                         </table>
@@ -140,25 +141,59 @@
 @push('scripts')
 <script>
     $(function () {
-        $("#usersTable").DataTable({
+        // DataTable in Variable speichern
+        var table = $("#usersTable").DataTable({
             "language": {
                 "url": "{{ asset('js/i18n/de-DE.json') }}"
             },
-            "order": [[1, 'asc']], // Sortiere nach Personalnr. aufsteigend
-            "responsive": true,
-            "autoWidth": false,
+            "order": [[1, 'asc']], 
+            "responsive": {
+                details: {
+                    display: DataTable.Responsive.display.modal({
+                        header: function (row) {
+                            var data = row.data();
+                            return 'Details zum Mitarbeiter';
+                        }
+                    }),
+                    renderer: DataTable.Responsive.renderer.tableAll({
+                        tableClass: 'table'
+                    })
+                }
+            },
+            "autoWidth": false, 
             "paging": true,
-            "lengthChange": true,
-            "searching": true,
             "ordering": true,
-            "info": true,
-            "lengthMenu": [10, 25, 50, 100],
-            "columnDefs": [
-                { "orderable": false, "targets": "no-sort" },
-                { "searchable": false, "targets": "no-search" }
-            ],
-            // AdminLTE/Bootstrap 4 Style Integration
-            "renderer": "bootstrap"
+            "info": true,        
+            "searching": true,         
+            "lengthChange": true,
+            "lengthMenu": [10, 25, 50, -1],
+            "columnDefs": [ {
+                "targets": 'no-sort',
+                "orderable": false
+            },
+            {
+                "targets": 'no-search',
+                "searchable": false
+            }],
+            "layout": {
+                bottomEnd: {
+                    paging: {
+                        firstLast: false
+                    }
+                }
+            }
+        });
+
+        // FIX: Erzwinge Neuberechnung bei Fenstergrößenänderung
+        $(window).on('resize', function () {
+            table.columns.adjust().responsive.recalc();
+        });
+        
+        // FIX: Auch beim Sidebar-Toggle (falls AdminLTE Sidebar Animation die Breite ändert)
+        $(document).on('collapsed.lte.pushmenu shown.lte.pushmenu', function() {
+            setTimeout(function(){
+                table.columns.adjust().responsive.recalc();
+            }, 300); // Kleine Verzögerung für die Animation
         });
     });
 </script>
