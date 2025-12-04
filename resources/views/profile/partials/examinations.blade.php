@@ -21,7 +21,7 @@
                     });
                 @endphp
                 
-                @forelse($passedAttempts as $attempt)
+                @forelse($examsCollection as $attempt)
                     <tr>
                         <td class="pl-3 text-muted">{{ $attempt->completed_at->format('d.m.Y') }}</td>
                         <td>
