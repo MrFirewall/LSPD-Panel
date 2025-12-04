@@ -11,7 +11,14 @@ class ExamAttempt extends Model
     
     protected $fillable = [
         'uuid',
-        'exam_id', 'user_id', 'started_at', 'completed_at', 'score', 'status', 'flags'
+        'exam_id', 
+        'user_id', 
+        'started_at', 
+        'completed_at', 
+        'score', 
+        'status', 
+        'flags',
+        'evaluator_id'
     ];
 
     protected $casts = [
