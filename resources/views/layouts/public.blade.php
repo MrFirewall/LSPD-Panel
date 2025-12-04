@@ -82,20 +82,9 @@
         </ul>
       </div>
 
-      <!-- Right navbar links -->
+      <!-- Right navbar links (Leer, da Links in den Footer verschoben wurden) -->
       <ul class="order-1 order-md-3 navbar-nav navbar-no-expand ml-auto">
-        @auth
-            <li class="nav-item">
-                <!-- btn-outline-info für helleren Kontrast im Dark Mode -->
-                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-info">
-                    <i class="fas fa-user-shield mr-1"></i> Zum Dienst-Dashboard
-                </a>
-            </li>
-        @else
-            <li class="nav-item">
-                <a href="{{ route('login') }}" class="nav-link btn btn-sm btn-outline-primary px-3 py-1">Login</a>
-            </li>
-        @endauth
+        {{-- Alle Auth/Guest Links wurden in den Footer verschoben --}}
       </ul>
     </div>
   </nav>
@@ -113,6 +102,15 @@
         <div class="float-right d-none d-sm-inline">
             Offizielles Dokument
         </div>
+        
+        @auth
+            <a href="{{ route('reports.index') }}" class="text-secondary mr-3 small">
+                <i class="fas fa-user-shield mr-1"></i> Dienst-Dashboard
+            </a>
+        @else
+            <a href="{{ route('login') }}" class="text-secondary mr-3 small">Dienst-Login</a>
+        @endauth
+        
         <strong>Copyright &copy; {{ date('Y') }} <a href="#" class="text-primary">Justizbehörde Hamburg</a>.</strong> Alle Rechte vorbehalten.
     </div>
   </footer>
