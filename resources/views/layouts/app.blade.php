@@ -41,11 +41,11 @@
         .content-header, .hero-header-internal {
             background: var(--accent-gradient);
             color: white;
-            padding: 2.5rem 1.5rem 5rem 1.5rem; /* Viel Padding unten für Overlap */
-            border-bottom-left-radius: 30px;
-            border-bottom-right-radius: 30px;
-            margin-bottom: -3rem !important; /* Zieht den Content nach oben */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            padding: 2rem 1.5rem; /* Standard Padding, kein Overlap mehr */
+            border-bottom-left-radius: 0; /* Eckig oder nur leicht abgerundet, je nach Geschmack */
+            border-bottom-right-radius: 0;
+            margin-bottom: 1.5rem !important; /* Positiver Abstand zum Content */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             position: relative;
             z-index: 1;
         }
@@ -58,21 +58,21 @@
             background-color: var(--card-dark);
             border: 1px solid var(--glass-border);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-radius: 15px;
+            border-radius: 12px;
             margin-bottom: 1.5rem;
             color: var(--text-light);
             transition: transform 0.2s, box-shadow 0.2s;
         }
         /* Hover Effekt nur für Info-Boxen oder interaktive Cards */
         .small-box:hover, .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
         }
 
         .card-header {
             background-color: rgba(0,0,0,0.2);
             border-bottom: 1px solid var(--glass-border);
-            border-radius: 15px 15px 0 0 !important;
+            border-radius: 12px 12px 0 0 !important;
         }
         
         /* 4. Inputs & Tables Dark Mode Overrides */
