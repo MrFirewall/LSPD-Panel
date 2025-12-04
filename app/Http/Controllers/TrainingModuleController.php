@@ -53,6 +53,12 @@ class TrainingModuleController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
+    /**
+     * Store a newly created training module in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -63,6 +69,12 @@ class TrainingModuleController extends Controller
 
         /** @var User $creator */
         $creator = Auth::user();
+
+        // --- FIX START ---
+        // Add the user_id to the validated array before creating the model
+        $validated['user_id'] = $creator->id;
+        // --- FIX END ---
+
         $module = TrainingModule::create($validated);
 
         // Log the activity
@@ -75,7 +87,6 @@ class TrainingModuleController extends Controller
         ]);
 
         // --- BENACHRICHTIGUNG VIA EVENT ---
-        // KORREKTUR: $creator (der handelnde Admin) als triggeringUser verwenden, da null nicht erlaubt ist.
         PotentiallyNotifiableActionOccurred::dispatch(
             'TrainingModuleController@store', // Action
             $creator, // triggeringUser
@@ -84,10 +95,9 @@ class TrainingModuleController extends Controller
         );
         // ---------------------------------
 
-        // Erfolgsmeldung entfernt
         return redirect()->route('modules.index');
     }
-
+    
     /**
      * Display the specified training module and its assigned users.
      *
