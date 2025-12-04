@@ -1,97 +1,157 @@
 @extends('layouts.app')
 
-@section('title', 'Einsatzbericht #'.$report->id)
-
-@php
-    /**
-     * Diese Helferfunktion formatiert den Berichtstext für die Anzeige.
-     * 1. Sie wandelt Zeilenumbrüche in HTML <br>-Tags um.
-     * 2. Sie hebt alle Platzhalter wie [TEXT] mit einem Warn-Badge hervor.
-     * 3. Sie schützt vor XSS-Angriffen durch das Escapen von HTML.
-     */
-    function formatReportContent($text) {
-        $safeText = e($text); // XSS-Schutz
-        $highlightedText = preg_replace('/\[(.*?)\]/', '<span class="badge bg-warning mx-1 p-1">$0</span>', $safeText);
-        return nl2br($highlightedText);
-    }
-@endphp
-
 @section('content')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Einsatzbericht #{{ $report->id }}</h1>
-                </div>
-                <div class="col-sm-6 text-right">
-                    <a href="{{ route('reports.index') }}" class="btn btn-default btn-flat me-2">
-                        <i class="fas fa-arrow-left"></i> Zurück zur Übersicht
-                    </a>
-                    @can('update', $report)
-                        <a href="{{ route('reports.edit', $report) }}" class="btn btn-primary btn-flat">
-                            <i class="fas fa-edit"></i> Bearbeiten
-                        </a>
-                    @endcan
-                </div>
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Akte #{{ $report->id }}</h1>
+            </div>
+            <div class="col-sm-6">
+                <a href="{{ route('reports.index') }}" class="btn btn-secondary float-sm-right">Zurück zur Übersicht</a>
             </div>
         </div>
     </div>
+</section>
 
-    <div class="row">
-        <!-- Linke Spalte: Stammdaten -->
-        <div class="col-md-4">
-            <div class="card card-primary card-outline">
-                <div class="card-body box-profile">
-                    <h3 class="profile-username text-center">{{ $report->patient_name }}</h3>
-                    <p class="text-muted text-center">Patient</p>
-
-                    <ul class="list-group list-group-unbordered mb-3">
-                        <li class="list-group-item">
-                            <b>Einsatzort</b> <a class="float-right">{{ $report->location }}</a>
-                        </li>
-                        <li class="list-group-item">
-                            <b>Erstellt von</b> <a class="float-right">{{ $report->user->name }}</a>
-                        </li>
-                        <li class="list-group-item">
-                            <b>Datum</b> <a class="float-right">{{ $report->created_at->format('d.m.Y H:i') }}</a>
-                        </li>
-                    </ul>
-                    @if($report->attendingStaff->isNotEmpty())
-                        <hr>
-                        <strong><i class="fas fa-users mr-1"></i> Beteiligte Mitarbeiter</strong>
-                        <p class="text-muted">
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                
+                <!-- Main Report Card -->
+                <div class="invoice p-3 mb-3">
+                    <!-- title row -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h4>
+                                <i class="fas fa-gavel"></i> LSPD Bericht: {{ $report->title }}
+                                <small class="float-right">Datum: {{ $report->created_at->format('d.m.Y H:i') }}</small>
+                            </h4>
+                        </div>
+                    </div>
+                    
+                    <!-- info row -->
+                    <div class="row invoice-info mt-4">
+                        <div class="col-sm-4 invoice-col">
+                            Verantwortlicher Beamter
+                            <address>
+                                <strong>{{ $report->user->name }}</strong><br>
+                                Rang: Officer<br> <!-- Beispiel -->
+                                Dienstnummer: {{ $report->user->id }}
+                            </address>
+                        </div>
+                        <div class="col-sm-4 invoice-col">
+                            Betroffene Person / TV
+                            <address>
+                                <strong>{{ $report->patient_name }}</strong><br>
+                                @if($report->citizen)
+                                    Status: Registrierter Bürger<br>
+                                @else
+                                    Status: Unbekannt / Nicht registriert<br>
+                                @endif
+                            </address>
+                        </div>
+                        <div class="col-sm-4 invoice-col">
+                            <b>Einsatzort:</b> {{ $report->location }}<br>
+                            <b>Beteiligte Einheiten:</b><br>
                             @foreach($report->attendingStaff as $staff)
-                                <span class="badge bg-secondary">{{ $staff->name }}</span>
+                                <span class="badge badge-info">{{ $staff->name }}</span>
                             @endforeach
-                        </p>
-                    @endif
-                </div>
-            </div>
-        </div>
+                        </div>
+                    </div>
 
-        <!-- Rechte Spalte: Berichtsdetails -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-file-alt mr-1"></i>
-                        {{ $report->title }}
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <dl>
-                        <dt>Einsatzhergang</dt>
-                        <dd class="callout callout-info" style="white-space: pre-line;">
-                            {!! formatReportContent($report->incident_description) !!}
-                        </dd>
+                    <!-- Description Row -->
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <p class="lead">Vorfallhergang:</p>
+                            <div class="text-muted well well-sm shadow-none" style="margin-top: 10px; background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                                {!! nl2br(e($report->incident_description)) !!}
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <p class="lead">Maßnahmen:</p>
+                            <div class="text-muted well well-sm shadow-none" style="margin-top: 10px; background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                                {!! nl2br(e($report->actions_taken)) !!}
+                            </div>
+                        </div>
+                    </div>
 
-                        <dt>Durchgeführte Maßnahmen</dt>
-                        <dd class="callout callout-success" style="white-space: pre-line;">
-                            {!! formatReportContent($report->actions_taken) !!}
-                        </dd>
-                    </dl>
+                    <!-- Fines Table -->
+                    <div class="row mt-4">
+                        <div class="col-12 table-responsive">
+                            <p class="lead">Strafbestand</p>
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Tatbestand</th>
+                                        <th>Haftzeit (HE)</th>
+                                        <th>Bemerkung</th>
+                                        <th>Betrag</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($report->fines as $fine)
+                                        <tr>
+                                            <td>{{ $fine->offense }}</td>
+                                            <td>{{ $fine->jail_time }} HE</td>
+                                            <td>{{ $fine->remark }}</td>
+                                            <td>{{ number_format($fine->amount, 0, ',', '.') }} €</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center">Keine Bußgelder verhängt.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- accepted payments column -->
+                        <div class="col-6">
+                            <p class="text-muted well well-sm shadow-none" style="margin-top: 10px;">
+                                Haftzeit-Hinweis: 1 HE entspricht 1 Minute im Bundesgefängnis.
+                            </p>
+                        </div>
+                        <!-- totals -->
+                        <div class="col-6">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <tr>
+                                        <th style="width:50%">Gesamthaftzeit:</th>
+                                        <td class="text-danger"><strong>{{ $report->fines->sum('jail_time') }} HE</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Gesamtbußgeld:</th>
+                                        <td class="text-success"><strong>{{ number_format($report->fines->sum('amount'), 0, ',', '.') }} €</strong></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- buttons -->
+                    <div class="row no-print mt-4">
+                        <div class="col-12">
+                            <form action="{{ route('reports.destroy', $report) }}" method="POST" class="d-inline" onsubmit="return confirm('Wirklich löschen?');">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-danger float-right" style="margin-right: 5px;">
+                                    <i class="fas fa-trash"></i> Löschen
+                                </button>
+                            </form>
+                            <a href="{{ route('reports.edit', $report) }}" class="btn btn-warning float-right" style="margin-right: 5px;">
+                                <i class="fas fa-edit"></i> Bearbeiten
+                            </a>
+                            <button type="button" class="btn btn-default float-right" style="margin-right: 5px;" onclick="window.print()">
+                                <i class="fas fa-print"></i> Drucken
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+</section>
 @endsection

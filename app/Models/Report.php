@@ -43,4 +43,8 @@ class Report extends Model
     {
         return $this->belongsToMany(User::class, 'report_user');
     }
+    public function fines()
+{
+    return $this->belongsToMany(Fine::class, 'fine_report')->withPivot('quantity');
+}
 }

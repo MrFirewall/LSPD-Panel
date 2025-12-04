@@ -10,7 +10,7 @@
                     <h1 class="m-0">Einsatzberichte</h1>
                 </div>
                 <div class="col-sm-6 text-right">
-                    @can('reports.create', App\Models\Report::class)
+                    @can('create', App\Models\Report::class)
                         <a href="{{ route('reports.create') }}" class="btn btn-primary btn-flat">
                             <i class="fas fa-plus me-1"></i> Neuen Bericht erstellen
                         </a>
@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    <!-- NEU: Suchformular -->
+    <!-- Suchformular -->
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Berichtsarchiv durchsuchen</h3>
@@ -58,23 +58,26 @@
                                 <td>{{ $report->patient_name }}</td>
                                 <td>{{ $report->user->name }}</td>
                                 <td class="text-right">
-                                    @can('reports.view', $report)
-                                        <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-default btn-flat">
+                                    {{-- Policy Check: view --}}
+                                    @can('view', $report)
+                                        <a href="{{ route('reports.show', $report) }}" class="btn btn-sm btn-default btn-flat" title="Ansehen">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     @endcan
                                     
-                                    @can('reports.edit', $report)
-                                        <a href="{{ route('reports.edit', $report) }}" class="btn btn-sm btn-primary btn-flat">
+                                    {{-- Policy Check: update --}}
+                                    @can('update', $report)
+                                        <a href="{{ route('reports.edit', $report) }}" class="btn btn-sm btn-primary btn-flat" title="Bearbeiten">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                     @endcan
 
-                                    @can('reports.delete', $report)
-                                        <form action="{{ route('reports.destroy', $report) }}" method="POST" class="d-inline" onsubmit="return confirm('Bist du sicher?')">
+                                    {{-- Policy Check: delete --}}
+                                    @can('delete', $report)
+                                        <form action="{{ route('reports.destroy', $report) }}" method="POST" class="d-inline" onsubmit="return confirm('Bist du sicher, dass du diesen Bericht löschen möchtest?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger btn-flat">
+                                            <button type="submit" class="btn btn-sm btn-danger btn-flat" title="Löschen">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </form>

@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Citizen;
 use App\Models\Report;
 use App\Models\User; // Hinzugefügt für die Suche
+use App\Models\Fine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -76,16 +77,18 @@ class ReportController extends Controller
             'actions_taken' => 'required|string',
             'attending_staff' => 'nullable|array',
             'attending_staff.*' => 'exists:users,id',
+            // NEU: Validierung der Bußgelder
+            'fines' => 'nullable|array',
+            'fines.*' => 'exists:fines,id',
         ]);
 
         /** @var User $creator */
         $creator = Auth::user();
         $validatedData['user_id'] = $creator->id;
 
-        // Versuche, den Bürger anhand des Namens zu finden
         $citizen = Citizen::where('name', $validatedData['patient_name'])->first();
         if ($citizen) {
-            $validatedData['citizen_id'] = $citizen->id; // Füge die ID zum Speichern hinzu
+            $validatedData['citizen_id'] = $citizen->id;
         }
 
         $report = Report::create($validatedData);
@@ -93,25 +96,31 @@ class ReportController extends Controller
         if ($request->has('attending_staff')) {
             $report->attendingStaff()->attach($request->input('attending_staff'));
         }
+
+        // NEU: Bußgelder verknüpfen
+        if ($request->has('fines')) {
+            $report->fines()->attach($request->input('fines'));
+            
+            // Optional: Berechne automatisch die Gesamtsumme/Haftzeit und schreibe sie in actions_taken oder ein extra Feld
+            // $totalFine = Fine::whereIn('id', $request->input('fines'))->sum('amount');
+        }
+
         // Logging
         ActivityLog::create([
             'user_id' => $creator->id,
             'log_type' => 'REPORT',
             'action' => 'CREATED',
             'target_id' => $report->id,
-            'description' => "Einsatzbericht '{$report->title}' erstellt (Patient: {$report->patient_name}).",
+            'description' => "Einsatzbericht '{$report->title}' erstellt.",
         ]);
 
-        // --- BENACHRICHTIGUNG VIA EVENT ---
         PotentiallyNotifiableActionOccurred::dispatch(
             action: 'ReportController@store',
-            triggeringUser: $citizen ?? (object)['name' => $report->patient_name], // Citizen oder Dummy-Objekt
+            triggeringUser: $citizen ?? (object)['name' => $report->patient_name],
             relatedModel: $report,
             actorUser: $creator
         );
-        // ---------------------------------
 
-        // Erfolgsmeldung entfernt
         return redirect()->route('reports.index');
     }
 
@@ -120,8 +129,8 @@ class ReportController extends Controller
      */
     public function show(Report $report)
     {
-        // Policy prüft hier implizit 'view'
-        $report->load(['user', 'citizen', 'attendingStaff']); // Lade Relationen
+        // NEU: 'fines' relation laden
+        $report->load(['user', 'citizen', 'attendingStaff', 'fines']); 
         return view('reports.show', compact('report'));
     }
 
@@ -131,13 +140,17 @@ class ReportController extends Controller
      */
     public function edit(Report $report)
     {
-        // Policy prüft implizit 'update'
         $templates = config('report_templates', []);
-        $citizens = Citizen::orderBy('name')->get(); // Bürgerliste laden
-        $allStaff = User::orderBy('name')->get(); // Alle Mitarbeiter laden
-        $report->load('attendingStaff'); // Lade die zugehörigen Mitarbeiter
+        $citizens = Citizen::orderBy('name')->get();
+        $allStaff = User::orderBy('name')->get();
+        
+        // NEU: Fines laden
+        $fines = Fine::orderBy('catalog_section')->orderBy('offense')->get();
+        
+        // Relationen laden
+        $report->load(['attendingStaff', 'fines']);
 
-        return view('reports.edit', compact('report', 'templates', 'citizens', 'allStaff'));
+        return view('reports.edit', compact('report', 'templates', 'citizens', 'allStaff', 'fines'));
     }
 
     /**
@@ -145,7 +158,6 @@ class ReportController extends Controller
      */
     public function update(Request $request, Report $report)
     {
-         // Policy prüft implizit 'update'
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'patient_name' => 'required|string|max:255',
@@ -154,19 +166,22 @@ class ReportController extends Controller
             'actions_taken' => 'required|string',
             'attending_staff' => 'nullable|array',
             'attending_staff.*' => 'exists:users,id',
+            'fines' => 'nullable|array',
+            'fines.*' => 'exists:fines,id',
         ]);
 
-        /** @var User $editor */
-        $editor = Auth::user();
-
-        // Versuche, den Bürger anhand des Namens zu finden
         $citizen = Citizen::where('name', $validatedData['patient_name'])->first();
-        $validatedData['citizen_id'] = $citizen ? $citizen->id : null; // Setze ID oder null
+        $validatedData['citizen_id'] = $citizen ? $citizen->id : null;
 
         $report->update($validatedData);
+        
+        // Sync Staff
         $report->attendingStaff()->sync($request->input('attending_staff', []));
+        
+        // NEU: Sync Fines (aktualisiert die Bußgelder, löscht nicht gewählte)
+        $report->fines()->sync($request->input('fines', []));
 
-        // Logging
+                // Logging
         ActivityLog::create([
             'user_id' => $editor->id,
             'log_type' => 'REPORT',
@@ -182,12 +197,8 @@ class ReportController extends Controller
             relatedModel: $report,
             actorUser: $editor
         );
-        // ---------------------------------
-
-        // Erfolgsmeldung entfernt
         return redirect()->route('reports.index');
     }
-
     /**
      * Löscht einen Bericht aus der Datenbank.
      */

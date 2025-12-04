@@ -17,7 +17,9 @@ class DatabaseSeeder extends Seeder
             //PermissionsSeeder::class,
             //RankSeeder::class,
             //DepartmentSeeder::class,
-            DiscordSettingsSeeder::class,
+           // DiscordSettingsSeeder::class,
+            FineSeeder::class,
+            LawSeeder::class,
         ]);
     }
 }

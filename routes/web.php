@@ -19,6 +19,8 @@ use App\Http\Controllers\DutyStatusController;
 use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\LawController;
+use App\Http\Controllers\CatalogController;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 use App\Models\User;
 use App\Notifications\GeneralNotification;
@@ -53,6 +55,9 @@ Route::get('/lockscreen', [LockscreenController::class, 'show'])->name('lockscre
 Route::get('/check-id', [LoginController::class, 'showCheckIdPage'])->name('check-id.show');
 Route::get('/check-id/start', [LoginController::class, 'startCheckIdFlow'])->name('check-id.start');
 
+// Gesetze & Katalog (öffentlich zugänglich)
+Route::get('/laws', [LawController::class, 'index'])->name('laws.index');
+Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
 // Impersonate Routes
 Route::middleware(['web', 'auth'])->group(function() {
     Route::get('/impersonate/take/{id}/{guardName?}', [ImpersonateController::class, 'take'])->name('impersonate');

@@ -1,129 +1,108 @@
 @extends('layouts.app')
-@section('title', 'Neuen Einsatzbericht erstellen')
-
-@push('styles')
-    <!-- Select2 für durchsuchbare Dropdowns -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
-@endpush
 
 @section('content')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1 class="m-0">Neuen Einsatzbericht erstellen</h1>
-                </div>
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Neuen Einsatzbericht anlegen</h1>
             </div>
         </div>
     </div>
-    <div class="card card-outline card-primary">
-        <div class="card-body">
-            <form method="POST" action="{{ route('reports.store') }}">
-                @csrf
+</section>
 
-                <!-- VORLAGENAUSWAHL -->
-                <div class="form-group row align-items-center">
-                    <label for="template-selector" class="col-sm-3 col-form-label">Vorlage auswählen (optional)</label>
-                    <div class="col-sm-9">
-                        <select class="form-control" id="template-selector">
-                            <option value="">-- Keine Vorlage --</option>
-                            @foreach($templates as $key => $template)
-                                <option value="{{ $key }}">{{ $template['name'] }}</option>
-                            @endforeach
-                        </select>
+<section class="content">
+    <div class="container-fluid">
+        <form action="{{ route('reports.store') }}" method="POST">
+            @csrf
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-6">
+                    <div class="card card-primary">
+                        <div class="card-header">
+                            <h3 class="card-title">Allgemeine Informationen</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Titel / Einsatzstichwort</label>
+                                <input type="text" name="title" class="form-control" placeholder="z.B. Verkehrskontrolle..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Name des Bürgers (Patient/TV)</label>
+                                <input type="text" name="patient_name" list="citizens_list" class="form-control" placeholder="Name eingeben..." required autocomplete="off">
+                                <datalist id="citizens_list">
+                                    @foreach($citizens as $c)
+                                        <option value="{{ $c->name }}">
+                                    @endforeach
+                                </datalist>
+                            </div>
+                            <div class="form-group">
+                                <label>Einsatzort</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                    </div>
+                                    <input type="text" name="location" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Vorfallbeschreibung</label>
+                                <textarea name="incident_description" class="form-control" rows="5" placeholder="Was ist passiert?" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Getroffene Maßnahmen</label>
+                                <textarea name="actions_taken" class="form-control" rows="3" placeholder="Erste Hilfe, Festnahme, etc." required></textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <hr>
 
-                <div class="form-group">
-                    <label for="title">Titel / Einsatzstichwort</label>
-                    <input type="text" class="form-control" id="title" name="title" value="{{ old('title') }}" required>
-                </div>
+                <!-- Right Column -->
+                <div class="col-md-6">
+                    <div class="card card-danger">
+                        <div class="card-header">
+                            <h3 class="card-title">Strafregister & Beamte</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Tatvorwürfe / Bußgelder auswählen</label>
+                                <select name="fines[]" class="form-control select2" multiple="multiple" style="width: 100%; height: 300px;">
+                                    @php $currentSection = ''; @endphp
+                                    @foreach($fines as $fine)
+                                        @if($fine->catalog_section != $currentSection)
+                                            @if($currentSection != '') </optgroup> @endif
+                                            <optgroup label="{{ $fine->catalog_section }}">
+                                            @php $currentSection = $fine->catalog_section; @endphp
+                                        @endif
+                                        <option value="{{ $fine->id }}">
+                                            {{ $fine->offense }} ({{ $fine->amount }}€ - {{ $fine->jail_time }} HE)
+                                        </option>
+                                    @endforeach
+                                    </optgroup>
+                                </select>
+                                <small class="form-text text-muted">Mehrfachauswahl mit STRG + Klick möglich.</small>
+                            </div>
 
-                <div class="form-group">
-                    <label for="patient_name">Name des Patienten</label>
-                    <select class="form-control" id="patient_name" name="patient_name" required>
-                        <option value="">Bürger auswählen oder neuen Namen eingeben</option>
-                        @foreach($citizens as $citizen)
-                            <option value="{{ $citizen->name }}" {{ old('patient_name') == $citizen->name ? 'selected' : '' }}>{{ $citizen->name }}</option>
-                        @endforeach
-                    </select>
+                            <div class="form-group">
+                                <label>Beteiligte Beamte</label>
+                                <select name="attending_staff[]" class="form-control" multiple>
+                                    @foreach($allStaff as $staff)
+                                        <option value="{{ $staff->id }}" {{ Auth::id() == $staff->id ? 'selected' : '' }}>
+                                            {{ $staff->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success float-right">
+                                <i class="fas fa-save"></i> Bericht speichern
+                            </button>
+                        </div>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="location">Einsatzort</label>
-                    <input type="text" class="form-control" id="location" name="location" value="{{ old('location') }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="attending_staff">Beteiligte Mitarbeiter (optional)</label>
-                    <select class="form-control select2" id="attending_staff" name="attending_staff[]" multiple="multiple">
-                        @foreach($allStaff as $staff)
-                            <option value="{{ $staff->id }}">{{ $staff->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="incident_description">Einsatzhergang</label>
-                    <textarea class="form-control" id="incident_description" name="incident_description" rows="15" required>{{ old('incident_description') }}</textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="actions_taken">Durchgeführte Maßnahmen</label>
-                    <textarea class="form-control" id="actions_taken" name="actions_taken" rows="15" required>{{ old('actions_taken') }}</textarea>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-flat">
-                    <i class="fas fa-save me-1"></i> Bericht speichern
-                </button>
-                <a href="{{ route('reports.index') }}" class="btn btn-default btn-flat">Abbrechen</a>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
+</section>
 @endsection
-
-@push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        const templates = @json($templates);
-
-        $(document).ready(function() {
-            $('#patient_name').select2({
-                theme: 'bootstrap4',
-                placeholder: 'Bürger suchen oder Namen eingeben',
-                tags: true // Erlaubt die Eingabe von neuen Namen, die nicht in der Liste sind
-            });
-            
-            // Event Listener für die Vorlagenauswahl
-            $('#template-selector').on('change', function() {
-                const selectedKey = $(this).val();
-                
-                if (selectedKey && templates[selectedKey]) {
-                    const template = templates[selectedKey];
-                    // Füllt die Felder mit den Daten aus der Vorlage
-                    $('#title').val(template.title);
-                    $('#incident_description').val(template.incident_description);
-                    $('#actions_taken').val(template.actions_taken);
-                } else {
-                    // Setzt die Felder zurück, wenn "Keine Vorlage" ausgewählt wird
-                    $('#title').val('');
-                    $('#incident_description').val('');
-                    $('#actions_taken').val('');
-                }
-            });
-            $('#attending_staff').select2({
-                theme: 'bootstrap4',
-                placeholder: 'Mitarbeiter auswählen',
-                // NEU: Verhindert, dass bereits ausgewählte Mitarbeiter erneut in der Liste erscheinen
-                templateResult: function (data) {
-                    // Wenn die Option bereits ausgewählt ist, nicht in der Liste anzeigen
-                    if ($('#attending_staff').find('option[value="' + data.id + '"]').is(':selected')) {
-                        return null;
-                    }
-                    return data.text;
-                }
-            });
-        });
-    </script>
-@endpush
-
