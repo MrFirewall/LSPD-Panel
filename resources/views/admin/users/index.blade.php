@@ -106,17 +106,17 @@
                                     <td class="text-right align-middle">
                                         <div class="btn-group btn-group-sm">
                                             @can('users.edit')
-                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-default" title="Personalakte öffnen">
+                                                <a href="{{ route('admin.users.show', $user) }}" class="btn btn-dark" title="Personalakte öffnen">
                                                     <i class="fas fa-file-alt text-primary"></i>
                                                 </a>
-                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-default" title="Bearbeiten">
+                                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-dark" title="Bearbeiten">
                                                     <i class="fas fa-pencil-alt text-warning"></i>
                                                 </a>
                                             @endcan
                                             
                                             @canImpersonate
                                                 @if($user->canBeImpersonated() && $user->id !== auth()->id())
-                                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-default" title="Als {{ $user->name }} einloggen">
+                                                    <a href="{{ route('impersonate', $user->id) }}" class="btn btn-dark" title="Als {{ $user->name }} einloggen">
                                                         <i class="fas fa-user-secret text-danger"></i>
                                                     </a>
                                                 @endif
