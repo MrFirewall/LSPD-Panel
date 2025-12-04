@@ -134,7 +134,12 @@
                         <p class="text-muted small">Bitte wählen Sie <strong>einen</strong> Rang und optional weitere Zusatzrollen/Abteilungen.</p>
                         @error('roles')<div class="alert alert-danger">{{ $message }}</div>@enderror
                         @error('roles.*')<div class="alert alert-danger">{{ $message }}</div>@enderror
-                        
+                        @php
+                            $currentUser = auth()->user();
+                            $canEditUser = $currentUser->hasAnyRole('Super-Admin', 'chief') || ($currentUser->level > $user->level);
+                        @endphp
+
+                        @if($canEditUser)
                         {{-- 1. RÄNGE (Radio Buttons - Single Select) --}}
                         @if (!empty($categorizedRoles['Ranks']))
                             <h6 class="text-primary mt-3 border-bottom pb-2">Haupt-Rang (Wähle einen)</h6>
@@ -155,7 +160,11 @@
                                 @endforeach
                             </div>
                         @endif
-
+                        @else
+                            <button class="btn btn-sm btn-secondary btn-flat disabled" title="Rang zu hoch" disabled>
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        @endif
                         {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
                             <h6 class="text-primary mt-4 border-bottom pb-2">Abteilungen & Zusatzrollen</h6>

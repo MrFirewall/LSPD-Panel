@@ -79,9 +79,21 @@
                                 <a href="{{ route('admin.users.show', $user) }}" class="btn btn-sm btn-default btn-flat" data-toggle="tooltip" title="Personalakte einsehen">
                                     <i class="fas fa-file-alt"></i>
                                 </a>
-                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary btn-flat" data-toggle="tooltip" title="Mitarbeiter bearbeiten">
-                                    <i class="fas fa-edit"></i>
-                                </a>
+                                @php
+                                    $currentUser = auth()->user();
+                                    $canEditUser = $currentUser->hasAnyRole('Super-Admin', 'chief') || ($currentUser->level > $user->level);
+                                @endphp
+                                    @if($canEditUser)
+                                        <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary btn-flat" data-toggle="tooltip" title="Mitarbeiter bearbeiten">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                    @else
+                                        {{-- Optional: Ausgegrauter Button oder gar nichts --}}
+                                        <button class="btn btn-sm btn-secondary btn-flat disabled" title="Rang zu hoch" disabled>
+                                            <i class="fas fa-lock"></i>
+                                        </button>
+                                    @endif
                             @endcan
                             @canImpersonate
                                 @if($user->canBeImpersonated())
