@@ -15,7 +15,7 @@
                 </p>
             </div>
             <div class="col-md-4 text-right">
-                <span class="badge badge-dark badge-pill px-3 py-2 text-dark font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <span class="badge badge-dark badge-pill px-3 py-2 text-white font-weight-bold" style="font-size: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     {{ $user->rankRelation->label ?? 'Mitarbeiter' }}
                 </span>
             </div>
