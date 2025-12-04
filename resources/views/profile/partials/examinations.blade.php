@@ -16,12 +16,10 @@
                     // FIX: Sicherstellen, dass $examinations eine Collection ist, falls null übergeben wird.
                     $examsCollection = $examAttempts ?? collect();
 
-                    $passedAttempts = $examsCollection->filter(function($attempt) {
-                        return $attempt->status === 'evaluated' && $attempt->exam && $attempt->score >= $attempt->exam->pass_mark;
-                    });
+                    $passedAttempts = $examsCollection
                 @endphp
                 
-                @forelse($examsCollection as $attempt)
+                @forelse($passedAttempts as $attempt)
                     <tr>
                         <td class="pl-3 text-muted">{{ $attempt->completed_at->format('d.m.Y') }}</td>
                         <td>
