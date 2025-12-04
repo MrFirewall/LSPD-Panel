@@ -78,7 +78,7 @@
                                                 @endif
                                             </td>
                                             <td>
-                                                @if($attempt->user)
+                                                @if($attempt->evaluator)
                                                 <a href="{{ route('admin.users.show', $attempt->evaluator) }}">{{ $attempt->evaluator->name }}</a>
                                                 @else
                                                 <span class="text-muted">Unbekannt</span>
