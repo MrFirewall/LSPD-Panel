@@ -161,9 +161,7 @@
                             </div>
                         @endif
                         @else
-                            <button class="btn btn-sm btn-secondary btn-flat disabled" title="Rang zu hoch" disabled>
-                                <i class="fas fa-lock"></i>
-                            </button>
+                            <h6 class="text-primary mt-3 border-bottom pb-2">Rang zu hoch</h6>
                         @endif
                         {{-- 2. ABTEILUNGEN (Checkboxen - Multi Select) --}}
                         @if (!empty($categorizedRoles['Departments']))
