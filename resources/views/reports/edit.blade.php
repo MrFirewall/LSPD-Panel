@@ -3,7 +3,7 @@
 @section('title', 'Einsatzbericht bearbeiten')
 
 @push('styles')
-    <!-- Select2 für durchsuchbare Dropdowns -->
+    <!-- Select2 -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
 @endpush
@@ -26,8 +26,8 @@
                 @method('PUT')
 
                 <!-- VORLAGENAUSWAHL -->
-                <div class="form-group row align-items-center">
-                    <label for="template-selector" class="col-sm-3 col-form-label">Vorlage anwenden (optional)</label>
+                <div class="form-group row align-items-center bg-light p-2 rounded">
+                    <label for="template-selector" class="col-sm-3 col-form-label mb-0">Vorlage anwenden (überschreibt Inhalt)</label>
                     <div class="col-sm-9">
                         <select class="form-control" id="template-selector">
                             <option value="">-- Keine Vorlage --</option>
@@ -49,15 +49,14 @@
 
                         <div class="form-group">
                             <label for="patient_name">Name des Patienten</label>
-                            <select class="form-control select2" id="patient_name" name="patient_name" required>
-                                <option value="">Bürger auswählen oder neuen Namen eingeben</option>
+                            <select class="form-control select2-citizen" id="patient_name" name="patient_name" required>
                                 @foreach($citizens as $citizen)
                                     <option value="{{ $citizen->name }}" {{ old('patient_name', $report->patient_name) == $citizen->name ? 'selected' : '' }}>
                                         {{ $citizen->name }}
                                     </option>
                                 @endforeach
                                 
-                                {{-- Stellt sicher, dass der Patient des Berichts in der Liste ist --}}
+                                {{-- Fallback: Wenn Name nicht in Bürgerliste, trotzdem als Option hinzufügen --}}
                                 @if (!in_array($report->patient_name, $citizens->pluck('name')->toArray()))
                                      <option value="{{ $report->patient_name }}" selected>{{ $report->patient_name }}</option>
                                 @endif
@@ -72,10 +71,10 @@
 
                     <!-- RECHTE SPALTE -->
                     <div class="col-md-6">
-                         <!-- NEU: Bußgelder Auswahl -->
+                         <!-- Bußgelder Auswahl -->
                         <div class="form-group">
                             <label for="fines">Tatvorwürfe / Bußgelder</label>
-                            <select class="form-control select2" id="fines" name="fines[]" multiple="multiple">
+                            <select class="form-control select2" id="fines" name="fines[]" multiple="multiple" data-placeholder="Bußgelder suchen...">
                                 @php 
                                     $selectedFines = $report->fines->pluck('id')->toArray(); 
                                     $currentSection = '';
@@ -87,22 +86,22 @@
                                         @php $currentSection = $fine->catalog_section; @endphp
                                     @endif
                                     <option value="{{ $fine->id }}" {{ in_array($fine->id, $selectedFines) ? 'selected' : '' }}>
-                                        {{ $fine->offense }} ({{ $fine->amount }}€)
+                                        {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€)
                                     </option>
                                 @endforeach
-                                </optgroup>
+                                @if($currentSection != '') </optgroup> @endif
                             </select>
                         </div>
 
                         <div class="form-group">
                             <label for="attending_staff">Beteiligte Mitarbeiter</label>
-                            <select class="form-control select2" id="attending_staff" name="attending_staff[]" multiple="multiple">
+                            <select class="form-control select2" id="attending_staff" name="attending_staff[]" multiple="multiple" data-placeholder="Beamte wählen...">
                                 @php
                                     $selectedStaffIds = $report->attendingStaff->pluck('id')->toArray();
                                 @endphp
                                 @foreach($allStaff as $staff)
                                     <option value="{{ $staff->id }}" {{ in_array($staff->id, $selectedStaffIds) ? 'selected' : '' }}>
-                                        {{ $staff->name }}
+                                        {{ $staff->rank }} {{ $staff->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -145,7 +144,7 @@
             });
 
             // Spezifisch für Bürger (mit Tags für freie Eingabe)
-            $('#patient_name').select2({
+            $('.select2-citizen').select2({
                 theme: 'bootstrap4',
                 placeholder: 'Bürger suchen oder Namen eingeben',
                 tags: true,
@@ -157,16 +156,15 @@
                 const selectedKey = $(this).val();
                 
                 if (selectedKey && templates[selectedKey]) {
-                    const template = templates[selectedKey];
-                    $('#title').val(template.title);
-                    $('#incident_description').val(template.incident_description);
-                    $('#actions_taken').val(template.actions_taken);
+                    if(confirm('Möchtest du wirklich die Vorlage anwenden? Der aktuelle Text wird überschrieben.')) {
+                        const template = templates[selectedKey];
+                        $('#title').val(template.title);
+                        $('#incident_description').val(template.incident_description);
+                        $('#actions_taken').val(template.actions_taken);
+                    } else {
+                        $(this).val(''); // Reset
+                    }
                 }
-            });
-
-            // Attending Staff Logik (verhindert Doppelauswahl in der Ansicht - optional)
-            $('#attending_staff').on('select2:select', function (e) {
-                // Logik falls nötig
             });
         });
     </script>

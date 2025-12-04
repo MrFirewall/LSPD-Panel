@@ -1,7 +1,9 @@
 @extends('layouts.app')
 
 @section('title', 'Einsatzberichte')
-
+@php
+@dump($report->getRelations())
+@endphp
 @section('content')
     <div class="content-header">
         <div class="container-fluid">
@@ -21,16 +23,16 @@
     </div>
 
     <!-- Suchformular -->
-    <div class="card">
+    <div class="card card-outline card-info">
         <div class="card-header">
-            <h3 class="card-title">Berichtsarchiv durchsuchen</h3>
+            <h3 class="card-title"><i class="fas fa-search"></i> Berichtsarchiv durchsuchen</h3>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ route('reports.index') }}">
                 <div class="input-group">
                     <input type="text" name="search" class="form-control" placeholder="Suche nach Titel, Patient oder Ersteller..." value="{{ request('search') }}">
                     <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i> Suchen</button>
+                        <button class="btn btn-info" type="submit">Suchen</button>
                     </div>
                 </div>
             </form>
@@ -56,7 +58,10 @@
                                 <td>{{ $report->created_at->format('d.m.Y H:i') }}</td>
                                 <td>{{ $report->title }}</td>
                                 <td>{{ $report->patient_name }}</td>
-                                <td>{{ $report->user->name }}</td>
+                                <td>
+                                    <!-- Hier nutzen wir den Rang aus der Datenbank -->
+                                    <span class="badge badge-light">{{ $report->user->rank }}</span> {{ $report->user->name }}
+                                </td>
                                 <td class="text-right">
                                     {{-- Policy Check: view --}}
                                     @can('view', $report)
@@ -86,7 +91,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">Keine Berichte gefunden.</td>
+                                <td colspan="5" class="text-center text-muted p-4">Keine Berichte gefunden.</td>
                             </tr>
                         @endforelse
                     </tbody>

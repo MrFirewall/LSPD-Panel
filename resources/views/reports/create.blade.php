@@ -29,12 +29,12 @@
                             </div>
                             <div class="form-group">
                                 <label>Name des Bürgers (Patient/TV)</label>
-                                <input type="text" name="patient_name" list="citizens_list" class="form-control" placeholder="Name eingeben..." required autocomplete="off">
-                                <datalist id="citizens_list">
+                                <select name="patient_name" class="form-control select2-citizen" required>
+                                    <option value="">Bitte wählen oder tippen...</option>
                                     @foreach($citizens as $c)
-                                        <option value="{{ $c->name }}">
+                                        <option value="{{ $c->name }}">{{ $c->name }}</option>
                                     @endforeach
-                                </datalist>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Einsatzort</label>
@@ -47,11 +47,32 @@
                             </div>
                             <div class="form-group">
                                 <label>Vorfallbeschreibung</label>
-                                <textarea name="incident_description" class="form-control" rows="5" placeholder="Was ist passiert?" required></textarea>
+                                <textarea name="incident_description" id="incident_description" class="form-control" rows="5" placeholder="Was ist passiert?" required></textarea>
                             </div>
                             <div class="form-group">
                                 <label>Getroffene Maßnahmen</label>
-                                <textarea name="actions_taken" class="form-control" rows="3" placeholder="Erste Hilfe, Festnahme, etc." required></textarea>
+                                <textarea name="actions_taken" id="actions_taken" class="form-control" rows="3" placeholder="Erste Hilfe, Festnahme, etc." required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vorlagen Box (Optional) -->
+                    <div class="card card-secondary collapsed-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Schnellvorlagen</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Vorlage anwenden</label>
+                                <select class="form-control" id="template-selector">
+                                    <option value="">-- Keine Vorlage --</option>
+                                    @foreach($templates as $key => $template)
+                                        <option value="{{ $key }}">{{ $template['name'] }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -66,7 +87,7 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Tatvorwürfe / Bußgelder auswählen</label>
-                                <select name="fines[]" class="form-control select2" multiple="multiple" style="width: 100%; height: 300px;">
+                                <select name="fines[]" class="form-control select2" multiple="multiple" style="width: 100%;" data-placeholder="Bußgelder suchen...">
                                     @php $currentSection = ''; @endphp
                                     @foreach($fines as $fine)
                                         @if($fine->catalog_section != $currentSection)
@@ -75,20 +96,20 @@
                                             @php $currentSection = $fine->catalog_section; @endphp
                                         @endif
                                         <option value="{{ $fine->id }}">
-                                            {{ $fine->offense }} ({{ $fine->amount }}€ - {{ $fine->jail_time }} HE)
+                                            {{ $fine->offense }} ({{ number_format($fine->amount, 0, ',', '.') }}€ @if($fine->jail_time > 0) - {{ $fine->jail_time }} HE @endif)
                                         </option>
                                     @endforeach
-                                    </optgroup>
+                                    @if($currentSection != '') </optgroup> @endif
                                 </select>
-                                <small class="form-text text-muted">Mehrfachauswahl mit STRG + Klick möglich.</small>
+                                <small class="form-text text-muted">Mehrfachauswahl möglich.</small>
                             </div>
 
                             <div class="form-group">
                                 <label>Beteiligte Beamte</label>
-                                <select name="attending_staff[]" class="form-control" multiple>
+                                <select name="attending_staff[]" class="form-control select2" multiple="multiple" style="width: 100%;" data-placeholder="Beamte auswählen...">
                                     @foreach($allStaff as $staff)
                                         <option value="{{ $staff->id }}" {{ Auth::id() == $staff->id ? 'selected' : '' }}>
-                                            {{ $staff->name }}
+                                            {{ $staff->rank }} {{ $staff->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -106,3 +127,39 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        const templates = @json($templates);
+
+        $(document).ready(function() {
+            // Standard Select2
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                width: '100%'
+            });
+
+            // Bürger Auswahl mit Tags (neue Namen erstellen)
+            $('.select2-citizen').select2({
+                theme: 'bootstrap4',
+                width: '100%',
+                tags: true,
+                placeholder: "Bürger suchen oder Name eingeben"
+            });
+            
+            // Vorlagen Logik
+            $('#template-selector').on('change', function() {
+                const selectedKey = $(this).val();
+                
+                if (selectedKey && templates[selectedKey]) {
+                    const template = templates[selectedKey];
+                    $('input[name="title"]').val(template.title);
+                    $('#incident_description').val(template.incident_description);
+                    $('#actions_taken').val(template.actions_taken);
+                }
+            });
+        });
+    </script>
+@endpush
