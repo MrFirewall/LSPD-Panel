@@ -18,6 +18,7 @@ class Report extends Model
         'incident_description',
         'actions_taken',
         'location',
+        'remark',
     ];
 
     /**
