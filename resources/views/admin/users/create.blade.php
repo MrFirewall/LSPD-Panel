@@ -5,7 +5,7 @@
 @section('content')
 
 {{-- 1. HERO HEADER --}}
-<div class="content-header" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+<div class="content-header" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1a202c; padding: 2rem 1.5rem; margin-bottom: 1.5rem; border-radius: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
     <div class="container-fluid">
         <div class="row align-items-center">
             <div class="col-sm-8">
@@ -15,7 +15,7 @@
                 </h1>
             </div>
             <div class="col-sm-4 text-right">
-                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-light rounded-pill px-4 font-weight-bold">
+                <a href="{{ route('admin.users.index') }}" class="btn btn-outline-dark rounded-pill px-4 font-weight-bold">
                     <i class="fas fa-arrow-left mr-2"></i> Zurück zur Liste
                 </a>
             </div>
@@ -173,8 +173,8 @@
                 </div>
             </div>
 
-            {{-- FOOTER ACTION BAR --}}
-            <div class="card mt-4 mb-5 border-0 shadow-lg" style="background: rgba(45, 55, 72, 0.95); position: sticky; bottom: 20px; z-index: 10;">
+            {{-- FOOTER ACTION BAR (FIXED: Sticky entfernt, normales Layout) --}}
+            <div class="card mt-4 mb-4 border-0 shadow-lg" style="background: rgba(45, 55, 72, 0.95);">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <a href="{{ route('admin.users.index') }}" class="btn btn-default rounded-pill px-4">Abbrechen</a>
                     <button type="submit" class="btn btn-success rounded-pill px-5 font-weight-bold shadow-sm">

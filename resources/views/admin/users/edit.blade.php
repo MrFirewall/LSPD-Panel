@@ -382,8 +382,8 @@
 
             </div>
 
-            {{-- FOOTER ACTION BAR --}}
-            <div class="card mt-4 mb-5 border-0 shadow-lg" style="background: rgba(45, 55, 72, 0.8);">
+            {{-- FOOTER ACTION BAR (FIXED: Sticky entfernt) --}}
+            <div class="card mt-4 mb-4 border-0 shadow-lg" style="background: rgba(45, 55, 72, 0.95);">
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <a href="{{ route('admin.users.index') }}" class="btn btn-default rounded-pill px-4">Abbrechen</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-5 font-weight-bold shadow-sm">
