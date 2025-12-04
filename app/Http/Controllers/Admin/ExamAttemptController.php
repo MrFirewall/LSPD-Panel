@@ -77,9 +77,20 @@ class ExamAttemptController extends Controller
     public function show(ExamAttempt $attempt)
     {
         $this->authorize('viewResult', $attempt);
-        // Lade die nötigen Relationen (Exam wird benötigt)
-        // KORREKTUR: Lade 'evaluator' mit
-        $attempt->load(['exam', 'user', 'answers.question.options', 'evaluator']);
+        
+        // KORREKTUR: Laden Sie die Relationen 'exam.questions.options' 
+        // und 'answers.option' explizit, um die Optionen auf allen Ebenen zu gewährleisten.
+        $attempt->load([
+            'exam.questions.options', // Fügt die Fragen UND deren Optionen hinzu, die im Blade-Loop verwendet werden.
+            'user', 
+            'answers.question', // Die Frage ist bereits durch answers.question.options oben geladen. answers.option ist wichtig für die Optionstexte.
+            'answers.option', // Stellt sicher, dass die gewählte Option geladen ist (falls für andere Logik benötigt).
+            'evaluator'
+        ]);
+        
+        // Wenn Sie nur die Fragen mit Optionen für die Ansicht verwenden, 
+        // ist 'exam.questions.options' der wichtigste Fix.
+        
         return view('exams.result', compact('attempt'));
     }
 
