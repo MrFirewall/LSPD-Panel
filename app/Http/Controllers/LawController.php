@@ -10,7 +10,7 @@ class LawController extends Controller
     public function index()
     {
         // Holt alle Gesetze und gruppiert sie nach dem Gesetzbuch (z.B. StVO, StGB)
-        $laws = Law::all()->groupBy('book');
+        $laws = Law::all()->groupBy('book_label');
         
         return view('laws.index', compact('laws'));
     }
