@@ -1,15 +1,15 @@
 @extends('layouts.app')
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+
 @section('content')
 <div class="container">
-    <h2>Neuen Regel-Abschnitt erstellen</h2>
+    <h2>{{ old('content', $rule->title ?? 'Neuen Regel-Abschnitt erstellen') }}</h2>
     
-    <form action="{{ route('rules.store') }}" method="POST">
+    <form action="{{ route('rules.update', $rule->id) }}" method="POST">
         @csrf
-        
+        @method('PUT')
         <div class="form-group mb-3">
             <label>Titel / Paragraph</label>
-            <input type="text" name="title" class="form-control" placeholder="z.B. §1 Allgemeine Regeln" required>
+            <input type="text" name="title" class="form-control" placeholder="z.B. §1 Allgemeine Regeln" value="{{ old('content', $rule->title ?? '') }}" required>
         </div>
 
         <div class="form-group mb-3">
@@ -19,24 +19,52 @@
 
         <div class="form-group mb-3">
             <label>Inhalt</label>
-            <textarea id="summernote" name="content" class="form-control"></textarea>
+            <textarea id="editor" name="content" class="form-control" rows="10">
+                {{ old('content', $rule->content ?? '') }}
+            </textarea>
         </div>
 
         <button type="submit" class="btn btn-success">Speichern</button>
     </form>
 </div>
 
-<!-- Am Ende der Seite -->
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+<!-- CKEditor 5 CDN (Kein Key notwendig) -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+
+<!-- Sprache Deutsch (Optional, falls gewünscht) -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/translations/de.js"></script>
 
 <script>
-    $(document).ready(function() {
-        $('#summernote').summernote({
-            height: 300, // Höhe des Editors
-            lang: 'de-DE' // Optional für Deutsch
+    ClassicEditor
+        .create(document.querySelector('#editor'), {
+            language: 'de', // Stellt die Oberfläche auf Deutsch
+            toolbar: [ 
+                'heading', '|', 
+                'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                'insertTable', 'undo', 'redo'
+            ],
+            // Optional: Anpassen, welche Überschriften erlaubt sind
+            heading: {
+                options: [
+                    { model: 'paragraph', title: 'Absatz', class: 'ck-heading_paragraph' },
+                    { model: 'heading2', view: 'h2', title: 'Überschrift 1', class: 'ck-heading_heading2' },
+                    { model: 'heading3', view: 'h3', title: 'Überschrift 2', class: 'ck-heading_heading3' }
+                ]
+            }
+        })
+        .then(editor => {
+            // Passt die Höhe an, damit es nicht so klein ist
+            editor.ui.view.editable.element.style.minHeight = '300px';
+        })
+        .catch(error => {
+            console.error(error);
         });
-    });
 </script>
+
+<!-- Kleines CSS für den Darkmode oder bessere Optik (Optional) -->
+<style>
+    .ck-editor__editable {
+        min-height: 300px;
+    }
+</style>
 @endsection
