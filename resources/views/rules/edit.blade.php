@@ -107,11 +107,9 @@
     </form>
 </div>
 
-<!-- FIX: Konflikte bereinigen, bevor wir laden -->
+<!-- FIX SCHRITT 1: Alten CKEditor (falls vorhanden) entfernen -->
 <script>
-    // Wenn CKEDITOR schon existiert, aber 'Essentials' fehlt, ist es die falsche Version (Classic statt Super-Build).
-    // Wir löschen sie, damit das korrekte Script geladen wird.
-    if (window.CKEDITOR && typeof window.CKEDITOR.Essentials === 'undefined') {
+    if (window.CKEDITOR) {
         window.CKEDITOR = undefined;
     }
 </script>
@@ -120,20 +118,29 @@
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
 
+<!-- FIX SCHRITT 2: Sofort sichern! -->
+<script>
+    // Wir speichern die Super-Build Instanz sofort in einer eigenen Variable.
+    // Selbst wenn der Footer später window.CKEDITOR überschreibt, haben wir hier das Original.
+    window.LSPD_SUPER_BUILD = window.CKEDITOR;
+</script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Sicherstellen, dass wir den Super-Build haben
-        const LSPD_CKEDITOR = window.CKEDITOR;
+        // FIX SCHRITT 3: Wir nutzen NUR unsere gesicherte Version
+        const LSPD_CKEDITOR = window.LSPD_SUPER_BUILD || window.CKEDITOR;
 
-        if (!LSPD_CKEDITOR || typeof LSPD_CKEDITOR.ClassicEditor === 'undefined') {
-            console.error('CKEditor Super-Build konnte nicht geladen werden.');
+        // Sicherheitscheck
+        if (!LSPD_CKEDITOR || typeof LSPD_CKEDITOR.ClassicEditor === 'undefined' || typeof LSPD_CKEDITOR.Essentials === 'undefined') {
+            console.error('CRITICAL: CKEditor Super-Build not found or overwritten. Plugins missing.');
+            alert('Fehler: CKEditor Konflikt erkannt. Bitte Seite neu laden.');
             return;
         }
 
         LSPD_CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
             language: 'de',
             
-            // Plugins aus dem Super-Build Namespace
+            // Plugins aus dem gesicherten Namespace laden
             plugins: [
                 LSPD_CKEDITOR.Essentials,
                 LSPD_CKEDITOR.Paragraph,
