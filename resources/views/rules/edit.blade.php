@@ -22,36 +22,48 @@
         background-color: #343a40 !important;
         color: #ffffff !important;
     }
-    .ck.ck-dropdown__panel {
+    /* Dropdowns und Listen im Darkmode */
+    .ck.ck-dropdown__panel, 
+    .ck.ck-list, 
+    .ck.ck-list__item, 
+    .ck.ck-reset_all-excluded {
         background-color: #2b3035 !important;
         border-color: #495057 !important;
+        color: #e0e0e0 !important;
     }
+    
     .ck.ck-list__item .ck-button {
         color: #e0e0e0 !important;
     }
+    
     .ck.ck-list__item .ck-button:hover {
         background-color: #343a40 !important;
     }
+    
+    /* Textfarbe in Input-Feldern (z.B. Link einfügen) */
+    .ck.ck-input-text {
+        background-color: #343a40 !important;
+        color: white !important;
+        border: 1px solid #495057 !important;
+    }
+
     .ck.ck-editor__editable::before {
         color: #adb5bd !important;
     }
 
     /* --- LAYOUT FIXES --- */
-    
-    /* 1. Zwingt den Editor, auf einer niedrigen Ebene zu bleiben (unter dem Footer) */
     .ck.ck-editor {
         position: relative !important;
         z-index: 0 !important; 
         margin-bottom: 20px;
     }
     
-    /* 2. Deaktiviert die "Sticky" Toolbar, die oft über Header/Footer rutscht */
+    /* Deaktiviert Sticky Toolbar */
     .ck.ck-sticky-panel__content_sticky {
         position: static !important;
         top: auto !important;
     }
 
-    /* 3. WICHTIG: Fügt unten am Container massiv Platz hinzu, damit man weit genug scrollen kann */
     .page-bottom-spacer {
         padding-bottom: 150px !important;
     }
@@ -71,7 +83,6 @@
         
         <div class="form-group mb-3">
             <label class="form-label">Titel / Paragraph</label>
-            <!-- Korrigiert: old('title') statt old('content') -->
             <input type="text" name="title" class="form-control" placeholder="z.B. §1 Allgemeine Regeln" value="{{ old('title', $rule->title ?? '') }}" required>
         </div>
 
@@ -82,7 +93,6 @@
 
         <div class="form-group mb-3">
             <label class="form-label">Inhalt</label>
-            <!-- Wrapper um Z-Index Probleme sicher abzufangen -->
             <div style="position: relative; z-index: 0;">
                 <textarea id="editor" name="content" class="form-control" rows="10">
                     {{ old('content', $rule->content ?? '') }}
@@ -91,42 +101,115 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-success btn-lg">
+            <button type="submit" class="btn btn-success">
                 <i class="fas fa-save"></i> Speichern
             </button>
         </div>
     </form>
 </div>
 
-<!-- CKEditor 5 CDN -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
-<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/translations/de.js"></script>
+<!-- WICHTIG: Wir nutzen hier den "Super Build". Dieser enthält ALLE Plugins ohne Lizenz-Key Zwang für die Basic Features -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        ClassicEditor
-            .create(document.querySelector('#editor'), {
-                language: 'de',
-                toolbar: [ 
-                    'heading', '|', 
-                    'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
-                    'insertTable', 'undo', 'redo'
+        // Zugriff auf die CKEDITOR Global Variable aus dem Super-Build
+        CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
+            language: 'de',
+            
+            // Hier sind die Features aus deiner Config, angepasst an den Super-Build:
+            plugins: [
+                CKEDITOR.ClassicEditor.builtinPlugins, // Lädt Basis-Plugins
+                CKEDITOR.Autoformat,
+                CKEDITOR.Bold,
+                CKEDITOR.Italic,
+                CKEDITOR.Underline,
+                CKEDITOR.Strikethrough,
+                CKEDITOR.Code,
+                CKEDITOR.Subscript,
+                CKEDITOR.Superscript,
+                CKEDITOR.BlockQuote,
+                CKEDITOR.Heading,
+                CKEDITOR.Link,
+                CKEDITOR.List, // BulletedList, NumberedList
+                CKEDITOR.Indent,
+                CKEDITOR.IndentBlock,
+                CKEDITOR.Image,
+                CKEDITOR.ImageCaption,
+                CKEDITOR.ImageStyle,
+                CKEDITOR.ImageToolbar,
+                CKEDITOR.ImageUpload,
+                CKEDITOR.Table,
+                CKEDITOR.TableToolbar,
+                CKEDITOR.Alignment,     // <-- Das wolltest du
+                CKEDITOR.Font,          // <-- Das wolltest du (Family, Size, Color)
+                CKEDITOR.HorizontalLine,
+                CKEDITOR.GeneralHtmlSupport, // Erlaubt alle HTML Tags/Classes
+                CKEDITOR.SourceEditing // Erlaubt Quellcode-Ansicht
+                // CKEDITOR.Markdown // Habe ich deaktiviert, da wir HTML speichern wollen!
+            ],
+            
+            toolbar: {
+                items: [
+                    'undo', 'redo', '|',
+                    'sourceEditing', '|',
+                    'heading', '|',
+                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                    'bold', 'italic', 'underline', 'strikethrough', 'code', '|',
+                    'link', 'blockQuote', 'insertTable', 'horizontalLine', '|',
+                    'alignment', '|',
+                    'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+                    'removeFormat'
                 ],
-                heading: {
-                    options: [
-                        { model: 'paragraph', title: 'Absatz', class: 'ck-heading_paragraph' },
-                        { model: 'heading2', view: 'h2', title: 'Überschrift 1', class: 'ck-heading_heading2' },
-                        { model: 'heading3', view: 'h3', title: 'Überschrift 2', class: 'ck-heading_heading3' }
-                    ]
-                }
-            })
-            .then(editor => {
-                // Manuelle Höhe setzen
-                editor.ui.view.editable.element.style.minHeight = '400px';
-            })
-            .catch(error => {
-                console.error(error);
-            });
+                shouldNotGroupWhenFull: true
+            },
+            
+            // Deine Schriftarten-Einstellungen
+            fontFamily: {
+                options: [
+                    'default',
+                    'Arial, Helvetica, sans-serif',
+                    'Courier New, Courier, monospace',
+                    'Georgia, serif',
+                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                    'Tahoma, Geneva, sans-serif',
+                    'Times New Roman, Times, serif',
+                    'Trebuchet MS, Helvetica, sans-serif',
+                    'Verdana, Geneva, sans-serif'
+                ],
+                supportAllValues: true
+            },
+            
+            fontSize: {
+                options: [10, 12, 14, 'default', 18, 20, 22],
+                supportAllValues: true
+            },
+            
+            // Erlaubt alle HTML-Attribute (wichtig für LSPD Tabellen etc.)
+            htmlSupport: {
+                allow: [
+                    {
+                        name: /.*/,
+                        attributes: true,
+                        classes: true,
+                        styles: true
+                    }
+                ]
+            },
+            
+            // Verhindert das Entfernen von Klassen
+            removePlugins: [
+                // 'Markdown', // Explizit sicherstellen, dass Markdown aus ist
+            ]
+        })
+        .then(editor => {
+            // Manuelle Höhe setzen
+            editor.ui.view.editable.element.style.minHeight = '400px';
+        })
+        .catch(error => {
+            console.error(error);
+        });
     });
 </script>
 @endsection
