@@ -60,7 +60,7 @@
   <!-- Navbar - explizit 'navbar-dark' für besseren Kontrast im Dark Mode -->
   <nav class="main-header navbar navbar-expand-md navbar-dark shadow">
     <div class="container">
-      <a href="{{ url('/') }}" class="navbar-brand">
+      <a href="{{ url('https://hamburg-rp.ivaro.de/') }}" class="navbar-brand">
         <!-- Logo hier einfügen falls vorhanden -->
         <i class="fas fa-university text-navy mr-2"></i>
         <span class="brand-text font-weight-light">Hansestadt <strong>Hamburg</strong></span>
