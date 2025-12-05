@@ -58,7 +58,7 @@
                                             </td>
                                             <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
-                                            <td class="small text-muted">{{ Str::limit(strip_tags($law->content), 120) }}</td>
+                                            <td class="small text-muted">{{ $law->content }}</td>
                                         </tr>
                                     @endforeach
                                 @endforeach
