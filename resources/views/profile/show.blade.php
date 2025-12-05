@@ -36,7 +36,7 @@
                     <div class="card-body box-profile text-center">
                         <div class="text-center mb-3">
                             <img class="profile-user-img img-fluid img-circle elevation-2"
-                                 src="{{ $user->avatar }}"
+                                 src="{{ $user->avatar ?? 'https://placehold.co/40x40/6c757d/FFFFFF?text=' . substr($user->name, 0, 1) }}"
                                  alt="Profilbild"
                                  style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #2d3748;">
                         </div>
