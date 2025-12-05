@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h2>{{ old('content', $rule->title ?? 'Neuen Regel-Abschnitt erstellen') }} bearbeiten</h2>
+    <h2>{{ old('content', $rule->title ?? 'Regel') }} bearbeiten</h2>
     
     <form action="{{ route('rules.update', $rule->id) }}" method="POST">
         @csrf

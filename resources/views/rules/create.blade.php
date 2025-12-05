@@ -4,9 +4,8 @@
 <div class="container">
     <h2>{{ old('content', $rule->title ?? 'Neuen Regel-Abschnitt erstellen') }}</h2>
     
-    <form action="{{ route('rules.update', $rule->id) }}" method="POST">
+    <form action="{{ route('rules.store') }}" method="POST">
         @csrf
-        @method('PUT')
         <div class="form-group mb-3">
             <label>Titel / Paragraph</label>
             <input type="text" name="title" class="form-control" placeholder="z.B. §1 Allgemeine Regeln" value="{{ old('content', $rule->title ?? '') }}" required>
