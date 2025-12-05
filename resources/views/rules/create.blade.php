@@ -46,6 +46,13 @@
     .ck.ck-editor__editable::before {
         color: #adb5bd !important;
     }
+
+    /* 5. Layout-Korrektur: Abstand nach unten erzwingen */
+    .ck.ck-editor {
+        margin-bottom: 50px !important; /* Schafft Platz zum Footer/Button */
+        z-index: 0; /* Verhindert, dass der Editor über fixierten Footern liegt */
+        position: relative;
+    }
 </style>
 @section('content')
 <div class="container">
