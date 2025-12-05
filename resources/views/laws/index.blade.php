@@ -60,7 +60,7 @@
                                     </tr>
                                     
                                     @foreach($entries as $law)
-                                        <tr class="law-row" data-search-term="{{ $law->book_label }} {{ $law->paragraph }} {{ $law->title }} {{ $law->content }}">
+                                        <tr class="law-row" data-search-term="{{ $law->book_label }} {{ $book }} {{ $law->paragraph }} {{ $law->title }} {{ $law->content }}">
                                             <td>
                                                 <span class="badge badge-primary">{{ $book }}</span>
                                             </td>
