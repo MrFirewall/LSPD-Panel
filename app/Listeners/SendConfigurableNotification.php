@@ -591,8 +591,8 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              $notificationIcon = 'fab fa-discord text-primary'; // Discord Icon in Blau/Lila
              $notificationUrl = route('admin.discord.index'); // Link zurück zu den Settings
         }        
-        elseif ($event->controllerAction === 'RuleController@store' && $event->relatedModel instanceof Rule) {
-             /** @var Rule $rule */
+        elseif ($event->controllerAction === 'RuleController@store' && $event->relatedModel instanceof Rulebook) {
+             /** @var Rulebook $rule */
              $rule = $event->relatedModel;
              $creator = $event->actorUser;
              $pushTitle = "Neuer Regelwerk-Eintrag";
@@ -601,8 +601,8 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              // Springt direkt zum neuen Paragraphen
              $notificationUrl = route('rules.index') . '#heading' . $rule->id;
         }
-        elseif ($event->controllerAction === 'RuleController@update' && $event->relatedModel instanceof Rule) {
-             /** @var Rule $rule */
+        elseif ($event->controllerAction === 'RuleController@update' && $event->relatedModel instanceof Rulebook) {
+             /** @var Rulebook $rule */
              $rule = $event->relatedModel;
              $editor = $event->actorUser;
              $pushTitle = "Regelwerk bearbeitet";
