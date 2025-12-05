@@ -90,17 +90,6 @@
         const $noResults = $("#no-results");
         const $lawRows = $(".law-row");
         
-        // Fügt einen Klick-Handler hinzu, um die Details anzuzeigen (kann später Modal sein)
-        $lawRows.on('click', function() {
-            // Vereinfachte Ausgabe für Klick-Funktion
-            const title = $(this).find('td').eq(2).text();
-            const paragraph = $(this).find('td').eq(1).text();
-            const fullContent = $(this).attr('data-search-term'); // Hier könnte der komplette Text stehen
-
-            // Dies sollte durch ein Modal ersetzt werden
-            alert(`§ ${paragraph} - ${title}\n\nVOLLE INHALTSVORSCHAU:\n\n${fullContent}`);
-        });
-
         $searchField.on("keyup", function() {
             var value = $(this).val().toLowerCase();
             var hasGlobalMatches = false;
