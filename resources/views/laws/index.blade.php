@@ -15,7 +15,7 @@
 <div class="content bg-gray-dark pt-5 pb-5">
     <div class="container">
         
-        <!-- Search Widget -->
+        <!-- Search Widget - Platziert, um die Hero Section zu überlappen -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
             <div class="col-md-10">
                 <div class="card shadow-lg card-dark card-outline-primary">
@@ -34,13 +34,14 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 
-                <!-- FIX: Eine einzige Tabelle für alle Gesetze (keine Tabs/Accordions) -->
+                <!-- Haupttabelle für alle Gesetze -->
                 <div class="card card-dark card-outline card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title">Alle Gesetzestexte</h3>
+                    <div class="card-header bg-dark">
+                        <h3 class="card-title text-white">Alle Gesetzestexte</h3>
                     </div>
                     
                     <div class="card-body p-0 table-responsive">
+                        <!-- table-dark und table-hover für Dark Mode -->
                         <table class="table table-dark table-hover mb-0 text-white" id="laws-table"> 
                             <thead class="bg-gray-dark">
                                 <tr>
@@ -55,10 +56,11 @@
                                     @foreach($entries as $law)
                                         <tr class="law-row" data-book="{{ $book }}" data-title="{{ Str::slug($law->title) }}" data-paragraph="{{ $law->paragraph }}">
                                             <td>
-                                                <span class="badge badge-primary">{{ $book }}</span>
-                                                <small class="d-block text-muted">{{$law->book_label}}</small>
+                                                <!-- Anzeige des Kürzels und des vollen Labels -->
+                                                <span class="badge badge-primary">{{$law->book_label}}</span>
+                                                <small class="d-block text-muted">{{ $book }}</small>
                                             </td>
-                                            <td class="font-weight-bold text-info">{{ $law->paragraph }}</td>
+                                            <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
                                             <td class="small text-muted">{{ Str::limit(strip_tags($law->content), 120) }}</td>
                                         </tr>
@@ -96,9 +98,12 @@
         $lawRows.on('click', function() {
             // In einer echten Anwendung würden Sie hier ein Modal öffnen, 
             // um den vollen Inhalt von $law->content anzuzeigen.
-            const content = $(this).find('td').eq(3).text();
+            const contentCell = $(this).find('td').eq(3);
+            // Wir müssen den gesamten Inhalt aus der Datenbank holen, aber hier simulieren wir es:
+            const fullContent = contentCell.attr('data-full-content') || contentCell.text(); 
             const title = $(this).find('td').eq(2).text();
-            alert(`§ ${$(this).find('td').eq(1).text()} - ${title}\n\n${content}`);
+            
+            alert(`§ ${$(this).find('td').eq(1).text()} - ${title}\n\n[Inhalt aus der Datenbank laden]\n\n${fullContent}`);
         });
 
         $searchField.on("keyup", function() {
