@@ -107,45 +107,62 @@
     </form>
 </div>
 
-<!-- WICHTIG: Nutze exakt diesen Link für den Super-Build -->
+<!-- FIX: Konflikte bereinigen, bevor wir laden -->
+<script>
+    // Wenn CKEDITOR schon existiert, aber 'Essentials' fehlt, ist es die falsche Version (Classic statt Super-Build).
+    // Wir löschen sie, damit das korrekte Script geladen wird.
+    if (window.CKEDITOR && typeof window.CKEDITOR.Essentials === 'undefined') {
+        window.CKEDITOR = undefined;
+    }
+</script>
+
+<!-- Super-Build laden -->
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
+        // Sicherstellen, dass wir den Super-Build haben
+        const LSPD_CKEDITOR = window.CKEDITOR;
+
+        if (!LSPD_CKEDITOR || typeof LSPD_CKEDITOR.ClassicEditor === 'undefined') {
+            console.error('CKEditor Super-Build konnte nicht geladen werden.');
+            return;
+        }
+
+        LSPD_CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
             language: 'de',
             
-            // Hier war der Fehler: builtinPlugins entfernt, Essentials & Paragraph hinzugefügt
+            // Plugins aus dem Super-Build Namespace
             plugins: [
-                CKEDITOR.Essentials,
-                CKEDITOR.Paragraph,
-                CKEDITOR.Autoformat,
-                CKEDITOR.Bold,
-                CKEDITOR.Italic,
-                CKEDITOR.Underline,
-                CKEDITOR.Strikethrough,
-                CKEDITOR.Code,
-                CKEDITOR.Subscript,
-                CKEDITOR.Superscript,
-                CKEDITOR.BlockQuote,
-                CKEDITOR.Heading,
-                CKEDITOR.Link,
-                CKEDITOR.List,
-                CKEDITOR.Indent,
-                CKEDITOR.IndentBlock,
-                CKEDITOR.Image,
-                CKEDITOR.ImageCaption,
-                CKEDITOR.ImageStyle,
-                CKEDITOR.ImageToolbar,
-                CKEDITOR.ImageUpload,
-                CKEDITOR.Table,
-                CKEDITOR.TableToolbar,
-                CKEDITOR.Alignment,
-                CKEDITOR.Font,
-                CKEDITOR.HorizontalLine,
-                CKEDITOR.GeneralHtmlSupport,
-                CKEDITOR.SourceEditing
+                LSPD_CKEDITOR.Essentials,
+                LSPD_CKEDITOR.Paragraph,
+                LSPD_CKEDITOR.Autoformat,
+                LSPD_CKEDITOR.Bold,
+                LSPD_CKEDITOR.Italic,
+                LSPD_CKEDITOR.Underline,
+                LSPD_CKEDITOR.Strikethrough,
+                LSPD_CKEDITOR.Code,
+                LSPD_CKEDITOR.Subscript,
+                LSPD_CKEDITOR.Superscript,
+                LSPD_CKEDITOR.BlockQuote,
+                LSPD_CKEDITOR.Heading,
+                LSPD_CKEDITOR.Link,
+                LSPD_CKEDITOR.List,
+                LSPD_CKEDITOR.Indent,
+                LSPD_CKEDITOR.IndentBlock,
+                LSPD_CKEDITOR.Image,
+                LSPD_CKEDITOR.ImageCaption,
+                LSPD_CKEDITOR.ImageStyle,
+                LSPD_CKEDITOR.ImageToolbar,
+                LSPD_CKEDITOR.ImageUpload,
+                LSPD_CKEDITOR.Table,
+                LSPD_CKEDITOR.TableToolbar,
+                LSPD_CKEDITOR.Alignment,
+                LSPD_CKEDITOR.Font,
+                LSPD_CKEDITOR.HorizontalLine,
+                LSPD_CKEDITOR.GeneralHtmlSupport,
+                LSPD_CKEDITOR.SourceEditing
             ],
             
             toolbar: {
@@ -198,7 +215,7 @@
             editor.ui.view.editable.element.style.minHeight = '400px';
         })
         .catch(error => {
-            console.error(error);
+            console.error('CKEditor Init Fehler:', error);
         });
     });
 </script>
