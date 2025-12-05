@@ -107,123 +107,115 @@
     </form>
 </div>
 
-<!-- FIX SCHRITT 1: Alten CKEditor (falls vorhanden) entfernen -->
+<!-- FIX: Dynamisches Laden um Konflikte mit AdminLTE/Layout zu umgehen -->
 <script>
-    if (window.CKEDITOR) {
-        window.CKEDITOR = undefined;
-    }
-</script>
+    (function() {
+        // 1. Übersetzungs-Datei laden (muss zuerst oder parallel geladen werden)
+        var scriptLang = document.createElement('script');
+        scriptLang.src = "https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js";
+        document.head.appendChild(scriptLang);
 
-<!-- Super-Build laden -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
-<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
+        // 2. Haupt-Skript laden und ISOLIERT starten
+        var scriptCore = document.createElement('script');
+        scriptCore.src = "https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js";
+        
+        scriptCore.onload = function() {
+            // JETZT ist window.CKEDITOR genau das Super-Build Skript, das wir gerade geladen haben.
+            // Wir schnappen es uns sofort, bevor irgendein Footer-Skript es überschreibt.
+            var SuperBuildCK = window.CKEDITOR;
 
-<!-- FIX SCHRITT 2: Sofort sichern! -->
-<script>
-    // Wir speichern die Super-Build Instanz sofort in einer eigenen Variable.
-    // Selbst wenn der Footer später window.CKEDITOR überschreibt, haben wir hier das Original.
-    window.LSPD_SUPER_BUILD = window.CKEDITOR;
-</script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // FIX SCHRITT 3: Wir nutzen NUR unsere gesicherte Version
-        const LSPD_CKEDITOR = window.LSPD_SUPER_BUILD || window.CKEDITOR;
-
-        // Sicherheitscheck
-        if (!LSPD_CKEDITOR || typeof LSPD_CKEDITOR.ClassicEditor === 'undefined' || typeof LSPD_CKEDITOR.Essentials === 'undefined') {
-            console.error('CRITICAL: CKEditor Super-Build not found or overwritten. Plugins missing.');
-            alert('Fehler: CKEditor Konflikt erkannt. Bitte Seite neu laden.');
-            return;
-        }
-
-        LSPD_CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
-            language: 'de',
-            
-            // Plugins aus dem gesicherten Namespace laden
-            plugins: [
-                LSPD_CKEDITOR.Essentials,
-                LSPD_CKEDITOR.Paragraph,
-                LSPD_CKEDITOR.Autoformat,
-                LSPD_CKEDITOR.Bold,
-                LSPD_CKEDITOR.Italic,
-                LSPD_CKEDITOR.Underline,
-                LSPD_CKEDITOR.Strikethrough,
-                LSPD_CKEDITOR.Code,
-                LSPD_CKEDITOR.Subscript,
-                LSPD_CKEDITOR.Superscript,
-                LSPD_CKEDITOR.BlockQuote,
-                LSPD_CKEDITOR.Heading,
-                LSPD_CKEDITOR.Link,
-                LSPD_CKEDITOR.List,
-                LSPD_CKEDITOR.Indent,
-                LSPD_CKEDITOR.IndentBlock,
-                LSPD_CKEDITOR.Image,
-                LSPD_CKEDITOR.ImageCaption,
-                LSPD_CKEDITOR.ImageStyle,
-                LSPD_CKEDITOR.ImageToolbar,
-                LSPD_CKEDITOR.ImageUpload,
-                LSPD_CKEDITOR.Table,
-                LSPD_CKEDITOR.TableToolbar,
-                LSPD_CKEDITOR.Alignment,
-                LSPD_CKEDITOR.Font,
-                LSPD_CKEDITOR.HorizontalLine,
-                LSPD_CKEDITOR.GeneralHtmlSupport,
-                LSPD_CKEDITOR.SourceEditing
-            ],
-            
-            toolbar: {
-                items: [
-                    'undo', 'redo', '|',
-                    'sourceEditing', '|',
-                    'heading', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', 'code', '|',
-                    'link', 'blockQuote', 'insertTable', 'horizontalLine', '|',
-                    'alignment', '|',
-                    'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-                    'removeFormat'
-                ],
-                shouldNotGroupWhenFull: true
-            },
-            
-            fontFamily: {
-                options: [
-                    'default',
-                    'Arial, Helvetica, sans-serif',
-                    'Courier New, Courier, monospace',
-                    'Georgia, serif',
-                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                    'Tahoma, Geneva, sans-serif',
-                    'Times New Roman, Times, serif',
-                    'Trebuchet MS, Helvetica, sans-serif',
-                    'Verdana, Geneva, sans-serif'
-                ],
-                supportAllValues: true
-            },
-            
-            fontSize: {
-                options: [10, 12, 14, 'default', 18, 20, 22],
-                supportAllValues: true
-            },
-            
-            htmlSupport: {
-                allow: [
-                    {
-                        name: /.*/,
-                        attributes: true,
-                        classes: true,
-                        styles: true
-                    }
-                ]
+            // Sicherheitscheck
+            if (!SuperBuildCK || !SuperBuildCK.ClassicEditor || !SuperBuildCK.Essentials) {
+                console.error("CKEditor Super-Build konnte nicht korrekt geladen werden.");
+                return;
             }
-        })
-        .then(editor => {
-            editor.ui.view.editable.element.style.minHeight = '400px';
-        })
-        .catch(error => {
-            console.error('CKEditor Init Fehler:', error);
-        });
-    });
+
+            // Editor initialisieren
+            SuperBuildCK.ClassicEditor.create(document.querySelector('#editor'), {
+                language: 'de',
+                plugins: [
+                    SuperBuildCK.Essentials,
+                    SuperBuildCK.Paragraph,
+                    SuperBuildCK.Autoformat,
+                    SuperBuildCK.Bold,
+                    SuperBuildCK.Italic,
+                    SuperBuildCK.Underline,
+                    SuperBuildCK.Strikethrough,
+                    SuperBuildCK.Code,
+                    SuperBuildCK.Subscript,
+                    SuperBuildCK.Superscript,
+                    SuperBuildCK.BlockQuote,
+                    SuperBuildCK.Heading,
+                    SuperBuildCK.Link,
+                    SuperBuildCK.List,
+                    SuperBuildCK.Indent,
+                    SuperBuildCK.IndentBlock,
+                    SuperBuildCK.Image,
+                    SuperBuildCK.ImageCaption,
+                    SuperBuildCK.ImageStyle,
+                    SuperBuildCK.ImageToolbar,
+                    SuperBuildCK.ImageUpload,
+                    SuperBuildCK.Table,
+                    SuperBuildCK.TableToolbar,
+                    SuperBuildCK.Alignment,
+                    SuperBuildCK.Font,
+                    SuperBuildCK.HorizontalLine,
+                    SuperBuildCK.GeneralHtmlSupport,
+                    SuperBuildCK.SourceEditing
+                ],
+                toolbar: {
+                    items: [
+                        'undo', 'redo', '|',
+                        'sourceEditing', '|',
+                        'heading', '|',
+                        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
+                        'bold', 'italic', 'underline', 'strikethrough', 'code', '|',
+                        'link', 'blockQuote', 'insertTable', 'horizontalLine', '|',
+                        'alignment', '|',
+                        'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+                        'removeFormat'
+                    ],
+                    shouldNotGroupWhenFull: true
+                },
+                fontFamily: {
+                    options: [
+                        'default',
+                        'Arial, Helvetica, sans-serif',
+                        'Courier New, Courier, monospace',
+                        'Georgia, serif',
+                        'Lucida Sans Unicode, Lucida Grande, sans-serif',
+                        'Tahoma, Geneva, sans-serif',
+                        'Times New Roman, Times, serif',
+                        'Trebuchet MS, Helvetica, sans-serif',
+                        'Verdana, Geneva, sans-serif'
+                    ],
+                    supportAllValues: true
+                },
+                fontSize: {
+                    options: [10, 12, 14, 'default', 18, 20, 22],
+                    supportAllValues: true
+                },
+                htmlSupport: {
+                    allow: [
+                        {
+                            name: /.*/,
+                            attributes: true,
+                            classes: true,
+                            styles: true
+                        }
+                    ]
+                }
+            })
+            .then(editor => {
+                editor.ui.view.editable.element.style.minHeight = '400px';
+                console.log("LSPD Editor erfolgreich gestartet.");
+            })
+            .catch(error => {
+                console.error('CKEditor Init Fehler:', error);
+            });
+        };
+
+        document.head.appendChild(scriptCore);
+    })();
 </script>
 @endsection
