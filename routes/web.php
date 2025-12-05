@@ -79,8 +79,13 @@ Route::middleware('auth.cfx')->group(function () {
     // Standard-Ressourcen
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
+
     Route::get('/rules', [RuleController::class, 'index'])->name('rules.index');
-    Route::get('/rules', [RuleController::class, 'create'])->name('rules.create');
+    Route::get('/rules/create', [RuleController::class, 'create'])->name('rules.create');
+    Route::post('/rules', [RuleController::class, 'store'])->name('rules.store');
+    Route::get('/rules/{rule}/edit', [RuleController::class, 'edit'])->name('rules.edit');
+    Route::put('/rules/{rule}', [RuleController::class, 'update'])->name('rules.update');
+    Route::delete('/rules/{rule}', [RuleController::class, 'destroy'])->name('rules.destroy');
 
     // Dienststatus
     Route::post('/duty-status/toggle', [DutyStatusController::class, 'toggle'])->name('duty.toggle');
