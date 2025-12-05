@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('rules', function (Blueprint $table) {
+        Schema::create('rulebooks', function (Blueprint $table) {
             $table->id();
             $table->string('title'); // Z.B. "§1 Allgemeine Regeln"
             $table->longText('content'); // Der HTML Text vom Editor
