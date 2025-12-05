@@ -16,6 +16,7 @@ use App\Models\Report;
 use App\Models\Vacation;
 use App\Models\ServiceRecord;
 use App\Models\DiscordSetting;
+use App\Models\Rulebook;
 use App\Notifications\GeneralNotification;
 use Illuminate\Contracts\Queue\ShouldQueue; // Optional, für asynchrone Listener
 use Illuminate\Support\Collection;
@@ -595,6 +596,7 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              /** @var Rulebook $rule */
              $rule = $event->relatedModel;
              $creator = $event->actorUser;
+
              $pushTitle = "Neuer Regelwerk-Eintrag";
              $notificationText = "Regelwerk-Abschnitt '{$rule->title}' wurde von {$creator->name} erstellt.";
              $notificationIcon = 'fas fa-book text-success';
@@ -605,6 +607,7 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              /** @var Rulebook $rule */
              $rule = $event->relatedModel;
              $editor = $event->actorUser;
+
              $pushTitle = "Regelwerk bearbeitet";
              $notificationText = "Regelwerk-Abschnitt '{$rule->title}' wurde von {$editor->name} bearbeitet.";
              $notificationIcon = 'fas fa-edit text-info';
@@ -612,8 +615,7 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              $notificationUrl = route('rules.index') . '#heading' . $rule->id;
         }
         elseif ($event->controllerAction === 'RuleController@destroy') {
-             // Hier versuchen wir den Titel aus den additionalData zu holen, falls im Controller übergeben,
-             // ansonsten Fallback, da das Model ja gelöscht ist.
+             // Hier versuchen wir den Titel aus den additionalData zu holen
              $title = $event->additionalData['title'] ?? ($event->relatedModel->title ?? 'Unbekannt');
              $deleter = $event->actorUser;
 
