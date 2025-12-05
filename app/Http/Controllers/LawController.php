@@ -9,10 +9,13 @@ class LawController extends Controller
 {
     public function index()
     {
-        // Holt alle Gesetze und gruppiert sie nach dem Gesetzbuch (z.B. StVO, StGB)
-        $laws = Law::all()->groupBy('book');
+        $laws = Law::orderBy('book')->get()->groupBy('book');
+
+        $sortedLaws = $laws->map(function ($bookGroup) {
+            return $bookGroup->sortBy('paragraph', SORT_NATURAL);
+        });
         
-        return view('laws.index', compact('laws'));
+        return view('laws.index', ['laws' => $sortedLaws]);
     }
 
     // Optional: Suche im Gesetzbuch
@@ -23,7 +26,10 @@ class LawController extends Controller
                    ->orWhere('content', 'LIKE', "%{$search}%")
                    ->get()
                    ->groupBy('book');
+        $sortedLaws = $laws->map(function ($bookGroup) {
+            return $bookGroup->sortBy('paragraph', SORT_NATURAL);
+        });
 
-        return view('laws.index', compact('laws'));
+        return view('laws.index', ['laws' => $sortedLaws]);
     }
 }
