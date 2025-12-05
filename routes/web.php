@@ -80,6 +80,7 @@ Route::middleware('auth.cfx')->group(function () {
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
     Route::get('/rules', [RuleController::class, 'index'])->name('rules');
+    Route::get('/rules', [RuleController::class, 'create'])->name('rules.create');
 
     // Dienststatus
     Route::post('/duty-status/toggle', [DutyStatusController::class, 'toggle'])->name('duty.toggle');
