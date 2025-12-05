@@ -1,5 +1,52 @@
 @extends('layouts.app')
+<style>
+    /* --- CKEditor 5 Dark Mode Anpassungen --- */
 
+    /* 1. Das Haupt-Eingabefeld dunkel machen */
+    .ck.ck-editor__main > .ck-editor__editable {
+        background-color: #2b3035 !important; /* Dunkelgrau (passend zu Bootstrap Dark) */
+        color: #e0e0e0 !important; /* Helle Schrift */
+        border-color: #495057 !important;
+    }
+
+    /* 2. Die Toolbar oben dunkel machen */
+    .ck.ck-editor .ck-toolbar {
+        background-color: #1c1f23 !important;
+        border-color: #495057 !important;
+    }
+
+    /* 3. Die Buttons in der Toolbar anpassen */
+    .ck.ck-editor .ck-button {
+        color: #e0e0e0 !important; /* Icon Farbe */
+        cursor: pointer;
+    }
+
+    /* Hover-Effekt für Buttons */
+    .ck.ck-editor .ck-button:hover,
+    .ck.ck-editor .ck-button.ck-on {
+        background-color: #343a40 !important;
+        color: #ffffff !important;
+    }
+
+    /* 4. Dropdowns (z.B. für Überschriften) dunkel machen */
+    .ck.ck-dropdown__panel {
+        background-color: #2b3035 !important;
+        border-color: #495057 !important;
+    }
+    
+    .ck.ck-list__item .ck-button {
+        color: #e0e0e0 !important;
+    }
+    
+    .ck.ck-list__item .ck-button:hover {
+        background-color: #343a40 !important;
+    }
+
+    /* Damit der Platzhalter-Text nicht verschwindet */
+    .ck.ck-editor__editable::before {
+        color: #adb5bd !important;
+    }
+</style>
 @section('content')
 <div class="container">
     <h2>{{ old('content', $rule->title ?? 'Regel') }} bearbeiten</h2>
