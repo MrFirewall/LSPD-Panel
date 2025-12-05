@@ -47,9 +47,9 @@
                                 <tr>
                                     <th style="width: 15%">Kategorie</th>
                                     <th>Tatbestand</th>
-                                    <th style="width: 150px">Bußgeld</th>
-                                    <th style="width: 100px" class="text-center">Haft (HE)</th>
-                                    <th style="width: 80px" class="text-center">Punkte</th>
+                                    <th>Bußgeld</th>
+                                    <th class="text-center">Haft (HE)</th>
+                                    <th class="text-center">Punkte</th>
                                     <th>Hinweise</th>
                                 </tr>
                             </thead>
