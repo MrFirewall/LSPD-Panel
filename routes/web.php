@@ -80,7 +80,7 @@ Route::middleware('auth.cfx')->group(function () {
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
 
-    Route::get('/rules', [RuleController::class, 'index'])->name('rules');
+    Route::get('/rules', [RuleController::class, 'index'])->name('rules.index');
     Route::get('/rules/create', [RuleController::class, 'create'])->name('rules.create');
     Route::post('/rules', [RuleController::class, 'store'])->name('rules.store');
     Route::get('/rules/{rule}/edit', [RuleController::class, 'edit'])->name('rules.edit');
