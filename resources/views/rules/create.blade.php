@@ -132,7 +132,6 @@
             .then(editor => {
                 // Manuelle Höhe setzen
                 editor.ui.view.editable.element.style.minHeight = '400px';
-                console.log('Standard CKEditor erfolgreich geladen.');
             })
             .catch(error => {
                 console.error('CKEditor Fehler:', error);

@@ -100,7 +100,7 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-success btn-lg">
+            <button type="submit" class="btn btn-success">
                 <i class="fas fa-save"></i> Speichern
             </button>
         </div>
@@ -136,8 +136,7 @@
             })
             .then(editor => {
                 // Manuelle Höhe setzen
-                editor.ui.view.editable.element.style.minHeight = '400px';
-                console.log('Standard CKEditor erfolgreich geladen.');
+                editor.ui.view.editable.element.style.minHeight = '400px';                
             })
             .catch(error => {
                 console.error('CKEditor Fehler:', error);
