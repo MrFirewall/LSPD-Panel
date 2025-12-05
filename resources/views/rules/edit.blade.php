@@ -1,12 +1,12 @@
 @extends('layouts.app')
-
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
 @section('content')
 <div class="container">
-    <h2>Neuen Regel-Abschnitt erstellen</h2>
+    <h2>Regel-Abschnitt Bearbeiten</h2>
     
-    <form action="{{ route('rules.update', $rule->id) }}" method="POST">
+    <form action="{{ route('rules.store') }}" method="POST">
         @csrf
-        @method('PUT')
+        
         <div class="form-group mb-3">
             <label>Titel / Paragraph</label>
             <input type="text" name="title" class="form-control" placeholder="z.B. §1 Allgemeine Regeln" value="{{ $rule->title }}" required>
@@ -19,19 +19,24 @@
 
         <div class="form-group mb-3">
             <label>Inhalt</label>
-            <textarea id="ruleEditor" name="content" class="form-control" rows="10">{{ $rule->content }}</textarea>
+            <textarea id="summernote" name="content" class="form-control">{{ $rule->content }}</textarea>
         </div>
 
         <button type="submit" class="btn btn-success">Speichern</button>
     </form>
 </div>
 
-<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- Am Ende der Seite -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+
 <script>
-  tinymce.init({
-    selector: '#ruleEditor',
-    plugins: 'lists link table code preview',
-    toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link'
-  });
+    $(document).ready(function() {
+        $('#summernote').summernote({
+            height: 300, // Höhe des Editors
+            lang: 'de-DE' // Optional für Deutsch
+        });
+    });
 </script>
 @endsection
