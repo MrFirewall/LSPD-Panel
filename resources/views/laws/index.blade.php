@@ -3,11 +3,11 @@
 @section('title', 'Gesetzbuch')
 
 @section('content')
-<!-- Hero Section -->
-<div class="hero-header bg-dark pt-5 pb-4">
+<!-- Hero Section - Akzentfarbe Warning/Gefahr, wie der Bußgeldkatalog (Danger/Warning) -->
+<div class="hero-header bg-dark pt-5 pb-4" style="background: linear-gradient(135deg, #a81c2d 0%, #dc3545 100%);">
     <div class="container text-center text-white">
         <h1 class="hero-title display-4"><i class="fas fa-balance-scale mr-3 text-warning"></i>Gesetzbuch</h1>
-        <p class="hero-subtitle mt-2 text-muted">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
+        <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
     </div>
 </div>
 
@@ -18,13 +18,15 @@
         <!-- Search Widget - Platziert, um die Hero Section zu überlappen -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
             <div class="col-md-10">
-                <div class="card shadow-lg card-dark card-outline-primary">
+                <!-- FIX: Dark Mode Card Style des Katalogs übernommen -->
+                <div class="card shadow-lg card-dark card-outline-danger">
                     <div class="card-body p-2 bg-dark">
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
                                 <span class="input-group-text border-0 bg-dark"><i class="fas fa-search text-muted"></i></span>
                             </div>
-                            <input type="text" id="law-search" class="form-control border-0 bg-dark text-white" placeholder="Suche nach Paragraf (§ 211), Titel oder Inhalt..." autocomplete="off">
+                            <!-- FIX: ID des Suchfelds an die JS Logik anpassen -->
+                            <input type="text" id="law-search-field" class="form-control border-0 bg-dark text-white" placeholder="Suche nach Paragraf (§ 211), Titel oder Inhalt..." autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -34,14 +36,14 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 
-                <!-- Haupttabelle für alle Gesetze -->
-                <div class="card card-dark card-outline card-primary">
+                <!-- Haupttabelle für alle Gesetze (Keine Tabs/Akkordeons) -->
+                <div class="card card-dark card-outline card-danger">
                     <div class="card-header bg-dark">
-                        <h3 class="card-title text-white">Alle Gesetzestexte</h3>
+                        <h3 class="card-title text-white">Gesetzestexte: {{ $laws->count() }} Kategorien</h3>
                     </div>
                     
                     <div class="card-body p-0 table-responsive">
-                        <!-- table-dark und table-hover für Dark Mode -->
+                        <!-- FIX: table-dark und table-hover für Dark Mode -->
                         <table class="table table-dark table-hover mb-0 text-white" id="laws-table"> 
                             <thead class="bg-gray-dark">
                                 <tr>
@@ -54,11 +56,11 @@
                             <tbody>
                                 @foreach($laws as $book => $entries)
                                     @foreach($entries as $law)
-                                        <tr class="law-row" data-book="{{ $book }}" data-title="{{ Str::slug($law->title) }}" data-paragraph="{{ $law->paragraph }}">
+                                        <tr class="law-row" data-search-term="{{ $law->book_label }} {{ $law->paragraph }} {{ $law->title }} {{ $law->content }}">
                                             <td>
                                                 <!-- Anzeige des Kürzels und des vollen Labels -->
-                                                <span class="badge badge-primary">{{$law->book_label}}</span>
-                                                <small class="d-block text-muted">{{ $book }}</small>
+                                                <span class="badge badge-danger">{{ $book }}</span>
+                                                <small class="d-block text-muted">{{$law->book_label}}</small>
                                             </td>
                                             <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
@@ -90,20 +92,19 @@
 @push('scripts')
 <script>
     $(document).ready(function(){
-        const $searchField = $("#law-search");
+        const $searchField = $("#law-search-field"); // FIX: ID des Suchfeldes
         const $noResults = $("#no-results");
         const $lawRows = $(".law-row");
         
         // Fügt einen Klick-Handler hinzu, um die Details anzuzeigen (kann später Modal sein)
         $lawRows.on('click', function() {
-            // In einer echten Anwendung würden Sie hier ein Modal öffnen, 
-            // um den vollen Inhalt von $law->content anzuzeigen.
-            const contentCell = $(this).find('td').eq(3);
-            // Wir müssen den gesamten Inhalt aus der Datenbank holen, aber hier simulieren wir es:
-            const fullContent = contentCell.attr('data-full-content') || contentCell.text(); 
+            // Vereinfachte Ausgabe für Klick-Funktion
             const title = $(this).find('td').eq(2).text();
-            
-            alert(`§ ${$(this).find('td').eq(1).text()} - ${title}\n\n[Inhalt aus der Datenbank laden]\n\n${fullContent}`);
+            const paragraph = $(this).find('td').eq(1).text();
+            const fullContent = $(this).attr('data-search-term'); // Hier könnte der komplette Text stehen
+
+            // Dies sollte durch ein Modal ersetzt werden
+            alert(`§ ${paragraph} - ${title}\n\nVOLLE INHALTSVORSCHAU:\n\n${fullContent}`);
         });
 
         $searchField.on("keyup", function() {
@@ -112,9 +113,9 @@
 
             $lawRows.each(function() {
                 var row = $(this);
-                // Suche in Paragraf (2. Spalte), Titel (3. Spalte) und Inhalt (4. Spalte)
-                var text = row.text().toLowerCase();
-                var match = text.indexOf(value) > -1;
+                // Suche im data-search-term Attribut, das alle relevanten Infos enthält
+                var text = row.attr('data-search-term').toLowerCase(); 
+                var match = text.includes(value);
                 
                 row.toggle(match);
                 if(match) hasGlobalMatches = true;
