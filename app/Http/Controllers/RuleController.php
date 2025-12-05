@@ -16,7 +16,7 @@ class RuleController extends Controller
     public function index()
     {
         // Sortiert nach 'order_index', damit §1 vor §2 kommt
-        $rules = Rule::orderBy('order_index', 'asc')->get();
+        $rules = Rulebook::orderBy('order_index', 'asc')->get();
         return view('rules.index', compact('rules'));
     }
 
@@ -41,7 +41,7 @@ class RuleController extends Controller
 
         $creator = Auth::user();
 
-        $rule = Rule::create([
+        $rule = Rulebook::create([
             'title' => $request->title,
             'content' => $request->content,
             'order_index' => $request->order_index ?? 0,
