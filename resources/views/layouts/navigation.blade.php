@@ -130,7 +130,12 @@
             <p>Dashboard</p>
         </a>
     </li>
-    
+    <li class="nav-item">
+        <a href="{{ route('rules') }}" class="nav-link {{ Request::routeIs('rules') ? 'active' : '' }}">
+            <i class="nav-icon fas fa-scale-balanced"></i>
+            <p>internes Regelwerk</p>
+        </a>
+    </li>
     @can('profile.view')
     <li class="nav-item">
         <a href="{{ route('profile.show') }}" class="nav-link {{ Request::routeIs('profile.show') ? 'active' : '' }}">
