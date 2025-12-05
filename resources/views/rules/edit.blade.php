@@ -40,7 +40,7 @@
         background-color: #343a40 !important;
     }
     
-    /* Textfarbe in Input-Feldern (z.B. Link einfügen) */
+    /* Textfarbe in Input-Feldern */
     .ck.ck-input-text {
         background-color: #343a40 !important;
         color: white !important;
@@ -58,7 +58,6 @@
         margin-bottom: 20px;
     }
     
-    /* Deaktiviert Sticky Toolbar */
     .ck.ck-sticky-panel__content_sticky {
         position: static !important;
         top: auto !important;
@@ -101,26 +100,26 @@
         </div>
 
         <div class="mt-4">
-            <button type="submit" class="btn btn-success">
+            <button type="submit" class="btn btn-success btn-lg">
                 <i class="fas fa-save"></i> Speichern
             </button>
         </div>
     </form>
 </div>
 
-<!-- WICHTIG: Wir nutzen hier den "Super Build". Dieser enthält ALLE Plugins ohne Lizenz-Key Zwang für die Basic Features -->
+<!-- WICHTIG: Nutze exakt diesen Link für den Super-Build -->
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
 <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Zugriff auf die CKEDITOR Global Variable aus dem Super-Build
         CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
             language: 'de',
             
-            // Hier sind die Features aus deiner Config, angepasst an den Super-Build:
+            // Hier war der Fehler: builtinPlugins entfernt, Essentials & Paragraph hinzugefügt
             plugins: [
-                CKEDITOR.ClassicEditor.builtinPlugins, // Lädt Basis-Plugins
+                CKEDITOR.Essentials,
+                CKEDITOR.Paragraph,
                 CKEDITOR.Autoformat,
                 CKEDITOR.Bold,
                 CKEDITOR.Italic,
@@ -132,7 +131,7 @@
                 CKEDITOR.BlockQuote,
                 CKEDITOR.Heading,
                 CKEDITOR.Link,
-                CKEDITOR.List, // BulletedList, NumberedList
+                CKEDITOR.List,
                 CKEDITOR.Indent,
                 CKEDITOR.IndentBlock,
                 CKEDITOR.Image,
@@ -142,12 +141,11 @@
                 CKEDITOR.ImageUpload,
                 CKEDITOR.Table,
                 CKEDITOR.TableToolbar,
-                CKEDITOR.Alignment,     // <-- Das wolltest du
-                CKEDITOR.Font,          // <-- Das wolltest du (Family, Size, Color)
+                CKEDITOR.Alignment,
+                CKEDITOR.Font,
                 CKEDITOR.HorizontalLine,
-                CKEDITOR.GeneralHtmlSupport, // Erlaubt alle HTML Tags/Classes
-                CKEDITOR.SourceEditing // Erlaubt Quellcode-Ansicht
-                // CKEDITOR.Markdown // Habe ich deaktiviert, da wir HTML speichern wollen!
+                CKEDITOR.GeneralHtmlSupport,
+                CKEDITOR.SourceEditing
             ],
             
             toolbar: {
@@ -165,7 +163,6 @@
                 shouldNotGroupWhenFull: true
             },
             
-            // Deine Schriftarten-Einstellungen
             fontFamily: {
                 options: [
                     'default',
@@ -186,7 +183,6 @@
                 supportAllValues: true
             },
             
-            // Erlaubt alle HTML-Attribute (wichtig für LSPD Tabellen etc.)
             htmlSupport: {
                 allow: [
                     {
@@ -196,15 +192,9 @@
                         styles: true
                     }
                 ]
-            },
-            
-            // Verhindert das Entfernen von Klassen
-            removePlugins: [
-                // 'Markdown', // Explizit sicherstellen, dass Markdown aus ist
-            ]
+            }
         })
         .then(editor => {
-            // Manuelle Höhe setzen
             editor.ui.view.editable.element.style.minHeight = '400px';
         })
         .catch(error => {

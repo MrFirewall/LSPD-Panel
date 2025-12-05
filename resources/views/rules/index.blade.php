@@ -208,10 +208,5 @@
             </div>
         @endforelse
     </div>
-    
-    <!-- Abschluss der Timeline -->
-    <div class="text-center text-muted mt-5 mb-5">
-        <small>&copy; {{ date('Y') }} Los Santos Police Department - Interne Verwaltung</small>
-    </div>
 </div>
 @endsection
