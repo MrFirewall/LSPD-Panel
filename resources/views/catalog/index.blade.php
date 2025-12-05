@@ -57,7 +57,7 @@
                                 @php $currentSection = null; @endphp
                                 @foreach($categories as $section => $fines)
                                     <!-- Optische Trennung durch eine Header-Zeile -->
-                                    <tr class="table-danger law-section-header">
+                                    <tr class="law-section-header">
                                         <td colspan="6" class="font-weight-bold text-center p-2">
                                             <i class="fas fa-angle-double-down mr-2"></i> {{ $section }} <i class="fas fa-angle-double-down ml-2"></i>
                                         </td>

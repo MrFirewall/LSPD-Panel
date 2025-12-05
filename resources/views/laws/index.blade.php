@@ -34,10 +34,13 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 
-                <!-- Haupttabelle für alle Gesetze (Keine Tabs/Akkordeons) -->
-                <div class="card card-dark card-outline card-danger">                    
+                <!-- Haupttabelle für alle Gesetze (Durchgehend) -->
+                <div class="card card-dark card-outline card-danger">
+                    <div class="card-header bg-dark">
+                        <h3 class="card-title text-white">Alle Gesetzestexte</h3>
+                    </div>
+                    
                     <div class="card-body p-0 table-responsive">
-                        <!-- FIX: table-dark und table-hover für Dark Mode -->
                         <table class="table table-dark table-hover mb-0 text-white" id="laws-table"> 
                             <thead class="bg-gray-dark">
                                 <tr>
@@ -49,16 +52,21 @@
                             </thead>
                             <tbody>
                                 @foreach($laws as $book => $entries)
+                                    <!-- Optische Trennung durch eine Header-Zeile (Sektion) -->
+                                    <tr class="law-section-header">
+                                        <td colspan="4" class="font-weight-bold text-center p-2 text-white">
+                                            <i class="fas fa-angle-double-down mr-2"></i> {{ $entries->first()->book_label }} ({{ $book }}) <i class="fas fa-angle-double-down ml-2"></i>
+                                        </td>
+                                    </tr>
+                                    
                                     @foreach($entries as $law)
                                         <tr class="law-row" data-search-term="{{ $law->book_label }} {{ $law->paragraph }} {{ $law->title }} {{ $law->content }}">
                                             <td>
-                                                <!-- Anzeige des Kürzels und des vollen Labels -->
-                                                <span>{{ $law->book_label }}</span>
-                                                <small class="d-block text-muted">{{$book}}</small>
+                                                <span class="badge badge-danger">{{ $book }}</span>
                                             </td>
                                             <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
-                                            <td class="small text-muted">{{ $law->content }}</td>
+                                            <td class="small text-muted">{{ Str::limit(strip_tags($law->content), 120) }}</td>
                                         </tr>
                                     @endforeach
                                 @endforeach
