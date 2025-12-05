@@ -66,7 +66,7 @@
                                             </td>
                                             <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
-                                            <td class="small text-muted">{{ $law->content }}</td>
+                                            <td>{{ $law->content }}</td>
                                         </tr>
                                     @endforeach
                                 @endforeach

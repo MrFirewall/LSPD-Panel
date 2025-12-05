@@ -72,19 +72,19 @@
                                             <td class="text-warning font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
                                             <td class="text-center">
                                                 @if($fine->jail_time > 0)
-                                                    <span class="badge badge-danger text-white">{{ $fine->jail_time }} HE</span>
+                                                    <span>{{ $fine->jail_time }} HE</span>
                                                 @else
                                                     <span class="text-muted small">-</span>
                                                 @endif
                                             </td>
                                             <td class="text-center">
                                                 @if($fine->points > 0)
-                                                    <span class="badge badge-warning text-dark">{{ $fine->points }}</span>
+                                                    <span>{{ $fine->points }}</span>
                                                 @else
                                                     <span class="text-muted small">-</span>
                                                 @endif
                                             </td>
-                                            <td class="small text-muted">
+                                            <td>
                                                 {{ $fine->remark ?: '-' }}
                                             </td>
                                         </tr>
