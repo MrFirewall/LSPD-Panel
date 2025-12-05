@@ -28,7 +28,7 @@
                                         data-toggle="pill" 
                                         href="#content-{{ Str::slug($book) }}" 
                                         role="tab">
-                                         <i class="fas fa-book-open mr-2 text-info"></i> {{ $book }}
+                                         <i class="fas fa-book-open mr-2 text-info"></i> {{$entries->first()->book_label}} ({{ $book }})
                                     </a>
                                 </li>
                             @endforeach
