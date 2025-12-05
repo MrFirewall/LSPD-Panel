@@ -144,7 +144,8 @@ class ExamAttemptController extends Controller
         
         // NEU: Wenn der Link erneut gesendet wird, trägt sich der aktuelle User als Prüfer ein
         $attempt->update(['evaluator_id' => Auth::id()]);
-        $attempt->update(['started_at' => now()]);
+        $attempt->update(['started_at' => now()]);        
+        $attempt->update(['status' => 'in_progress']);
         $secureUrl = route('exams.take', $attempt);
 
         PotentiallyNotifiableActionOccurred::dispatch(
