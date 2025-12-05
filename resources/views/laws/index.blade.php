@@ -4,28 +4,26 @@
 
 @section('content')
 <!-- Hero Section - Akzentfarbe Warning/Gefahr, wie der Bußgeldkatalog (Danger/Warning) -->
-<div class="hero-header bg-dark pt-5 pb-4" style="background: linear-gradient(135deg, #a81c2d 0%, #dc3545 100%);">
-    <div class="container text-center text-white">
-        <h1 class="hero-title display-4"><i class="fas fa-balance-scale mr-3 text-warning"></i>Gesetzbuch</h1>
-        <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
+<div class="hero-header bg-dark pt-5 pb-4">
+    <div class="container text-center">
+        <h1 class="hero-title display-4"><i class="fas fa-clipboard-list mr-3"></i>Bußgeldkatalog</h1>
+        <p class="hero-subtitle mt-2">Übersicht aller Verwarnungs- und Bußgelder (BBuG)</p>
     </div>
 </div>
 
-<!-- Main content -->
-<div class="content bg-gray-dark pt-5 pb-5">
+<div class="content">
     <div class="container">
         
-        <!-- Search Widget - Platziert, um die Hero Section zu überlappen -->
+        <!-- Search Widget - Hell abgesetzt für Sichtbarkeit -->
         <div class="row justify-content-center mb-5" style="margin-top: -3rem;">
-            <div class="col-md-10">
-                <!-- FIX: Dark Mode Card Style des Katalogs übernommen -->
-                <div class="card shadow-lg card-dark card-outline-danger">
-                    <div class="card-body p-2 bg-dark">
+            <div class="col-md-8">
+                <div class="card shadow-lg">
+                    <div class="card-body p-2">
                         <div class="input-group input-group-lg">
                             <div class="input-group-prepend">
-                                <span class="input-group-text border-0 bg-dark"><i class="fas fa-search text-muted"></i></span>
+                                <span class="input-group-text border-0 bg-transparent"><i class="fas fa-search text-info"></i></span>
                             </div>
-                            <!-- FIX: ID des Suchfelds an die JS Logik anpassen -->
+                            <!-- Input-Feld passt sich automatisch an Dark Mode an -->
                             <input type="text" id="law-search-field" class="form-control border-0 bg-dark text-white" placeholder="Suche nach Paragraf (§ 211), Titel oder Inhalt..." autocomplete="off">
                         </div>
                     </div>
