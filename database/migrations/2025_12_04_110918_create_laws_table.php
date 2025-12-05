@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('laws', function (Blueprint $table) {
             $table->id();
             $table->string('book'); // z.B. "StGB", "StVO"
+            $table->string('book_label'); // z.B. "Strafgesetzbuch", "Straßenverkehrsordnung"
             $table->string('paragraph'); // z.B. "§ 223"
             $table->string('title'); // z.B. "Körperverletzung"
             $table->text('content'); // Der eigentliche Gesetzestext

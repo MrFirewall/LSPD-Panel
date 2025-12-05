@@ -11,6 +11,7 @@ class Law extends Model
 
     protected $fillable = [
         'book',      // z.B. StGB, Verfassung
+        'book_label',// z.B. Strafgesetzbuch, Grundgesetz
         'paragraph', // z.B. § 211
         'title',     // z.B. Mord
         'content',   // Der Text
