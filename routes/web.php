@@ -21,6 +21,7 @@ use App\Http\Controllers\PrescriptionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\LawController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\RuleController;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 use App\Models\User;
 use App\Notifications\GeneralNotification;
@@ -78,7 +79,8 @@ Route::middleware('auth.cfx')->group(function () {
     // Standard-Ressourcen
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
-
+    Route::resource('rules', RuleController::class);
+    
     // Dienststatus
     Route::post('/duty-status/toggle', [DutyStatusController::class, 'toggle'])->name('duty.toggle');
 
@@ -104,11 +106,6 @@ Route::middleware('auth.cfx')->group(function () {
     
     Route::resource('modules', TrainingModuleController::class);
 
-    /*
-    |--------------------------------------------------------------------------
-    | NEU: PRÜFUNGS-ROUTEN (FÜR PRÜFLINGE)
-    |--------------------------------------------------------------------------
-    */
     // Prüfung ablegen (Nutzt RMB mit 'uuid' dank Model-Definition)
     Route::get('/exams/take/{attempt:uuid}', [ExamAttemptController::class, 'show'])->name('exams.take');
     // Prüfung einreichen

@@ -207,6 +207,10 @@ class NotificationRuleController extends Controller
             'TrainingModuleController@destroy' => 'Ausbildungsmodul gelöscht',
             // 'TrainingModuleController@signUp' => 'Benutzer hat sich für Modul angemeldet (Antrag)', // Wird durch EvaluationController@store abgedeckt
 
+            'RuleController@store'   => 'Regelwerk-Abschnitt erstellt',
+            'RuleController@update'  => 'Regelwerk-Abschnitt bearbeitet',
+            'RuleController@destroy' => 'Regelwerk-Abschnitt gelöscht',
+            
             // Urlaubsanträge
             'VacationController@store' => 'Urlaubsantrag gestellt',
             'VacationController@updateStatus' => '[Admin] Urlaubsantrag bearbeitet (Genehmigt/Abgelehnt)',

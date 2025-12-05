@@ -590,6 +590,37 @@ class SendConfigurableNotification // Optional: implements ShouldQueue
              
              $notificationIcon = 'fab fa-discord text-primary'; // Discord Icon in Blau/Lila
              $notificationUrl = route('admin.discord.index'); // Link zurück zu den Settings
+        }        
+        elseif ($event->controllerAction === 'RuleController@store' && $event->relatedModel instanceof Rule) {
+             /** @var Rule $rule */
+             $rule = $event->relatedModel;
+             $creator = $event->actorUser;
+             $pushTitle = "Neuer Regelwerk-Eintrag";
+             $notificationText = "Regelwerk-Abschnitt '{$rule->title}' wurde von {$creator->name} erstellt.";
+             $notificationIcon = 'fas fa-book text-success';
+             // Springt direkt zum neuen Paragraphen
+             $notificationUrl = route('rules.index') . '#heading' . $rule->id;
+        }
+        elseif ($event->controllerAction === 'RuleController@update' && $event->relatedModel instanceof Rule) {
+             /** @var Rule $rule */
+             $rule = $event->relatedModel;
+             $editor = $event->actorUser;
+             $pushTitle = "Regelwerk bearbeitet";
+             $notificationText = "Regelwerk-Abschnitt '{$rule->title}' wurde von {$editor->name} bearbeitet.";
+             $notificationIcon = 'fas fa-edit text-info';
+             // Springt direkt zum bearbeiteten Paragraphen
+             $notificationUrl = route('rules.index') . '#heading' . $rule->id;
+        }
+        elseif ($event->controllerAction === 'RuleController@destroy') {
+             // Hier versuchen wir den Titel aus den additionalData zu holen, falls im Controller übergeben,
+             // ansonsten Fallback, da das Model ja gelöscht ist.
+             $title = $event->additionalData['title'] ?? ($event->relatedModel->title ?? 'Unbekannt');
+             $deleter = $event->actorUser;
+
+             $pushTitle = "Regelwerk-Eintrag gelöscht";
+             $notificationText = "Regelwerk-Abschnitt '{$title}' wurde von {$deleter->name} gelöscht.";
+             $notificationIcon = 'fas fa-trash-alt text-danger';
+             $notificationUrl = route('rules.index');
         }
 
         // =====================================================================
