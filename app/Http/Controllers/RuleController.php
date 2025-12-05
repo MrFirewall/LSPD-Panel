@@ -71,7 +71,7 @@ class RuleController extends Controller
     /**
      * Formular zum Bearbeiten.
      */
-    public function edit(Rule $rule)
+    public function edit(Rulebook $rule)
     {
         return view('rules.edit', compact('rule'));
     }
@@ -79,7 +79,7 @@ class RuleController extends Controller
     /**
      * Update + Log + Event.
      */
-    public function update(Request $request, Rule $rule)
+    public function update(Request $request, Rulebook $rule)
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -119,7 +119,7 @@ class RuleController extends Controller
     /**
      * Löschen.
      */
-    public function destroy(Rule $rule)
+    public function destroy(Rulebook $rule)
     {
         $user = Auth::user();
         $title = $rule->title;
