@@ -152,11 +152,11 @@
                 </p>
             </div>
             <div class="col-md-4 text-right">
-                @if($canManage)
+                @can('rules.edit')
                     <a href="{{ route('rules.create') }}" class="btn btn-success btn-lg rounded-pill px-4 font-weight-bold shadow-lg" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%); border: none;">
                         <i class="fas fa-plus mr-2"></i> Neuer Abschnitt
                     </a>
-                @endif
+                @endcan
             </div>
         </div>
     </div>
@@ -195,7 +195,7 @@
                                 {{ $rule->title }}
                             </h2>
                             
-                            @if($canManage)
+                            @can('rules.edit')
                                 <div class="btn-group shadow-sm">
                                     <a href="{{ route('rules.edit', $rule->id) }}" class="btn btn-sm btn-dark border-secondary" title="Bearbeiten">
                                         <i class="fas fa-edit text-warning"></i>
@@ -208,7 +208,7 @@
                                         </button>
                                     </form>
                                 </div>
-                            @endif
+                            @endcan
                         </div>
 
                         <div class="timeline-body rule-content">
@@ -235,18 +235,14 @@
                         </div>
                         <h3 class="text-white font-weight-bold">Keine Einträge</h3>
                         <p class="text-muted">Das Regelwerk ist aktuell noch leer.</p>
-                        @if($canManage)
+                        @can('rules.edit')
                             <a href="{{ route('rules.create') }}" class="btn btn-outline-light rounded-pill mt-3 px-4">
                                 Ersten Abschnitt erstellen
                             </a>
-                        @endif
+                        @endcan
                     </div>
                 </div>
             @endforelse
-        </div>
-        
-        <div class="text-center text-muted mt-5 mb-5 opacity-50">
-            <small>&copy; {{ date('Y') }} Los Santos Police Department - Interne Verwaltung</small>
         </div>
     </div>
 </section>
