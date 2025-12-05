@@ -132,7 +132,7 @@
     </li>
     <li class="nav-item">
         <a href="{{ route('rules') }}" class="nav-link {{ Request::routeIs('rules') ? 'active' : '' }}">
-            <i class="nav-icon fas fa-scale-balanced"></i>
+            <i class="nav-icon fas fa-balance-scale"></i>
             <p>internes Regelwerk</p>
         </a>
     </li>
