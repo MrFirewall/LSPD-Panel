@@ -10,7 +10,6 @@
         <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
     </div>
 </div>
-@dd($laws)
 <!-- Main content -->
 <div class="content">
     <div class="container">
