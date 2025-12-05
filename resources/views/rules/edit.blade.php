@@ -107,115 +107,41 @@
     </form>
 </div>
 
-<!-- FIX: Dynamisches Laden um Konflikte mit AdminLTE/Layout zu umgehen -->
+<!-- FALLBACK-LÖSUNG: Standard Classic Editor -->
+<!-- Wir laden hier absichtlich NICHT den Super-Build, sondern die stabile Standard-Version -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/translations/de.js"></script>
+
 <script>
-    (function() {
-        // 1. Übersetzungs-Datei laden (muss zuerst oder parallel geladen werden)
-        var scriptLang = document.createElement('script');
-        scriptLang.src = "https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js";
-        document.head.appendChild(scriptLang);
-
-        // 2. Haupt-Skript laden und ISOLIERT starten
-        var scriptCore = document.createElement('script');
-        scriptCore.src = "https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js";
-        
-        scriptCore.onload = function() {
-            // JETZT ist window.CKEDITOR genau das Super-Build Skript, das wir gerade geladen haben.
-            // Wir schnappen es uns sofort, bevor irgendein Footer-Skript es überschreibt.
-            var SuperBuildCK = window.CKEDITOR;
-
-            // Sicherheitscheck
-            if (!SuperBuildCK || !SuperBuildCK.ClassicEditor || !SuperBuildCK.Essentials) {
-                console.error("CKEditor Super-Build konnte nicht korrekt geladen werden.");
-                return;
-            }
-
-            // Editor initialisieren
-            SuperBuildCK.ClassicEditor.create(document.querySelector('#editor'), {
+    document.addEventListener("DOMContentLoaded", function() {
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
                 language: 'de',
-                plugins: [
-                    SuperBuildCK.Essentials,
-                    SuperBuildCK.Paragraph,
-                    SuperBuildCK.Autoformat,
-                    SuperBuildCK.Bold,
-                    SuperBuildCK.Italic,
-                    SuperBuildCK.Underline,
-                    SuperBuildCK.Strikethrough,
-                    SuperBuildCK.Code,
-                    SuperBuildCK.Subscript,
-                    SuperBuildCK.Superscript,
-                    SuperBuildCK.BlockQuote,
-                    SuperBuildCK.Heading,
-                    SuperBuildCK.Link,
-                    SuperBuildCK.List,
-                    SuperBuildCK.Indent,
-                    SuperBuildCK.IndentBlock,
-                    SuperBuildCK.Image,
-                    SuperBuildCK.ImageCaption,
-                    SuperBuildCK.ImageStyle,
-                    SuperBuildCK.ImageToolbar,
-                    SuperBuildCK.ImageUpload,
-                    SuperBuildCK.Table,
-                    SuperBuildCK.TableToolbar,
-                    SuperBuildCK.Alignment,
-                    SuperBuildCK.Font,
-                    SuperBuildCK.HorizontalLine,
-                    SuperBuildCK.GeneralHtmlSupport,
-                    SuperBuildCK.SourceEditing
+                // Wir definieren KEINE Plugins manuell -> Der Editor lädt seine Standard-Plugins.
+                // Das verhindert den "plugincollection-plugin-not-found" Fehler.
+                
+                toolbar: [
+                    'heading', '|',
+                    'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                    'insertTable', '|',
+                    'undo', 'redo'
                 ],
-                toolbar: {
-                    items: [
-                        'undo', 'redo', '|',
-                        'sourceEditing', '|',
-                        'heading', '|',
-                        'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                        'bold', 'italic', 'underline', 'strikethrough', 'code', '|',
-                        'link', 'blockQuote', 'insertTable', 'horizontalLine', '|',
-                        'alignment', '|',
-                        'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-                        'removeFormat'
-                    ],
-                    shouldNotGroupWhenFull: true
-                },
-                fontFamily: {
+                heading: {
                     options: [
-                        'default',
-                        'Arial, Helvetica, sans-serif',
-                        'Courier New, Courier, monospace',
-                        'Georgia, serif',
-                        'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                        'Tahoma, Geneva, sans-serif',
-                        'Times New Roman, Times, serif',
-                        'Trebuchet MS, Helvetica, sans-serif',
-                        'Verdana, Geneva, sans-serif'
-                    ],
-                    supportAllValues: true
-                },
-                fontSize: {
-                    options: [10, 12, 14, 'default', 18, 20, 22],
-                    supportAllValues: true
-                },
-                htmlSupport: {
-                    allow: [
-                        {
-                            name: /.*/,
-                            attributes: true,
-                            classes: true,
-                            styles: true
-                        }
+                        { model: 'paragraph', title: 'Absatz', class: 'ck-heading_paragraph' },
+                        { model: 'heading2', view: 'h2', title: 'Überschrift 1', class: 'ck-heading_heading2' },
+                        { model: 'heading3', view: 'h3', title: 'Überschrift 2', class: 'ck-heading_heading3' }
                     ]
                 }
             })
             .then(editor => {
+                // Manuelle Höhe setzen
                 editor.ui.view.editable.element.style.minHeight = '400px';
-                console.log("LSPD Editor erfolgreich gestartet.");
+                console.log('Standard CKEditor erfolgreich geladen.');
             })
             .catch(error => {
-                console.error('CKEditor Init Fehler:', error);
+                console.error('CKEditor Fehler:', error);
             });
-        };
-
-        document.head.appendChild(scriptCore);
-    })();
+    });
 </script>
 @endsection
