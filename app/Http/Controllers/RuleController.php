@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rulebook; // WICHTIG: Hier muss Rulebook stehen, nicht Rulebook
+use App\Http\Controllers\Controller;
+use App\Models\Rulebook; // WICHTIG: Nutze das Model, das zu deiner Tabelle 'rulebooks' passt
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class RuleController extends Controller
      */
     public function index()
     {
-        // Sortiert nach 'order_index', damit §1 vor §2 kommt
+        // Sortiert nach 'order_index'
         $rules = Rulebook::orderBy('order_index', 'asc')->get();
         return view('rules.index', compact('rules'));
     }
@@ -41,23 +42,24 @@ class RuleController extends Controller
 
         $creator = Auth::user();
 
-        $Rulebook = Rulebook::create([
+        // 1. Erstellen und in Variable $rule speichern (WICHTIG für den Log unten!)
+        $rule = Rulebook::create([
             'title' => $request->title,
             'content' => $request->content,
             'order_index' => $request->order_index ?? 0,
             'updated_by' => $creator->id
         ]);
 
-        // --- ACTIVITY LOG ---
+        // 2. Activity Log (Greift auf $rule zu)
         ActivityLog::create([
             'user_id' => $creator->id,
             'log_type' => 'RULEBOOK',
             'action' => 'CREATED',
-            'target_id' => $rule->id,
+            'target_id' => $rule->id, // Hier trat der Fehler auf, jetzt ist $rule definiert
             'description' => "Regelwerk-Abschnitt '{$rule->title}' wurde erstellt.",
         ]);
 
-        // --- BENACHRICHTIGUNG VIA EVENT ---
+        // 3. Benachrichtigung
         PotentiallyNotifiableActionOccurred::dispatch(
             'RuleController@store', 
             $creator, 
@@ -121,7 +123,7 @@ class RuleController extends Controller
      */
     public function destroy(Rulebook $rule)
     {
-        $user = Auth::user(); // Hier heißt die Variable $user
+        $user = Auth::user();
         
         // Daten sichern VOR dem Löschen
         $ruleTitle = $rule->title;
@@ -141,10 +143,10 @@ class RuleController extends Controller
         // --- BENACHRICHTIGUNG ---
         PotentiallyNotifiableActionOccurred::dispatch(
             'RuleController@destroy', 
-            $user, // Fix: Hier stand vorher $editor (undefined), jetzt korrekt $user
-            $rule, // Gelöschtes Model Object
-            $user, // Fix: Hier stand vorher $editor
-            ['title' => $ruleTitle] // Titel explizit mitgeben für den Listener
+            $user, 
+            $rule, 
+            $user,
+            ['title' => $ruleTitle]
         );
 
         return redirect()->route('rules.index')->with('success', 'Abschnitt gelöscht.');
