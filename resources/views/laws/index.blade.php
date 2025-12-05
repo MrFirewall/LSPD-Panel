@@ -4,10 +4,10 @@
 
 @section('content')
 <!-- Hero Section - Akzentfarbe Warning/Gefahr, wie der Bußgeldkatalog (Danger/Warning) -->
-<div class="hero-header bg-dark pt-5 pb-4">
+<div class="hero-header">
     <div class="container text-center">
-        <h1 class="hero-title display-4"><i class="fas fa-clipboard-list mr-3"></i>Bußgeldkatalog</h1>
-        <p class="hero-subtitle mt-2">Übersicht aller Verwarnungs- und Bußgelder (BBuG)</p>
+        <h1 class="hero-title display-4"><i class="fas fa-balance-scale mr-3"></i>Gesetzbuch</h1>
+        <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
     </div>
 </div>
 
@@ -35,11 +35,7 @@
             <div class="col-lg-10">
                 
                 <!-- Haupttabelle für alle Gesetze (Keine Tabs/Akkordeons) -->
-                <div class="card card-dark card-outline card-danger">
-                    <div class="card-header bg-dark">
-                        <h3 class="card-title text-white">Gesetzestexte: {{ $laws->count() }} Kategorien</h3>
-                    </div>
-                    
+                <div class="card card-dark card-outline card-danger">                    
                     <div class="card-body p-0 table-responsive">
                         <!-- FIX: table-dark und table-hover für Dark Mode -->
                         <table class="table table-dark table-hover mb-0 text-white" id="laws-table"> 
@@ -57,8 +53,8 @@
                                         <tr class="law-row" data-search-term="{{ $law->book_label }} {{ $law->paragraph }} {{ $law->title }} {{ $law->content }}">
                                             <td>
                                                 <!-- Anzeige des Kürzels und des vollen Labels -->
-                                                <span class="badge badge-danger">{{ $book }}</span>
-                                                <small class="d-block text-muted">{{$law->book_label}}</small>
+                                                <span>{{ $law->book_label }}</span>
+                                                <small class="d-block text-muted">{{$book}}</small>
                                             </td>
                                             <td class="font-weight-bold text-warning">{{ $law->paragraph }}</td>
                                             <td class="font-weight-bold">{{ $law->title }}</td>
