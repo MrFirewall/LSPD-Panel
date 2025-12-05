@@ -79,7 +79,7 @@ Route::middleware('auth.cfx')->group(function () {
     // Standard-Ressourcen
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
-    Route::resource('rules', RuleController::class)->name('rules');
+    Route::resource('rules', RuleController::class, 'rules')->name('rules');
 
     // Dienststatus
     Route::post('/duty-status/toggle', [DutyStatusController::class, 'toggle'])->name('duty.toggle');
