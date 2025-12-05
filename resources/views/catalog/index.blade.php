@@ -32,66 +32,67 @@
         </div>
 
         <!-- Catalog Categories -->
-        <div class="row justify-content-center">
+<div class="row justify-content-center">
             <div class="col-lg-10">
-                <div id="accordion">
-                    @foreach($categories as $section => $fines)
-                        <!-- card-purple zu card-danger geändert -->
-                        <div class="card card-outline card-danger mb-3 category-card">
-                            <div class="card-header">
-                                <h4 class="card-title w-100">
-                                    <a class="d-block w-100  font-weight-bold" data-toggle="collapse" href="#collapse{{ Str::slug($section) }}">
-                                        <i class="fas fa-folder-open text-danger mr-2"></i> {{ $section }}
-                                        <!-- badge-purple zu badge-danger geändert -->
-                                        <span class="float-right badge badge-danger badge-pill">{{ count($fines) }} Einträge</span>
-                                    </a>
-                                </h4>
-                            </div>
-                            
-                            <div id="collapse{{ Str::slug($section) }}" class="collapse {{ $loop->first ? 'show' : '' }}" data-parent="#accordion">
-                                <div class="card-body p-0 table-responsive">
-                                    <table class="table table-hover table-striped fine-table mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th class="pl-4">Tatbestand</th>
-                                                <th style="width: 150px">Bußgeld</th>
-                                                <th style="width: 100px" class="text-center">Haft (HE)</th>
-                                                <th style="width: 80px" class="text-center">Punkte</th>
-                                                <th>Hinweise</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($fines as $fine)
-                                                <tr class="fine-row">
-                                                    <td class="pl-4 font-weight-bold">{{ $fine->offense }}</td>
-                                                    <!-- text-danger zu text-warning für bessere Sichtbarkeit von Geldbeträgen im Dark Mode -->
-                                                    <td class="text-warning font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
-                                                    <td class="text-center">
-                                                        @if($fine->jail_time > 0)
-                                                            <span class="badge badge-danger ">{{ $fine->jail_time }} HE</span>
-                                                        @else
-                                                            <span class="text-muted small">-</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="text-center">
-                                                        @if($fine->points > 0)
-                                                            <span class="badge badge-danger">{{ $fine->points }}</span>
-                                                        @else
-                                                            <span class="text-muted small">-</span>
-                                                        @endif
-                                                    </td>
-                                                    <!-- text-light, um sicherzustellen, dass die Hinweise gut sichtbar sind -->
-                                                    <td class="text-light small">
-                                                        {{ $fine->remark ?: '-' }}
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
+                
+                <!-- Haupttabelle für alle Bußgelder (KEINE Akkordeons) -->
+                <div class="card card-dark card-outline card-danger">
+                    <div class="card-header bg-dark">
+                        <h3 class="card-title text-white">Alle Tatbestände</h3>
+                    </div>
+                    
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-dark table-hover mb-0 text-white" id="fines-table"> 
+                            <thead class="bg-gray-dark">
+                                <tr>
+                                    <th style="width: 15%">Kategorie</th>
+                                    <th>Tatbestand</th>
+                                    <th style="width: 150px">Bußgeld</th>
+                                    <th style="width: 100px" class="text-center">Haft (HE)</th>
+                                    <th style="width: 80px" class="text-center">Punkte</th>
+                                    <th>Hinweise</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $currentSection = null; @endphp
+                                @foreach($categories as $section => $fines)
+                                    <!-- Optische Trennung durch eine Header-Zeile -->
+                                    <tr class="table-danger law-section-header">
+                                        <td colspan="6" class="font-weight-bold text-center p-2">
+                                            <i class="fas fa-angle-double-down mr-2"></i> {{ $section }} <i class="fas fa-angle-double-down ml-2"></i>
+                                        </td>
+                                    </tr>
+                                    
+                                    @foreach($fines as $fine)
+                                        <tr class="fine-row" data-search-term="{{ $fine->catalog_section }} {{ $fine->offense }} {{ $fine->amount }} {{ $fine->remark }}">
+                                            <td>
+                                                <span class="badge badge-danger">{{ Str::limit($fine->catalog_section, 12, '') }}</span>
+                                            </td>
+                                            <td class="font-weight-bold">{{ $fine->offense }}</td>
+                                            <td class="text-warning font-weight-bold">{{ number_format($fine->amount, 0, ',', '.') }} €</td>
+                                            <td class="text-center">
+                                                @if($fine->jail_time > 0)
+                                                    <span class="badge badge-danger text-white">{{ $fine->jail_time }} HE</span>
+                                                @else
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center">
+                                                @if($fine->points > 0)
+                                                    <span class="badge badge-warning text-dark">{{ $fine->points }}</span>
+                                                @else
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </td>
+                                            <td class="small text-muted">
+                                                {{ $fine->remark ?: '-' }}
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 
                 <!-- No Results Message -->
@@ -109,46 +110,59 @@
 @push('scripts')
 <script>
     $(document).ready(function(){
-        $("#catalog-search").on("keyup", function() {
+        const $searchField = $("#catalog-search-field");
+        const $noResults = $("#no-results");
+        const $fineRows = $(".fine-row");
+        const $sectionHeaders = $(".law-section-header"); // Elemente, die Kategorien trennen
+        
+        $searchField.on("keyup", function() {
             var value = $(this).val().toLowerCase();
             var hasGlobalMatches = false;
 
-            // Iteriere durch alle Karten (Kategorien)
-            $(".category-card").each(function() {
-                var card = $(this);
-                var hasVisibleRows = false;
-                
-                // Suche innerhalb der Tabelle in dieser Karte
-                card.find(".fine-row").filter(function() {
-                    // Suche in Tatbestand (Index 0) und Hinweisen (Index 4)
-                    var text = $(this).text().toLowerCase();
-                    var match = text.indexOf(value) > -1;
-                    $(this).toggle(match);
-                    if(match) hasVisibleRows = true;
-                });
+            if (value.length === 0) {
+                // Keine Suche: Alles anzeigen
+                $fineRows.show();
+                $sectionHeaders.show();
+                $noResults.hide();
+                return;
+            }
 
-                // Wenn Suche leer ist, zeige alles wie Standard
-                if(value === "") {
-                    card.show();
-                    // Optional: Akkordeon Logik zurücksetzen (z.B. nur erstes offen)
-                    // Hier lassen wir den aktuellen Status
-                } else {
-                    // Wenn Treffer in der Tabelle, öffne das Akkordeon und zeige Karte
-                    if (hasVisibleRows) {
-                        card.show();
-                        card.find('.collapse').collapse('show');
-                        hasGlobalMatches = true;
-                    } else {
-                        card.hide();
-                    }
+            let currentSectionMatch = false;
+
+            // Iteriere rückwärts, um die Sichtbarkeit der Header einfacher zu steuern
+            $($fineRows.get().reverse()).each(function() {
+                var row = $(this);
+                // Sucht im data-search-term
+                var text = row.attr('data-search-term').toLowerCase(); 
+                var match = text.includes(value);
+                
+                row.toggle(match);
+
+                if (match) {
+                    hasGlobalMatches = true;
+                    currentSectionMatch = true;
                 }
             });
 
-            // "Keine Ergebnisse" Nachricht
-            if(!hasGlobalMatches && value !== "") {
-                $("#no-results").show();
+            // Wir müssen die Section Headers separat behandeln
+            $sectionHeaders.each(function() {
+                // Suche, ob irgendeine Zeile nach diesem Header sichtbar ist
+                let header = $(this);
+                let nextVisibleRow = header.nextAll('.fine-row:visible').first();
+                
+                if (nextVisibleRow.length > 0) {
+                    header.show();
+                } else {
+                    header.hide();
+                }
+            });
+
+
+            // "Keine Ergebnisse" Nachricht anzeigen
+            if(!hasGlobalMatches && value.length > 0) {
+                $noResults.show();
             } else {
-                $("#no-results").hide();
+                $noResults.hide();
             }
         });
     });
