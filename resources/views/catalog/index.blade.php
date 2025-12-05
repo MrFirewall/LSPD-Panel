@@ -110,7 +110,7 @@
 @push('scripts')
 <script>
     $(document).ready(function(){
-        const $searchField = $("#catalog-search-field");
+        const $searchField = $("#catalog-search");
         const $noResults = $("#no-results");
         const $fineRows = $(".fine-row");
         const $sectionHeaders = $(".law-section-header"); // Elemente, die Kategorien trennen
