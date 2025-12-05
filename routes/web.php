@@ -79,7 +79,7 @@ Route::middleware('auth.cfx')->group(function () {
     // Standard-Ressourcen
     Route::resource('reports', ReportController::class);
     Route::resource('citizens', CitizenController::class);
-    Route::get('/rules', [RuleController::class, 'index'])->name('rules');
+    Route::get('/rules', [RuleController::class, 'index'])->name('rules.index');
     Route::get('/rules', [RuleController::class, 'create'])->name('rules.create');
 
     // Dienststatus
