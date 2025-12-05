@@ -10,6 +10,7 @@
         <p class="hero-subtitle mt-2">Die geltenden Rechtsvorschriften der Hansestadt Hamburg</p>
     </div>
 </div>
+
 <!-- Main content -->
 <div class="content">
     <div class="container">
@@ -45,7 +46,7 @@
                             <!-- Timeline Style for Laws -->
                             <div class="timeline">
                                 <div class="time-label">
-                                    <span class="bg-info">{{$laws}} ({{ $book }})</span>
+                                    <span class="bg-info">{{$book_label}} ({{ $book }})</span>
                                 </div>
 
                                 @foreach($entries as $law)
