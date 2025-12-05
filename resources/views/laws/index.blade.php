@@ -46,7 +46,7 @@
                             <!-- Timeline Style for Laws -->
                             <div class="timeline">
                                 <div class="time-label">
-                                    <span class="bg-info">{{$book_label}} ({{ $book }})</span>
+                                    <span class="bg-info">{{$entries->first()->book_label}} ({{ $book }})</span>
                                 </div>
 
                                 @foreach($entries as $law)

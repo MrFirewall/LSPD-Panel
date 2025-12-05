@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- Custom Styles für diesen View -->
+<!-- Custom Styles für diesen View (Identisch zu Edit) -->
 <style>
     /* --- CKEditor 5 Dark Mode Anpassungen --- */
     .ck.ck-editor__main > .ck-editor__editable {
@@ -40,7 +40,7 @@
         background-color: #343a40 !important;
     }
     
-    /* Textfarbe in Input-Feldern (z.B. Link einfügen) */
+    /* Textfarbe in Input-Feldern */
     .ck.ck-input-text {
         background-color: #343a40 !important;
         color: white !important;
@@ -58,7 +58,6 @@
         margin-bottom: 20px;
     }
     
-    /* Deaktiviert Sticky Toolbar */
     .ck.ck-sticky-panel__content_sticky {
         position: static !important;
         top: auto !important;
@@ -71,13 +70,13 @@
 
 <div class="container page-bottom-spacer">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Neue Regel-Abschnitt erstellen</h2>
+        <h2>Neuen Regel-Abschnitt erstellen</h2>
         <a href="{{ route('rules.index') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Zurück
         </a>
     </div>
     
-    <form action="{{ route('rules.stor' }}" method="POST">
+    <form action="{{ route('rules.store') }}" method="POST">
         @csrf
         
         <div class="form-group mb-3">
@@ -87,15 +86,13 @@
 
         <div class="form-group mb-3">
             <label class="form-label">Reihenfolge (Sortierung)</label>
-            <input type="number" name="order_index" class="form-control" value="0" >
+            <input type="number" name="order_index" class="form-control" value="{{ old('order_index', 0) }}">
         </div>
 
         <div class="form-group mb-3">
             <label class="form-label">Inhalt</label>
             <div style="position: relative; z-index: 0;">
-                <textarea id="editor" name="content" class="form-control" rows="10">
-                    
-                </textarea>
+                <textarea id="editor" name="content" class="form-control" rows="10"></textarea>
             </div>
         </div>
 
@@ -107,108 +104,39 @@
     </form>
 </div>
 
-<!-- WICHTIG: Wir nutzen hier den "Super Build". Dieser enthält ALLE Plugins ohne Lizenz-Key Zwang für die Basic Features -->
-<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
-<script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/translations/de.js"></script>
+<!-- FALLBACK-LÖSUNG: Standard Classic Editor -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/ckeditor.js"></script>
+<script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/classic/translations/de.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        // Zugriff auf die CKEDITOR Global Variable aus dem Super-Build
-        CKEDITOR.ClassicEditor.create(document.querySelector('#editor'), {
-            language: 'de',
-            
-            // Hier sind die Features aus deiner Config, angepasst an den Super-Build:
-            plugins: [
-                CKEDITOR.ClassicEditor.builtinPlugins, // Lädt Basis-Plugins
-                CKEDITOR.Autoformat,
-                CKEDITOR.Bold,
-                CKEDITOR.Italic,
-                CKEDITOR.Underline,
-                CKEDITOR.Strikethrough,
-                CKEDITOR.Code,
-                CKEDITOR.Subscript,
-                CKEDITOR.Superscript,
-                CKEDITOR.BlockQuote,
-                CKEDITOR.Heading,
-                CKEDITOR.Link,
-                CKEDITOR.List, // BulletedList, NumberedList
-                CKEDITOR.Indent,
-                CKEDITOR.IndentBlock,
-                CKEDITOR.Image,
-                CKEDITOR.ImageCaption,
-                CKEDITOR.ImageStyle,
-                CKEDITOR.ImageToolbar,
-                CKEDITOR.ImageUpload,
-                CKEDITOR.Table,
-                CKEDITOR.TableToolbar,
-                CKEDITOR.Alignment,     // <-- Das wolltest du
-                CKEDITOR.Font,          // <-- Das wolltest du (Family, Size, Color)
-                CKEDITOR.HorizontalLine,
-                CKEDITOR.GeneralHtmlSupport, // Erlaubt alle HTML Tags/Classes
-                CKEDITOR.SourceEditing // Erlaubt Quellcode-Ansicht
-                // CKEDITOR.Markdown // Habe ich deaktiviert, da wir HTML speichern wollen!
-            ],
-            
-            toolbar: {
-                items: [
-                    'undo', 'redo', '|',
-                    'sourceEditing', '|',
+        ClassicEditor
+            .create(document.querySelector('#editor'), {
+                language: 'de',
+                // Wir definieren KEINE Plugins manuell -> Der Editor lädt seine Standard-Plugins.
+                
+                toolbar: [
                     'heading', '|',
-                    'fontSize', 'fontFamily', 'fontColor', 'fontBackgroundColor', '|',
-                    'bold', 'italic', 'underline', 'strikethrough', 'code', '|',
-                    'link', 'blockQuote', 'insertTable', 'horizontalLine', '|',
-                    'alignment', '|',
-                    'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-                    'removeFormat'
+                    'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                    'insertTable', '|',
+                    'undo', 'redo'
                 ],
-                shouldNotGroupWhenFull: true
-            },
-            
-            // Deine Schriftarten-Einstellungen
-            fontFamily: {
-                options: [
-                    'default',
-                    'Arial, Helvetica, sans-serif',
-                    'Courier New, Courier, monospace',
-                    'Georgia, serif',
-                    'Lucida Sans Unicode, Lucida Grande, sans-serif',
-                    'Tahoma, Geneva, sans-serif',
-                    'Times New Roman, Times, serif',
-                    'Trebuchet MS, Helvetica, sans-serif',
-                    'Verdana, Geneva, sans-serif'
-                ],
-                supportAllValues: true
-            },
-            
-            fontSize: {
-                options: [10, 12, 14, 'default', 18, 20, 22],
-                supportAllValues: true
-            },
-            
-            // Erlaubt alle HTML-Attribute (wichtig für LSPD Tabellen etc.)
-            htmlSupport: {
-                allow: [
-                    {
-                        name: /.*/,
-                        attributes: true,
-                        classes: true,
-                        styles: true
-                    }
-                ]
-            },
-            
-            // Verhindert das Entfernen von Klassen
-            removePlugins: [
-                // 'Markdown', // Explizit sicherstellen, dass Markdown aus ist
-            ]
-        })
-        .then(editor => {
-            // Manuelle Höhe setzen
-            editor.ui.view.editable.element.style.minHeight = '400px';
-        })
-        .catch(error => {
-            console.error(error);
-        });
+                heading: {
+                    options: [
+                        { model: 'paragraph', title: 'Absatz', class: 'ck-heading_paragraph' },
+                        { model: 'heading2', view: 'h2', title: 'Überschrift 1', class: 'ck-heading_heading2' },
+                        { model: 'heading3', view: 'h3', title: 'Überschrift 2', class: 'ck-heading_heading3' }
+                    ]
+                }
+            })
+            .then(editor => {
+                // Manuelle Höhe setzen
+                editor.ui.view.editable.element.style.minHeight = '400px';
+                console.log('Standard CKEditor erfolgreich geladen.');
+            })
+            .catch(error => {
+                console.error('CKEditor Fehler:', error);
+            });
     });
 </script>
 @endsection
