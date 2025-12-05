@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Rulebook;
-use App\Models\ActivityLog; // Dein Log Model
+use App\Models\Rulebook; // WICHTIG: Hier muss Rulebook stehen, nicht Rulebook
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Events\PotentiallyNotifiableActionOccurred; // Dein Event
+use App\Events\PotentiallyNotifiableActionOccurred;
 
 class RuleController extends Controller
 {
@@ -41,17 +41,17 @@ class RuleController extends Controller
 
         $creator = Auth::user();
 
-        $rule = Rulebook::create([
+        $Rulebook = Rulebook::create([
             'title' => $request->title,
             'content' => $request->content,
             'order_index' => $request->order_index ?? 0,
             'updated_by' => $creator->id
         ]);
 
-        // --- ACTIVITY LOG (Dein Snippet angepasst) ---
+        // --- ACTIVITY LOG ---
         ActivityLog::create([
             'user_id' => $creator->id,
-            'log_type' => 'RULEBOOK', // Angepasst für Regelwerk
+            'log_type' => 'RULEBOOK',
             'action' => 'CREATED',
             'target_id' => $rule->id,
             'description' => "Regelwerk-Abschnitt '{$rule->title}' wurde erstellt.",
@@ -121,9 +121,11 @@ class RuleController extends Controller
      */
     public function destroy(Rulebook $rule)
     {
-        $user = Auth::user();
-        $title = $rule->title;
-        $id = $rule->id;
+        $user = Auth::user(); // Hier heißt die Variable $user
+        
+        // Daten sichern VOR dem Löschen
+        $ruleTitle = $rule->title;
+        $ruleId = $rule->id;
 
         $rule->delete();
 
@@ -132,16 +134,17 @@ class RuleController extends Controller
             'user_id' => $user->id,
             'log_type' => 'RULEBOOK',
             'action' => 'DELETED',
-            'target_id' => $id,
-            'description' => "Regelwerk-Abschnitt '{$title}' wurde gelöscht.",
+            'target_id' => $ruleId,
+            'description' => "Regelwerk-Abschnitt '{$ruleTitle}' wurde gelöscht.",
         ]);
 
         // --- BENACHRICHTIGUNG ---
         PotentiallyNotifiableActionOccurred::dispatch(
             'RuleController@destroy', 
-            $editor, 
-            $rule, 
-            $editor 
+            $user, // Fix: Hier stand vorher $editor (undefined), jetzt korrekt $user
+            $rule, // Gelöschtes Model Object
+            $user, // Fix: Hier stand vorher $editor
+            ['title' => $ruleTitle] // Titel explizit mitgeben für den Listener
         );
 
         return redirect()->route('rules.index')->with('success', 'Abschnitt gelöscht.');
