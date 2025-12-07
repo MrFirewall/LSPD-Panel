@@ -531,7 +531,7 @@
         @auth
         if (typeof window.Echo !== 'undefined') {
              window.Echo.private(`users.{{ Auth::id() }}`)
-                .listen('.new.ems.notification', (e) => {
+                .listen('.new.notification', (e) => {
                      fetchNotifications();
                      $('#notification-dropdown .fa-bell').addClass('text-warning').delay(500).queue(function(next){ $(this).removeClass('text-warning'); next(); });
                 });
