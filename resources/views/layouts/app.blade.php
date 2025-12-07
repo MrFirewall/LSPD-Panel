@@ -561,30 +561,19 @@
         data: { _token: $('meta[name="csrf-token"]').attr('content') },
         success: function(res) {
           if (res.success) {
-            // Zeile ausblenden und entfernen
             $row.slideUp(200, function() { 
               $(this).remove(); 
-              
-              // Logik nur ausführen, wenn die Zeile wirklich entfernt wurde
               if (res.remaining_count !== undefined) {
                 const count = res.remaining_count;
-                                
-                                // 1. Navbar Zähler aktualisieren und ausblenden
                 $('#notification-count').text(count);
                 if (count <= 0) {
                   $('#notification-count').hide();
                 }
-
-                // 2. Dropdown-Header-Text aktualisieren
                 const $headerText = $('#notification-list .custom-header span.font-weight-bold');
                 $headerText.html('<i class="far fa-bell mr-2"></i> ' + count + ' Benachrichtigungen');
                 
-                // 3. Logik für den leeren Zustand (WICHTIG!)
-                if (count <= 0) {
-                  // "Alle lesen" Button entfernen (wird durch das @if in Blade versteckt, muss aber bei AJAX entfernt werden)
+                if (count <= 0) {                  
                   $('#notification-list .custom-header form').remove();
-                  
-                  // Leeren Platzhalter einfügen (wie in _notifications.blade.php)
                   const emptyHtml = `
                     <div class="p-5 text-center text-muted">
                       <i class="far fa-bell-slash mb-3" style="font-size: 2.5rem; opacity: 0.3;"></i><br>
