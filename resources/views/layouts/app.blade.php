@@ -547,32 +547,61 @@
             if (isToggle || isButton || isForm) { e.stopPropagation(); }
         });
 
-        // AJAX Mark Read Handler
-        $(document).on('click', '.mark-read-ajax-btn', function(e) {
-            e.preventDefault(); e.stopPropagation();
-            var $btn = $(this);
-            var url = $btn.data('url');
-            var $row = $('#notif-row-' + $btn.data('id'));
-            var originalContent = $btn.html();
-            $btn.html('<i class="fas fa-spinner fa-spin text-muted"></i>').prop('disabled', true);
+// AJAX Mark Read Handler
+    $(document).on('click', '.mark-read-ajax-btn', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var $btn = $(this);
+      var url = $btn.data('url');
+      var $row = $('#notif-row-' + $btn.data('id'));
+      var originalContent = $btn.html();
+      $btn.html('<i class="fas fa-spinner fa-spin text-muted"></i>').prop('disabled', true);
 
-            $.ajax({
-                url: url, type: 'POST',
-                data: { _token: $('meta[name="csrf-token"]').attr('content') },
-                success: function(res) {
-                    if (res.success) {
-                        $row.slideUp(200, function() { $(this).remove(); });
-                        if (res.remaining_count !== undefined) {
-                            $('#notification-count').text(res.remaining_count);
-                            if (res.remaining_count <= 0) $('#notification-count').hide();
-                        }
-                    }
-                },
-                error: function() {
-                    $btn.html(originalContent).prop('disabled', false);
+      $.ajax({
+        url: url, type: 'POST',
+        data: { _token: $('meta[name="csrf-token"]').attr('content') },
+        success: function(res) {
+          if (res.success) {
+            // Zeile ausblenden und entfernen
+            $row.slideUp(200, function() { 
+              $(this).remove(); 
+              
+              // Logik nur ausführen, wenn die Zeile wirklich entfernt wurde
+              if (res.remaining_count !== undefined) {
+                const count = res.remaining_count;
+                                
+                                // 1. Navbar Zähler aktualisieren und ausblenden
+                $('#notification-count').text(count);
+                if (count <= 0) {
+                  $('#notification-count').hide();
                 }
+
+                // 2. Dropdown-Header-Text aktualisieren
+                const $headerText = $('#notification-list .custom-header span.font-weight-bold');
+                $headerText.html('<i class="far fa-bell mr-2"></i> ' + count + ' Benachrichtigungen');
+                
+                // 3. Logik für den leeren Zustand (WICHTIG!)
+                if (count <= 0) {
+                  // "Alle lesen" Button entfernen (wird durch das @if in Blade versteckt, muss aber bei AJAX entfernt werden)
+                  $('#notification-list .custom-header form').remove();
+                  
+                  // Leeren Platzhalter einfügen (wie in _notifications.blade.php)
+                  const emptyHtml = `
+                    <div class="p-5 text-center text-muted">
+                      <i class="far fa-bell-slash mb-3" style="font-size: 2.5rem; opacity: 0.3;"></i><br>
+                      <span style="opacity: 0.7;">Keine neuen Meldungen</span>
+                    </div>
+                  `;
+                  $('.notification-list-scroll').html(emptyHtml);
+                }
+              }
             });
-        });
+          }
+        },
+        error: function() {
+          $btn.html(originalContent).prop('disabled', false);
+        }
+      });
+    });
 
     });
 </script>
