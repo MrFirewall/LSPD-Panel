@@ -57,7 +57,7 @@ class LoginController extends Controller
                 // 3. Prüfe, ob ein "avatar_template" in den Rohdaten existiert
                 if (isset($raw['avatar_template']) && !empty($raw['avatar_template'])) {
                     // Ersetze {size} durch '512' (oder 1024) für hohe Qualität
-                    $template = str_replace('{size}', '1024', $raw['avatar_template']);
+                    $template = str_replace('{size}', '512', $raw['avatar_template']);
                     
                     // Prüfen, ob die URL relativ ist (fängt nicht mit http an)
                     if (!str_starts_with($template, 'http')) {
