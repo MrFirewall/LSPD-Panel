@@ -6,81 +6,49 @@ use Illuminate\Console\Command;
 use App\Models\DutyRecord;
 use App\Models\User;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class UpdateDutyDurations extends Command
 {
-    /**
-     * Der Name und die Signatur des Befehls.
-     */
     protected $signature = 'duty:update-durations';
+    protected $description = 'Aktualisiert Dienstzeiten (Debug Version)';
 
-    /**
-     * Die Beschreibung des Befehls.
-     */
-    protected $description = 'Aktualisiert die Dauer aller laufenden Dienste und prüft auf Timeouts';
-
-    /**
-     * Führt den Befehl aus.
-     */
     public function handle()
     {
-        // Lade Intervall aus .env (z.B. 10 Sekunden)
-        $interval = (int) env('DUTY_HEARTBEAT_INTERVAL', 60);
+        $this->info('--------------------------------------');
+        $this->info('1. Start: Command wurde gestartet.');
         
-        // Sicherheitsnetz: Nicht unter 5 Sekunden gehen, um CPU zu schonen
-        if ($interval < 5) $interval = 5;
+        $now = Carbon::now();
+        $this->info('2. Aktuelle Serverzeit: ' . $now->toDateTimeString());
 
-        // Startzeitpunkt des Commands
-        $startTime = time();
-        
-        // Wir lassen den Command maximal 55 Sekunden laufen (damit der nächste Cronjob übernimmt)
-        // Das simuliert einen dauerhaften Prozess.
-        while (time() - $startTime < 55) {
+        // Prüfen, wie viele offene Einträge es gibt
+        try {
+            $openCount = DutyRecord::whereNull('end_time')->count();
+            $this->info("3. Datenbank-Check: Es gibt aktuell {$openCount} offene Dienste (end_time ist NULL).");
+        } catch (\Exception $e) {
+            $this->error('!!! DATENBANK FEHLER !!!');
+            $this->error($e->getMessage());
+            return;
+        }
+
+        if ($openCount === 0) {
+            $this->warn('   -> Da 0 Dienste offen sind, gibt es nichts zu tun.');
+            $this->warn('   -> Bitte gehe im Panel erst "In den Dienst", damit wir etwas zum Updaten haben!');
+        } else {
+            $this->info('4. Starte Update-Schleife...');
             
-            $now = Carbon::now();
-            
-            // --- DEINE LOGIK ---
             DutyRecord::whereNull('end_time')->chunk(100, function ($records) use ($now) {
                 foreach ($records as $record) {
-                    $record->update([
-                        'duration_seconds' => $record->start_time->diffInSeconds($now)
-                    ]);
+                    $oldDuration = $record->duration_seconds;
+                    $newDuration = $record->start_time->diffInSeconds($now);
+                    
+                    $record->update(['duration_seconds' => $newDuration]);
+                    
+                    $this->line("   -> Record ID {$record->id} (User {$record->user_id}): Dauer von {$oldDuration}s auf {$newDuration}s aktualisiert.");
                 }
             });
-            // -------------------
-
-            // Warte die eingestellten Sekunden (z.B. 10s)
-            sleep($interval);
         }
-    }
 
-    /**
-     * Hilfsfunktion: Zwangsweises Beenden
-     */
-    private function forceStopDuty(DutyRecord $record, Carbon $now)
-    {
-        // Record schließen
-        $record->update([
-            'end_time' => $now,
-            'duration_seconds' => $record->start_time->diffInSeconds($now),
-        ]);
-
-        // User Status zurücksetzen
-        $user = User::find($record->user_id);
-        if ($user) {
-            $user->on_duty = false;
-            $user->save();
-            
-            // Log schreiben
-            \App\Models\ActivityLog::create([
-                'user_id' => $user->id,
-                'log_type' => 'DUTY_END',
-                'action' => 'SYSTEM',
-                'description' => 'Dienst automatisch beendet (Zeitüberschreitung).',
-            ]);
-            
-            Log::info("User {$user->id} wurde zwangsweise ausgeloggt (Maximalzeit).");
-        }
+        $this->info('5. Ende: Skript erfolgreich durchgelaufen.');
+        $this->info('--------------------------------------');
     }
 }
