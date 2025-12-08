@@ -77,19 +77,7 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
                 <ul class="list-group list-group-flush bg-transparent">
                     @forelse ($hourData['archive_by_rank'] as $rankSlug => $seconds)
                         <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
-                            {{-- Hier wird der Slug mit dem Label aus der DB abgelichen --}}
-                            <span class="text-muted">{{ $rankNames[$rankSlug] ?? ucfirst($rankSlug) }}</span>
-                            <span class="font-weight-bold">{{ formatSeconds($seconds) }} h</span>
-                        </li>
-                    @empty
-                        <li class="list-group-item bg-transparent text-center text-muted py-3">
-                            Keine archivierten Stunden.
-                        </li>
-                    @endforelse
-<hr>@dd($weeklyHours)
-                    @forelse ($weeklyHours as $rankSlug => $seconds)
-                        <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
-                            {{-- Hier wird der Slug mit dem Label aus der DB abgelichen --}}
+                            {{-- Hier wird der Slug mit dem Label aus der DB abgeglichen --}}
                             <span class="text-muted">{{ $rankNames[$rankSlug] ?? ucfirst($rankSlug) }}</span>
                             <span class="font-weight-bold">{{ formatSeconds($seconds) }} h</span>
                         </li>

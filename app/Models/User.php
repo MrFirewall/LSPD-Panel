@@ -166,27 +166,56 @@ class User extends Authenticatable
             return [];
         }
 
-        $startDate = $this->hire_date->copy()->startOfDay();
-        $logTypes = ['DUTY_START', 'DUTY_END', 'LEITSTELLE_START', 'LEITSTELLE_END'];
-        $logs = $this->activityLogs()
-            ->whereIn('log_type', $logTypes)
-            ->where('created_at', '>=', $startDate)
-            ->orderBy('created_at', 'asc')
-            ->get();
-
+        $startDate = $this->hire_date->copy()->startOfWeek(); // Start der ersten Woche
+        $endDate = Carbon::now()->endOfWeek(); // Ende der aktuellen Woche
         $weeklyData = [];
-        $lastDutyStart = null;
-        $lastLeitstelleStart = null;
 
-        foreach ($logs as $log) {
-            $kw = "KW" . $log->created_at->format('W');
+        // 1. Initialisiere alle Wochen von hire_date bis heute mit 00:00 h
+        $currentWeek = $startDate->copy();
+        while ($currentWeek->lessThanOrEqualTo($endDate)) {
+            $kw = "KW" . $currentWeek->format('W');
+            // Sicherstellen, dass die KW nicht schon existiert, falls die Schleife mehrmals durchlaufen wird (z.B. bei Jahreswechsel)
             if (!isset($weeklyData[$kw])) {
                 $weeklyData[$kw] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
             }
+            $currentWeek->addWeek();
+        }
+
+        $logTypes = ['DUTY_START', 'DUTY_END', 'LEITSTELLE_START', 'LEITSTELLE_END'];
+        // Hole alle relevanten Logs seit dem hire_date
+        $logs = $this->activityLogs()
+            ->whereIn('log_type', $logTypes)
+            ->where('created_at', '>=', $this->hire_date->copy()->startOfDay()) // Wir nutzen das genaue hire_date für die Logs-Abfrage
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $lastDutyStart = null;
+        $lastLeitstelleStart = null;
+
+        // 2. Verarbeite die Logs und addiere die Zeiten zur korrekten Kalenderwoche
+        foreach ($logs as $log) {
+            // HINWEIS: Carbon's `format('W')` funktioniert gut für europäische KWs.
+            $kw = "KW" . $log->created_at->format('W');
+            
+            // Sollte immer existieren wegen der Initialisierung, aber zur Sicherheit:
+            if (!isset($weeklyData[$kw])) {
+                $weeklyData[$kw] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
+            }
+
             switch ($log->log_type) {
-                case 'DUTY_START': $lastDutyStart = $log; break;
+                case 'DUTY_START': 
+                    // Prüfe auf Überlappung (falls vergessen wurde auszuloggen, aber hier wird einfach überschrieben)
+                    $lastDutyStart = $log; 
+                    break;
                 case 'DUTY_END':
                     if ($lastDutyStart) {
+                        // Wichtig: Prüfen, ob der Start-Log in der gleichen KW liegt
+                        // (Wenn Logs zwischen Wochen liegen, ist die Logik komplexer,
+                        // aber für eine einfache Addition pro KW ist das in Ordnung,
+                        // solange Start und Ende in der gleichen KW liegen oder nur kurze Übergänge existieren).
+                        // In deinem Fall gehen wir davon aus, dass Start und Ende in derselben Woche stattfinden
+                        // oder die Methode ist für Übergänge wie in deinem Code geplant (Gesamtzeit zwischen Start und Endlog).
+                        // Da die Schleife nach dem Ende des Dienstes fortfährt, wird die volle Dauer der End-KW gutgeschrieben.
                         $weeklyData[$kw]['normal_seconds'] += $lastDutyStart->created_at->diffInSeconds($log->created_at);
                         $lastDutyStart = null;
                     }
@@ -200,7 +229,17 @@ class User extends Authenticatable
                     break;
             }
         }
-        
+
+        // 3. Optional: Offene Dienste bis zur aktuellen Zeit addieren (für die aktuelle KW)
+        $currentKw = "KW" . Carbon::now()->format('W');
+        if ($lastDutyStart && $lastDutyStart->created_at->isSameWeek(Carbon::now())) {
+            $weeklyData[$currentKw]['normal_seconds'] += $lastDutyStart->created_at->diffInSeconds(Carbon::now());
+        }
+        if ($lastLeitstelleStart && $lastLeitstelleStart->created_at->isSameWeek(Carbon::now())) {
+            $weeklyData[$currentKw]['leitstelle_seconds'] += $lastLeitstelleStart->created_at->diffInSeconds(Carbon::now());
+        }
+
+        // 4. Sortieren (KW absteigend)
         krsort($weeklyData);
         return $weeklyData;
     }
