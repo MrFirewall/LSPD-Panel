@@ -63,7 +63,7 @@ class DashboardController extends Controller
 
         // Statistik: Offene Akten (Gesamt)
         // Annahme: Es gibt eine Spalte 'status' in der reports Tabelle
-        $openCasesCount = Report::where('status', 'open')->count();
+        $openCasesCount = Report::count();
 
         // Statistik: Bußgelder Heute
         // Hinweis: Falls das Model anders heißt (z.B. Ticket), hier anpassen.
