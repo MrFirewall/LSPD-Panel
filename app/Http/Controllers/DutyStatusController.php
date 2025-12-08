@@ -94,20 +94,21 @@ class DutyStatusController extends Controller
                 ->first();
 
             if ($openRecord) {
+                // Endgültige Zeit berechnen
                 $duration = $openRecord->start_time->diffInSeconds($currentTime);
 
-                // GRACE PERIOD CHECK:
-                // Wenn die Dauer KÜRZER ist als die eingestellte Toleranzzeit,
-                // löschen wir den Eintrag komplett, als wäre er nie passiert.
+                // Grace Period Check (z.B. 120 Sekunden)
+                $gracePeriod = (int) env('DUTY_GRACE_PERIOD', 0);
+
                 if ($duration < $gracePeriod) {
-                    $openRecord->forceDelete(); // Oder delete(), je nach SoftDeletes
-                    // Optional: Auch den ActivityLog "DUTY_START" löschen, wenn man ganz sauber sein will?
-                    // Hier lassen wir den Log für Audit-Zwecke, aber die Stunden zählen nicht.
+                    // Zu kurz! Löschen.
+                    $openRecord->forceDelete();
+                    $status_text = 'Dienstzeit verworfen (zu kurz).';
                 } else {
-                    // Normales Speichern
+                    // Gültig! Abschließen.
                     $openRecord->update([
                         'end_time' => $currentTime,
-                        'duration_seconds' => $duration,
+                        'duration_seconds' => $duration
                     ]);
                 }
             }
