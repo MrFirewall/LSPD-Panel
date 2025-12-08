@@ -4,51 +4,46 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\DutyRecord;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 
 class UpdateDutyDurations extends Command
 {
     protected $signature = 'duty:update-durations';
-    protected $description = 'Aktualisiert Dienstzeiten (Debug Version)';
+    protected $description = 'Aktualisiert Dienstzeiten kontinuierlich (Worker Mode)';
 
     public function handle()
     {
-        $this->info('--------------------------------------');
-        $this->info('1. Start: Command wurde gestartet.');
+        // 1. Intervall aus .env laden (Fallback: 10 Sekunden)
+        // Wir nehmen hier bewusst (int) für ganze Sekunden
+        $interval = (int) env('DUTY_HEARTBEAT_INTERVAL', 10);
         
-        $now = Carbon::now();
-        $this->info('2. Aktuelle Serverzeit: ' . $now->toDateTimeString());
+        // SICHERHEIT: Um die CPU nicht zu töten, erzwingen wir mindestens 1 Sekunde Pause.
+        // Wenn du 0 oder Quatsch in der .env hast, nehmen wir 5 Sekunden.
+        if ($interval < 1) $interval = 5;
 
-        // Prüfen, wie viele offene Einträge es gibt
-        try {
-            $openCount = DutyRecord::whereNull('end_time')->count();
-            $this->info("3. Datenbank-Check: Es gibt aktuell {$openCount} offene Dienste (end_time ist NULL).");
-        } catch (\Exception $e) {
-            $this->error('!!! DATENBANK FEHLER !!!');
-            $this->error($e->getMessage());
-            return;
-        }
+        $startTime = time();
+        $maxExecutionTime = 55; // Das Skript beendet sich nach 55 Sek, damit der nächste Cronjob übernimmt.
 
-        if ($openCount === 0) {
-            $this->warn('   -> Da 0 Dienste offen sind, gibt es nichts zu tun.');
-            $this->warn('   -> Bitte gehe im Panel erst "In den Dienst", damit wir etwas zum Updaten haben!');
-        } else {
-            $this->info('4. Starte Update-Schleife...');
+        $this->info("Starte Worker-Loop. Intervall: {$interval}s");
+
+        // 2. Die Schleife: Läuft solange, bis 55 Sekunden vergangen sind
+        while ((time() - $startTime) < $maxExecutionTime) {
             
+            $now = Carbon::now();
+
+            // Massen-Update durchführen
             DutyRecord::whereNull('end_time')->chunk(100, function ($records) use ($now) {
                 foreach ($records as $record) {
-                    $oldDuration = $record->duration_seconds;
-                    $newDuration = $record->start_time->diffInSeconds($now);
-                    
-                    $record->update(['duration_seconds' => $newDuration]);
-                    
-                    $this->line("   -> Record ID {$record->id} (User {$record->user_id}): Dauer von {$oldDuration}s auf {$newDuration}s aktualisiert.");
+                    $record->update([
+                        'duration_seconds' => $record->start_time->diffInSeconds($now)
+                    ]);
                 }
             });
+
+            // 3. Warten (Schlafen) bis zum nächsten Intervall
+            sleep($interval);
         }
 
-        $this->info('5. Ende: Skript erfolgreich durchgelaufen.');
-        $this->info('--------------------------------------');
+        $this->info('Worker beendet (Zeitlimit erreicht).');
     }
 }
