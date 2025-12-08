@@ -16,6 +16,7 @@ class DutyRecord extends Model
         'end_time',
         'duration_seconds',
         'type',
+        'rank',
     ];
     protected $casts = [
         'start_time' => 'datetime',

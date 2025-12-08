@@ -46,60 +46,36 @@ class User extends Authenticatable
 
     /**
      * NEU: Dynamischer Abruf des Levels basierend auf dem Haupt-Rang ($user->rank).
-     * Zugriff in Blade via: $user->level
      */
     public function getLevelAttribute(): int
     {
         if (empty($this->rank)) {
             return 0;
         }
-
-        // Suche den Rang in der DB (Cache empfohlen für Produktion, hier direkt)
         $rankModel = Rank::where('name', $this->rank)
                             ->orWhere('label', $this->rank)
                             ->first();
-
         return $rankModel ? $rankModel->level : 0;
     }
 
-    /**
-     * Ermittelt den Namen der höchsten Rolle, die der Benutzer hat (basierend auf DB-Level).
-     */
     public function getHighestRank(): string
     {
-        // Wir holen alle Rollennamen des Users
         $roleNames = $this->getRoleNames()->toArray();
+        if (empty($roleNames)) return 'praktikant';
 
-        if (empty($roleNames)) {
-            return 'praktikant';
-        }
-
-        // Wir suchen in der Rank-Tabelle nach diesen Namen und holen den mit dem höchsten Level
         $highestRank = Rank::whereIn('name', $roleNames)
                             ->orderBy('level', 'desc')
                             ->first();
-
         return $highestRank ? $highestRank->name : 'praktikant';
     }
 
-    /**
-     * Gibt die "Stufe" des höchsten Ranges zurück (basierend auf zugewiesenen Rollen).
-     */
     public function getHighestRankLevel(): int
     {
         $roleNames = $this->getRoleNames()->toArray();
-
-        if (empty($roleNames)) {
-            return 0;
-        }
-
-        // Höchstes Level direkt aus der DB aggregieren
+        if (empty($roleNames)) return 0;
         return (int) Rank::whereIn('name', $roleNames)->max('level');
     }
 
-    /**
-     * Accessor, der "System" zurückgibt, wenn kein Bearbeiter gesetzt ist.
-     */
     protected function lastEditor(): Attribute
     {
         return Attribute::make(
@@ -108,63 +84,62 @@ class User extends Authenticatable
     }
 
     /**
-     * Berechnet die Dienststunden basierend auf den ActivityLogs. 
-     * HINWEIS: Diese Methode bleibt unverändert, da sie die Rangwechsel-Logik 
-     * für das Archiv benötigt und weiterhin ActivityLogs auswertet.
+     * Berechnet die GESAMTZEIT und das ARCHIV NACH RANG
+     * KOMPLETT NEU: Basiert jetzt zu 100% auf der duty_records Tabelle.
      */
     public function calculateDutyHours(): array
     {
-         $logs = $this->activityLogs()
-                     ->whereIn('log_type', ['DUTY_START', 'DUTY_END', 'UPDATED'])
-                     ->orderBy('created_at', 'asc')
-                     ->get();
+        // 1. Hole alle abgeschlossenen Records
+        $records = $this->dutyRecords()
+            ->select('rank', 'duration_seconds')
+            ->whereNotNull('end_time')
+            ->get();
 
-         $archiveByRank = [];
-         $activeTotalSeconds = 0;
-         $lastStartLog = null;
-         $currentRank = $this->rank; 
+        $archiveByRank = [];
+        $activeTotalSeconds = 0;
 
-         foreach ($logs as $log) {
-             if ($log->log_type === 'UPDATED' && !empty($log->details)) {
-                 if (str_contains($log->details, 'Status geändert:') && str_contains($log->details, '-> inaktiv')) {
-                     $activeTotalSeconds = 0; 
-                 }
-                 if (preg_match('/Rang geändert:.*?-> ([\w-]+)/', $log->details, $matches)) {
-                     $currentRank = $matches[1];
-                 }
-             }
+        // 2. Summieren der abgeschlossenen Dienste
+        foreach ($records as $record) {
+            $rankSlug = $record->rank ?? 'unbekannt'; // Fallback für alte Einträge ohne Rang
+            
+            if (!isset($archiveByRank[$rankSlug])) {
+                $archiveByRank[$rankSlug] = 0;
+            }
+            
+            $seconds = (int) $record->duration_seconds;
+            $archiveByRank[$rankSlug] += $seconds;
+            $activeTotalSeconds += $seconds;
+        }
 
-             if ($log->log_type === 'DUTY_START') {
-                 $lastStartLog = $log;
-             } 
-             elseif ($log->log_type === 'DUTY_END' && $lastStartLog) {
-                 $duration = $lastStartLog->created_at->diffInSeconds($log->created_at);
-                 if (!isset($archiveByRank[$currentRank])) {
-                     $archiveByRank[$currentRank] = 0;
-                 }
-                 $archiveByRank[$currentRank] += $duration;
-                 $activeTotalSeconds += $duration;
-                 $lastStartLog = null;
-             }
-         }
+        // 3. Laufenden Dienst hinzufügen (falls vorhanden)
+        /** @var DutyRecord $openRecord */
+        $openRecord = $this->dutyRecords()
+            ->whereNull('end_time')
+            ->latest('start_time')
+            ->first();
 
-         if ($lastStartLog) {
-             $duration = $lastStartLog->created_at->diffInSeconds(Carbon::now());
-             if (!isset($archiveByRank[$currentRank])) {
-                 $archiveByRank[$currentRank] = 0;
-             }
-             $archiveByRank[$currentRank] += $duration;
-             $activeTotalSeconds += $duration;
-         }
+        if ($openRecord) {
+            $currentDuration = $openRecord->start_time->diffInSeconds(Carbon::now());
+            
+            // Verwende den Rang aus dem Record oder den aktuellen User-Rang als Fallback
+            $currentRankSlug = $openRecord->rank ?? $this->rank;
 
-         return [
-             'active_total_seconds' => $activeTotalSeconds,
-             'archive_by_rank' => $archiveByRank,
-         ];
+            if (!isset($archiveByRank[$currentRankSlug])) {
+                $archiveByRank[$currentRankSlug] = 0;
+            }
+
+            $archiveByRank[$currentRankSlug] += $currentDuration;
+            $activeTotalSeconds += $currentDuration;
+        }
+
+        return [
+            'active_total_seconds' => $activeTotalSeconds,
+            'archive_by_rank' => $archiveByRank,
+        ];
     }
     
     /**
-     * Berechnet die wöchentlichen Dienststunden seit dem Beitritt, 
+     * Berechnet die WOCHENSTUNDEN seit dem Beitritt, 
      * basierend auf der NEUEN DutyRecord-Tabelle. 
      */
     public function calculateWeeklyHoursSinceEntry(): array
@@ -176,11 +151,11 @@ class User extends Authenticatable
         $startDate = $this->hire_date->copy()->startOfDay();
         $weeklyData = [];
 
-        // 1. Hole alle ABGESCHLOSSENEN DutyRecords (end_time IS NOT NULL)
+        // 1. Hole alle abgeschlossenen DutyRecords seit dem Beitrittsdatum.
         $records = $this->dutyRecords()
             ->select('start_time', 'duration_seconds', 'type')
             ->where('start_time', '>=', $startDate)
-            ->whereNotNull('end_time') // Nur abgeschlossene Dienste
+            ->whereNotNull('end_time') 
             ->get();
 
         // 2. Initialisiere alle Wochen (von hire_date bis heute) mit 00:00 h
@@ -188,16 +163,14 @@ class User extends Authenticatable
         $endDate = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
         while ($currentWeek->lessThanOrEqualTo($endDate)) {
-            // Verwende das korrekte, sortierbare Y_KW-Format
             $kwKey = $currentWeek->format('Y') . "_KW" . $currentWeek->format('W');
             $weeklyData[$kwKey] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
             $currentWeek->addWeek();
         }
 
-        // 3. Füge die Zeiten aus den abgeschlossenen DutyRecords hinzu.
+        // 3. Füge die Zeiten aus den Records hinzu
         foreach ($records as $record) {
             $kwKey = $record->start_time->format('Y') . "_KW" . $record->start_time->format('W');
-            
             $typeKey = ($record->type === 'LEITSTELLE') ? 'leitstelle_seconds' : 'normal_seconds';
             
             if (isset($weeklyData[$kwKey])) {
@@ -205,7 +178,7 @@ class User extends Authenticatable
             }
         }
         
-        // 4. LAUFENDER DIENST (end_time IS NULL) hinzufügen
+        // 4. Laufenden Dienst hinzufügen
         /** @var DutyRecord $openRecord */
         $openRecord = $this->dutyRecords()
             ->whereNull('end_time')
@@ -222,14 +195,14 @@ class User extends Authenticatable
             }
         }
 
-        // 5. Sortieren (Y_KW absteigend)
+        // 5. Sortieren
         krsort($weeklyData);
         return $weeklyData;
     }
 
     // --- Relationen ---
     public function activityLogs(): HasMany { return $this->hasMany(ActivityLog::class); }
-    public function dutyRecords(): HasMany { return $this->hasMany(DutyRecord::class); } // NEUE RELATION
+    public function dutyRecords(): HasMany { return $this->hasMany(DutyRecord::class); }
     public function receivedEvaluations(): HasMany { return $this->hasMany(Evaluation::class, 'user_id'); }
     public function serviceRecords(): HasMany { return $this->hasMany(ServiceRecord::class); }
     public function reports(): HasMany { return $this->hasMany(Report::class); }
@@ -244,11 +217,8 @@ class User extends Authenticatable
         ->withPivot('assigned_by_user_id', 'completed_at', 'notes')
         ->withTimestamps();
     }
-
     public function qualifications(){ return $this->trainingModules()->wherePivot('status', 'bestanden'); }
     public function examAttempts(): HasMany{ return $this->hasMany(ExamAttempt::class); }
     public function pushSubscriptions(): HasMany { return $this->hasMany(\App\Models\PushSubscription::class); }
-    
-    // Falls du die Relation nutzen willst (optional, da wir oben oft den String nutzen)
     public function rankRelation(){ return $this->belongsTo(Rank::class, 'rank', 'name'); }
 }

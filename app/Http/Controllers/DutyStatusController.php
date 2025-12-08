@@ -30,7 +30,8 @@ class DutyStatusController extends Controller
             DutyRecord::create([
                 'user_id' => $user->id,
                 'start_time' => Carbon::now(),
-                'type' => 'DUTY', 
+                'type' => 'DUTY',
+                'rank' => $user->rank,
                 'end_time' => null, // Explizit null
                 'duration_seconds' => null // Explizit null
             ]);
