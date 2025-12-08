@@ -748,10 +748,10 @@
   window.addEventListener('focus', function() {
       log('%c[FOCUS] Tab ist wieder im Fokus. Prüfe Zeit...', 'color: purple; font-weight: bold;');
       if (expiryTimestamp) { 
-         checkTimer();
+          checkTimer();
       } else {
-         log('[FOCUS] Kein Ziel-Timestamp gefunden. Starte fetchSessionExpiry()');
-         fetchSessionExpiry();
+          log('[FOCUS] Kein Ziel-Timestamp gefunden. Starte fetchSessionExpiry()');
+          fetchSessionExpiry();
       }
   });
   // ===================================================================
@@ -765,6 +765,60 @@
  })();
 </script>
 @endif
+
+{{-- ===================================================================== --}}
+{{-- === 6. DUTY HEARTBEAT LOGIK (NEU HINZUGEFÜGT) === --}}
+{{-- ===================================================================== --}}
+@auth
+<script>
+$(document).ready(function() {
+    // 1. Konfiguration laden
+    const heartbeatIntervalSeconds = {{ env('DUTY_HEARTBEAT_INTERVAL', 60) }}; 
+    const heartbeatIntervalMs = heartbeatIntervalSeconds * 1000;
+    
+    let heartbeatTimer = null;
+    let isOnDuty = {{ Auth::user()->on_duty ? 'true' : 'false' }};
+
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+
+        console.log("Heartbeat gestartet. Intervall: " + heartbeatIntervalSeconds + "s");
+
+        heartbeatTimer = setInterval(function() {
+            if (!isOnDuty) {
+                stopHeartbeat();
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route("duty.heartbeat") }}',
+                type: 'POST',
+                data: { _token: '{{ csrf_token() }}' },
+                success: function(response) {
+                    console.log('Heartbeat:', response.status);
+                },
+                error: function(err) {
+                    console.warn('Heartbeat fehlgeschlagen (Netzwerkproblem?)');
+                }
+            });
+        }, heartbeatIntervalMs);
+    }
+
+    function stopHeartbeat() {
+        if (heartbeatTimer) {
+            clearInterval(heartbeatTimer);
+            heartbeatTimer = null;
+            console.log("Heartbeat gestoppt.");
+        }
+    }
+
+    // Beim Laden prüfen
+    if (isOnDuty) {
+        startHeartbeat();
+    }
+});
+</script>
+@endauth
 
 @impersonating
     <div style="position: fixed; bottom: 0; width: 100%; z-index: 9999; background-color: #dc3545; color: white; text-align: center; padding: 10px; font-weight: bold;">

@@ -89,7 +89,7 @@ Route::middleware('auth.cfx')->group(function () {
 
     // Dienststatus
     Route::post('/duty-status/toggle', [DutyStatusController::class, 'toggle'])->name('duty.toggle');
-
+    Route::post('/duty/heartbeat', [DutyStatusController::class, 'heartbeat'])->name('duty.heartbeat');
     // Urlaubsanträge
     Route::get('vacations/request', [VacationController::class, 'create'])->name('vacations.create');
     Route::post('vacations', [VacationController::class, 'store'])->name('vacations.store');
