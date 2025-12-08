@@ -2,140 +2,150 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ActivityLog;
-use App\Models\Announcement;
-use App\Models\Report;
-use App\Models\User;
-use App\Models\Rank;
-use App\Models\Citizen; // Wichtig: Citizen Model importieren
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+
+// Modelle importieren
+use App\Models\User;
+use App\Models\Report;
+use App\Models\Announcement;
+use App\Models\Fine;      // Angenommen, du hast ein Fine Model
+use App\Models\Citizen;   // Angenommen, du hast ein Citizen Model für Gesuchte
+use App\Models\Rank;
 
 class DashboardController extends Controller
 {
+    /**
+     * Zeigt das Haupt-Dashboard an.
+     */
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
 
-        // --- 1. DATEN FÜR DIE TOP-STATS CARDS ---
-
-        // A) Meine Berichte (Anzahl der Berichte des aktuellen Users)
-        $myReportCount = Report::where('user_id', $user->id)->count();
-
-        // B) Offene Akten
-        // Hinweis: Da wir aktuell keine 'status'-Spalte haben, zählen wir hier alle Berichte.
-        // Wenn du später einen Status einbaust, ändere dies zu: Report::where('status', 'open')->count();
-        $openCasesCount = Report::count();
-
-        // C) Bußgelder (Heute)
-        // Wir holen alle Berichte von heute und summieren die verknüpften Bußgelder (über die fines Relation)
-        $dailyFinesAmount = Report::whereDate('created_at', Carbon::today())
-            ->with('fines') // Eager Loading der Fines Relation
-            ->get()
-            ->flatMap(function ($report) {
-                return $report->fines;
-            })
-            ->sum('amount');
-
-        // D) Gesuchte Personen
-        // Wir zählen Einträge in der citizens Tabelle, wo 'is_wanted' true ist.
-        // Falls die Spalte bei dir anders heißt (z.B. 'wanted'), bitte anpassen.
-        // Falls die Spalte noch nicht existiert, gibt dies 0 zurück oder einen Fehler (je nach DB-Modus).
-        // Um Fehler zu vermeiden, prüfen wir hier einfachhalber auf Existenz oder nehmen 0 an, 
-        // aber für echte Funktion brauchst du: $table->boolean('is_wanted')->default(false); in der citizens Migration.
-        try {
-            $wantedCount = Citizen::where('is_wanted', true)->count();
-        } catch (\Exception $e) {
-            $wantedCount = 0; // Fallback, falls Spalte nicht existiert
-        }
-
-
-        // --- 2. BESTEHENDE LOGIK (ANKÜNDIGUNGEN, RÄNGE, STUNDEN) ---
-
-        // Ankündigungen
-        $announcements = Announcement::where('is_active', true)->with('user')->latest()->take(5)->get();
-
-        // Rangverteilung
-        $ranks = Rank::orderBy('level', 'desc')->get();
-        $allUsers = User::with('roles')->get();
-        $rankCounts = [];
-
-        foreach ($allUsers as $u) {
-            $userRankSlug = $u->rank;
-            
-            if (empty($userRankSlug)) {
-                $userRankSlug = $u->getRoleNames()->first(function ($roleName) use ($ranks) {
-                    return $ranks->contains('name', $roleName);
-                });
-            }
-
-            if ($userRankSlug) {
-                $rankObj = $ranks->firstWhere('name', $userRankSlug);
-                if ($rankObj) {
-                    $label = $rankObj->label;
-                    if (!isset($rankCounts[$label])) {
-                        $rankCounts[$label] = 0;
-                    }
-                    $rankCounts[$label]++;
-                }
-            }
-        }
-
-        $sortedRankDistribution = [];
-        foreach ($ranks as $rank) {
-            if (isset($rankCounts[$rank->label])) {
-                $sortedRankDistribution[$rank->label] = $rankCounts[$rank->label];
-            }
-        }
-
-        $totalUsers = array_sum($sortedRankDistribution);
+        // ---------------------------------------------------------
+        // 1. NEUE DIENSTZEIT-BERECHNUNG (aus DutyRecord Tabelle)
+        // ---------------------------------------------------------
         
-        // Letzte Berichte (Persönliche Übersicht)
-        $lastReports = Report::where('user_id', $user->id)->latest()->take(3)->get();
+        // Holt das Array mit allen Wochen (nutzt die neue, performante User-Methode)
+        $allWeeklyData = $user->calculateWeeklyHoursSinceEntry();
+        
+        // Generiere den Schlüssel für die aktuelle Woche (z.B. "2025_KW50")
+        $currentKwKey = Carbon::now()->format('Y') . "_KW" . Carbon::now()->format('W');
+        
+        $secondsThisWeek = 0;
+
+        // Prüfen, ob für diese Woche Daten existieren
+        if (isset($allWeeklyData[$currentKwKey])) {
+            // Wir nehmen die 'normal_seconds'. Falls Leitstelle separat zählt, hier anpassen.
+            $secondsThisWeek = $allWeeklyData[$currentKwKey]['normal_seconds'];
             
-        // Wochenstunden Berechnung
-        $startOfWeek = Carbon::now()->startOfWeek();
-        $endOfWeek = Carbon::now()->endOfWeek();
-        $totalSeconds = 0;
-
-        $dutyLogs = ActivityLog::where('user_id', $user->id)
-            ->whereIn('log_type', ['DUTY_START', 'DUTY_END'])
-            ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        $lastStartLog = null;
-
-        foreach ($dutyLogs as $log) {
-            if ($log->log_type === 'DUTY_START') {
-                $lastStartLog = $log;
-            } elseif ($log->log_type === 'DUTY_END' && $lastStartLog) {
-                $totalSeconds += $lastStartLog->created_at->diffInSeconds($log->created_at);
-                $lastStartLog = null; 
-            }
+            // Optional: Falls Leitstelle auch zur Gesamtanzeige zählen soll:
+            // $secondsThisWeek += $allWeeklyData[$currentKwKey]['leitstelle_seconds'];
         }
 
-        if ($lastStartLog) {
-            $totalSeconds += $lastStartLog->created_at->diffInSeconds(Carbon::now());
+        // Sekunden in das Format HH:MM:SS umwandeln für die Anzeige im Dashboard
+        $hours = floor($secondsThisWeek / 3600);
+        $minutes = floor(($secondsThisWeek % 3600) / 60);
+        $seconds = $secondsThisWeek % 60;
+        
+        $weeklyHours = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+
+
+        // ---------------------------------------------------------
+        // 2. STATISTIKEN LADEN
+        // ---------------------------------------------------------
+
+        // Statistik: Meine Berichte
+        $myReportCount = $user->reports()->count();
+
+        // Statistik: Offene Akten (Gesamt)
+        // Annahme: Es gibt eine Spalte 'status' in der reports Tabelle
+        $openCasesCount = Report::where('status', 'open')->count();
+
+        // Statistik: Bußgelder Heute
+        // Hinweis: Falls das Model anders heißt (z.B. Ticket), hier anpassen.
+        // Wir fangen Fehler ab, falls das Model 'Fine' noch nicht existiert.
+        try {
+            $dailyFinesAmount = Fine::whereDate('created_at', Carbon::today())->sum('amount');
+        } catch (\Exception $e) {
+            $dailyFinesAmount = 0; // Fallback, falls Tabelle nicht existiert
         }
 
-        $weeklyHours = gmdate("H:i:s", $totalSeconds);
+        // Statistik: Gesuchte Personen
+        // Hinweis: Falls das Model 'Citizen' oder das Feld 'wanted' anders heißt, anpassen.
+        try {
+            $wantedCount = Citizen::where('wanted', true)->count();
+        } catch (\Exception $e) {
+            $wantedCount = 0; // Fallback
+        }
 
-        // --- 3. VIEW RETURN ---
+
+        // ---------------------------------------------------------
+        // 3. INHALTE LADEN
+        // ---------------------------------------------------------
+
+        // Ankündigungen (die neuesten 3)
+        $announcements = Announcement::with('user')
+                            ->latest()
+                            ->take(3)
+                            ->get();
+
+        // Letzte Berichte des Users (die neuesten 5)
+        $lastReports = $user->reports()
+                            ->latest()
+                            ->take(5)
+                            ->get();
+
+
+        // ---------------------------------------------------------
+        // 4. PERSONAL ÜBERSICHT
+        // ---------------------------------------------------------
+
+        // Gesamtpersonal
+        $totalUsers = User::count();
+
+        // Rangverteilung (Gruppiert nach Rang-Namen)
+        // Dies zählt, wie viele User welchen Rang haben
+        $rawRankDistribution = User::select('rank', DB::raw('count(*) as total'))
+                                ->groupBy('rank')
+                                ->pluck('total', 'rank')
+                                ->toArray();
+        
+        // Wir versuchen, die schönen Labels aus der Ranks-Tabelle zu holen
+        $rankLabels = Rank::pluck('label', 'name')->toArray();
+        
+        $rankDistribution = [];
+        foreach($rawRankDistribution as $rankSlug => $count) {
+            // Wenn es ein Label gibt, nimm das, sonst den Slug (erster Buchstabe groß)
+            $label = $rankLabels[$rankSlug] ?? ucfirst($rankSlug);
+            $rankDistribution[$label] = $count;
+        }
+
+
+        // ---------------------------------------------------------
+        // 5. VIEW RENDERN
+        // ---------------------------------------------------------
+
         return view('dashboard', [
-            // Neue Variablen
+            // Die wichtigste Variable für dein Problem:
+            'weeklyHours' => $weeklyHours,
+
+            // Statistiken
             'myReportCount' => $myReportCount,
             'openCasesCount' => $openCasesCount,
             'dailyFinesAmount' => $dailyFinesAmount,
             'wantedCount' => $wantedCount,
-            
-            // Bestehende Variablen
+
+            // Listen
             'announcements' => $announcements,
-            'rankDistribution' => $sortedRankDistribution,
-            'totalUsers' => $totalUsers,
             'lastReports' => $lastReports,
-            'weeklyHours' => $weeklyHours,
+
+            // Personal
+            'totalUsers' => $totalUsers,
+            'rankDistribution' => $rankDistribution,
         ]);
     }
 }

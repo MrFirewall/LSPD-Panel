@@ -3,54 +3,88 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\DutyRecord; // WICHTIG: Model importieren
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Events\PotentiallyNotifiableActionOccurred; // Event hinzufügen
-use App\Models\User; // User hinzufügen für Typ-Hinting
+use App\Events\PotentiallyNotifiableActionOccurred; 
+use App\Models\User; 
+use Illuminate\Support\Carbon; 
 
 class DutyStatusController extends Controller
 {
     public function toggle(Request $request)
     {
-        /** @var User $user */ // Type hint for static analysis
+        /** @var User $user */
         $user = Auth::user();
 
-        // Status umkehren
+        // 1. Status im User-Objekt umschalten
         $user->on_duty = !$user->on_duty;
         $user->save();
 
         if ($user->on_duty) {
-            // Der Benutzer hat den Dienst angetreten
+            // ====================================================
+            // DIENST START (Schreibt in duty_records UND activity_logs)
+            // ====================================================
+            
+            // A: Erstelle einen neuen, offenen Eintrag in der NEUEN Tabelle
+            DutyRecord::create([
+                'user_id' => $user->id,
+                'start_time' => Carbon::now(),
+                'type' => 'DUTY', 
+                'end_time' => null, // Explizit null
+                'duration_seconds' => null // Explizit null
+            ]);
+
+            // B: Protokoll (Log)
             ActivityLog::create([
                 'user_id' => $user->id,
                 'log_type' => 'DUTY_START',
                 'action' => 'TOGGLED',
                 'description' => 'Benutzer hat den Dienst angetreten.',
             ]);
+            
             $status_text = 'Im Dienst';
-            $actionIdentifier = 'DutyStatusController@toggle.on_duty'; // Spezifischer Identifier
+            $actionIdentifier = 'DutyStatusController@toggle.on_duty'; 
+            
         } else {
-            // Der Benutzer hat den Dienst beendet
+            // ====================================================
+            // DIENST ENDE (Aktualisiert duty_records UND schreibt Log)
+            // ====================================================
+            
+            $currentTime = Carbon::now();
+            
+            // A: Suche den offenen Eintrag in der NEUEN Tabelle und schließe ihn
+            $openRecord = DutyRecord::where('user_id', $user->id)
+                ->whereNull('end_time') // Suche nach Eintrag ohne Ende
+                ->latest('start_time')
+                ->first();
+
+            if ($openRecord) {
+                // Berechne Dauer
+                $duration = $openRecord->start_time->diffInSeconds($currentTime);
+
+                // Update den bestehenden Eintrag
+                $openRecord->update([
+                    'end_time' => $currentTime,
+                    'duration_seconds' => $duration,
+                ]);
+            }
+
+            // B: Protokoll (Log)
             ActivityLog::create([
                 'user_id' => $user->id,
                 'log_type' => 'DUTY_END',
                 'action' => 'TOGGLED',
                 'description' => 'Benutzer hat den Dienst beendet.',
             ]);
+            
             $status_text = 'Außer Dienst';
-            $actionIdentifier = 'DutyStatusController@toggle.off_duty'; // Spezifischer Identifier
+            $actionIdentifier = 'DutyStatusController@toggle.off_duty'; 
         }
 
-        // --- BENACHRICHTIGUNG VIA EVENT ---
-        PotentiallyNotifiableActionOccurred::dispatch(
-            $actionIdentifier, // Spezifischer Name für an/abmelden
-            $user,             // Der Benutzer, der den Status ändert
-            $user,             // Das zugehörige Modell
-            $user              // Der auslösende Benutzer ist hier derselbe
-        );
-        // ---------------------------------
+        // Event feuern (für Benachrichtigungen etc.)
+        PotentiallyNotifiableActionOccurred::dispatch($actionIdentifier, $user, $user, $user);
 
-        // Erfolgreiche Antwort mit neuem Status zurückgeben
         return response()->json([
             'success' => true,
             'new_status' => $user->on_duty,
