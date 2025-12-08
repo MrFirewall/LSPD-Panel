@@ -28,7 +28,7 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
             <div class="card-header border-0">
                 <h3 class="card-title font-weight-bold"><i class="far fa-calendar-alt mr-2"></i> Wochenstunden</h3>
             </div>
-            <div class="card-body p-0 table-responsive">
+            <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
                 <table class="table table-sm table-hover text-nowrap">
                     <thead>
                         <tr>
