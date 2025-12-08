@@ -2,10 +2,14 @@
 @php
 if (!function_exists('formatSeconds')) {
     function formatSeconds($seconds) {
-        if ($seconds < 1) return '00:00';
+        // Sekunden können als Float reinkommen (obwohl hier unwahrscheinlich), 
+        // daher ist floor() wichtig.
+        $seconds = (int) round($seconds);         
+        if ($seconds < 1) return '00:00 h'; // Hinzufügen des 'h' für 0 Sekunden        
         $h = floor($seconds / 3600);
-        $m = floor(($seconds % 3600) / 60);
-        return sprintf('%02d:%02d', $h, $m);
+        $m = floor(($seconds % 3600) / 60);        
+        // Führende Nullen und das 'h' am Ende hinzufügen
+        return sprintf('%02d:%02d h', $h, $m); 
     }
 }
 
