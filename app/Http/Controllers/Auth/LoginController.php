@@ -4,19 +4,18 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request; // Request hinzugefügt
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log; // Log Facade importieren
 use Laravel\Socialite\Facades\Socialite;
 
 class LoginController extends Controller
 {
     /**
-     * NEU: Akzeptiert Request, um "remember" zu lesen
+     * Akzeptiert Request, um "remember" zu lesen und speichert es in der Session.
      */
     public function redirectToCfx(Request $request)
     {
-        // NEU: Speichere den "remember" Status in der Session,
-        // da wir ihn nach dem CFX-Callback wieder brauchen.
         $remember = $request->has('remember');
         session(['login_remember' => $remember]);
 
@@ -31,7 +30,7 @@ class LoginController extends Controller
         try {
             $cfxUser = Socialite::driver('cfx')->user();
 
-            // PRÜFUNG: Wollte der User nur seine ID wissen?
+            // --- PRÜFUNG: Wollte der User nur seine ID wissen? ---
             if (session('auth_flow') === 'id_check') {
                 session()->forget('auth_flow'); // Session sofort wieder löschen
                 
@@ -45,24 +44,51 @@ class LoginController extends Controller
             $user = User::where('cfx_id', $cfxUser->getId())->first();
 
             if ($user) {
+                // ---------------------------------------------------------
+                // START: Avatar Fix (Discourse Template Parsing)
+                // ---------------------------------------------------------
+                
+                // 1. Hole die Rohdaten von der API
+                $raw = $cfxUser->getRaw();
+                
+                // 2. Setze den Standard-Fallback (falls kein Template gefunden wird)
+                $finalAvatarUrl = $cfxUser->getAvatar(); 
+
+                // 3. Prüfe, ob ein "avatar_template" in den Rohdaten existiert
+                if (isset($raw['avatar_template']) && !empty($raw['avatar_template'])) {
+                    // Ersetze {size} durch '512' (oder 1024) für hohe Qualität
+                    $template = str_replace('{size}', '512', $raw['avatar_template']);
+                    
+                    // Prüfen, ob die URL relativ ist (fängt nicht mit http an)
+                    if (!str_starts_with($template, 'http')) {
+                        // CFX Forum Base URL voranstellen
+                        $finalAvatarUrl = 'https://forum.cfx.re' . $template;
+                    } else {
+                        $finalAvatarUrl = $template;
+                    }
+                }
+                // ---------------------------------------------------------
+                // ENDE: Avatar Fix
+                // ---------------------------------------------------------
+
                 $user->update([
                     'cfx_name' => $cfxUser->getNickname(),
-                    'avatar' => $cfxUser->getAvatar(),
+                    'avatar'   => $finalAvatarUrl, // Hier nutzen wir nun die optimierte URL
                 ]);
 
-                // NEU: Hole den "remember" Status aus der Session
-                // 'pull' holt den Wert und löscht den Key sofort.
+                // Hole den "remember" Status aus der Session und lösche ihn direkt
                 $remember = session()->pull('login_remember', false);
 
-                // NEU: Speichere den finalen Status für den JS-Timer
+                // Speichere den finalen Status für den JS-Timer (Session Timeout)
                 session(['is_remembered' => $remember]);
                 
-                // NEU: Setze das 'remember' Flag (true/false)
+                // User einloggen
                 Auth::login($user, $remember); 
                 
+                // Auth-Flags setzen
                 session(['is_cfx_authenticated' => true]);
                 
-                // NEU: Leere Lockscreen-Daten, falls vorhanden
+                // Leere Lockscreen-Daten, falls vorhanden
                 session()->forget('lockscreen_name');
                 session()->forget('lockscreen_avatar');
                 session()->forget('is_locked');
@@ -73,9 +99,9 @@ class LoginController extends Controller
             }
 
         } catch (\Exception $e) {
-            session()->forget('auth_flow'); // Session auch im Fehlerfall löschen
-            session()->forget('login_remember'); // Auch hier löschen
-            \Illuminate\Support\Facades\Log::error('Cfx.re Callback Fehler: ' . $e->getMessage());
+            session()->forget('auth_flow');
+            session()->forget('login_remember');
+            Log::error('Cfx.re Callback Fehler: ' . $e->getMessage());
             return redirect('/')->with('error', 'Es ist ein Fehler aufgetreten. Bitte erneut versuchen.');
         }
     }
@@ -96,12 +122,11 @@ class LoginController extends Controller
     }
 
     /**
-     * NEUE METHODE: Setzt die Session und startet den Redirect.
+     * Setzt die Session und startet den Redirect für den ID-Check.
      */
     public function startCheckIdFlow()
     {
         session(['auth_flow' => 'id_check']);
-        // Leitet zur Login-Route weiter, die dann "redirectToCfx" aufruft
         return redirect()->route('login.cfx');
     }
 }
