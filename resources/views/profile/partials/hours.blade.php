@@ -86,8 +86,8 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
                             Keine archivierten Stunden.
                         </li>
                     @endforelse
-<hr>
-                    @forelse ($weeklyHours['archive_by_rank'] as $rankSlug => $seconds)
+<hr>@dd($weeklyHours)
+                    @forelse ($weeklyHours as $rankSlug => $seconds)
                         <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
                             {{-- Hier wird der Slug mit dem Label aus der DB abgelichen --}}
                             <span class="text-muted">{{ $rankNames[$rankSlug] ?? ucfirst($rankSlug) }}</span>
