@@ -173,7 +173,7 @@ class User extends Authenticatable
         // 1. Initialisiere alle Wochen von hire_date bis heute mit 00:00 h
         $currentWeek = $startDate->copy();
         while ($currentWeek->lessThanOrEqualTo($endDate)) {
-            $kw = "KW" . $currentWeek->format('W');
+            $kw = $currentWeek->format('Y') . "\-" . "KW" . $currentWeek->format('W');
             // Sicherstellen, dass die KW nicht schon existiert, falls die Schleife mehrmals durchlaufen wird (z.B. bei Jahreswechsel)
             if (!isset($weeklyData[$kw])) {
                 $weeklyData[$kw] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
