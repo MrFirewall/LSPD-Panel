@@ -195,7 +195,7 @@ class User extends Authenticatable
         // 2. Verarbeite die Logs und addiere die Zeiten zur korrekten Kalenderwoche
         foreach ($logs as $log) {
             // HINWEIS: Carbon's `format('W')` funktioniert gut für europäische KWs.
-            $kw = "KW" . $log->created_at->format('W');
+            $kw = $log->created_at->format('Y') . "_" . "KW" . $log->created_at->format('W');
             
             // Sollte immer existieren wegen der Initialisierung, aber zur Sicherheit:
             if (!isset($weeklyData[$kw])) {
