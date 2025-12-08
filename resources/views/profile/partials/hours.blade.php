@@ -40,7 +40,10 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
                     <tbody>
                         @forelse ($weeklyHours as $kw => $hours)
                             <tr>
-                                <td class="pl-3 text-muted">{{ $kw }}</td>
+                                <td class="pl-3 text-muted">
+                                    {{ substr($kw, 5) }} {{-- Zeigt nur KWXX --}}
+                                    <small class="text-xs text-info ml-1">({{ substr($kw, 0, 4) }})</small> {{-- Fügt das Jahr (2025) hinzu --}}
+                                </td>
                                 <td class="font-weight-bold">{{ formatSeconds($hours['normal_seconds']) }}</td>
                                 <td class="text-muted">{{ formatSeconds($hours['leitstelle_seconds']) }}</td>
                             </tr>
