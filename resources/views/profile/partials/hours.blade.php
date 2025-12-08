@@ -4,7 +4,7 @@ if (!function_exists('formatSeconds')) {
     function formatSeconds($seconds) {
         // Sekunden können als Float reinkommen (obwohl hier unwahrscheinlich), 
         // daher ist floor() wichtig.
-        $seconds = (int) round($seconds);         
+        $seconds = (int) round($seconds);        
         if ($seconds < 1) return '00:00 h'; // Hinzufügen des 'h' für 0 Sekunden        
         $h = floor($seconds / 3600);
         $m = floor(($seconds % 3600) / 60);        
@@ -38,11 +38,12 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($weeklyHours as $kw => $hours)
+                        @forelse ($weeklyHours as $kwKey => $hours)
                             <tr>
                                 <td class="pl-3 text-muted">
-                                    {{ substr($kw, 5) }} {{-- Zeigt nur KWXX --}}
-                                    <small class="text-xs text-info ml-1">({{ substr($kw, 0, 4) }})</small> {{-- Fügt das Jahr (2025) hinzu --}}
+                                    {{-- Anzeige: KWXX (YYYY) aus dem Schlüssel YYYY_KWXX --}}
+                                    {{ substr($kwKey, 5) }} 
+                                    <small class="text-xs text-info ml-1">({{ substr($kwKey, 0, 4) }})</small>
                                 </td>
                                 <td class="font-weight-bold">{{ formatSeconds($hours['normal_seconds']) }}</td>
                                 <td class="text-muted">{{ formatSeconds($hours['leitstelle_seconds']) }}</td>
@@ -86,7 +87,8 @@ $rankNames = \Illuminate\Support\Facades\Cache::remember('ranks_list', 60, funct
                         <li class="list-group-item d-flex justify-content-between bg-transparent border-bottom border-light">
                             {{-- Hier wird der Slug mit dem Label aus der DB abgeglichen --}}
                             <span class="text-muted">{{ $rankNames[$rankSlug] ?? ucfirst($rankSlug) }}</span>
-                            <span class="font-weight-bold">{{ formatSeconds($seconds) }} h</span>
+                            {{-- HINWEIS: ' h' wurde entfernt, da es in formatSeconds() enthalten ist. --}}
+                            <span class="font-weight-bold">{{ formatSeconds($seconds) }}</span> 
                         </li>
                     @empty
                         <li class="list-group-item bg-transparent text-center text-muted py-3">

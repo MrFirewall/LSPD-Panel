@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Carbon; 
 use NotificationChannels\WebPush\HasPushSubscriptions;
 use App\Models\Rank;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -24,7 +25,7 @@ class User extends Authenticatable
         'cfx_name',
         'cfx_id',
         'avatar',
-        'status',        
+        'status',          
         'rank', // Das ist der String (Slug) des Haupt-Rangs (z.B. 'captain')
         'personal_number',
         'employee_id',
@@ -55,8 +56,8 @@ class User extends Authenticatable
 
         // Suche den Rang in der DB (Cache empfohlen für Produktion, hier direkt)
         $rankModel = Rank::where('name', $this->rank)
-                         ->orWhere('label', $this->rank)
-                         ->first();
+                            ->orWhere('label', $this->rank)
+                            ->first();
 
         return $rankModel ? $rankModel->level : 0;
     }
@@ -75,8 +76,8 @@ class User extends Authenticatable
 
         // Wir suchen in der Rank-Tabelle nach diesen Namen und holen den mit dem höchsten Level
         $highestRank = Rank::whereIn('name', $roleNames)
-                           ->orderBy('level', 'desc')
-                           ->first();
+                            ->orderBy('level', 'desc')
+                            ->first();
 
         return $highestRank ? $highestRank->name : 'praktikant';
     }
@@ -107,153 +108,136 @@ class User extends Authenticatable
     }
 
     /**
-     * Berechnet die Dienststunden basierend auf den ActivityLogs.
+     * Berechnet die Dienststunden basierend auf den ActivityLogs. 
+     * HINWEIS: Diese Methode bleibt unverändert, da sie die Rangwechsel-Logik 
+     * für das Archiv benötigt und weiterhin ActivityLogs auswertet.
      */
     public function calculateDutyHours(): array
     {
-        $logs = $this->activityLogs()
+         $logs = $this->activityLogs()
                      ->whereIn('log_type', ['DUTY_START', 'DUTY_END', 'UPDATED'])
                      ->orderBy('created_at', 'asc')
                      ->get();
 
-        $archiveByRank = [];
-        $activeTotalSeconds = 0;
-        $lastStartLog = null;
-        $currentRank = $this->rank; 
+         $archiveByRank = [];
+         $activeTotalSeconds = 0;
+         $lastStartLog = null;
+         $currentRank = $this->rank; 
 
-        foreach ($logs as $log) {
-            if ($log->log_type === 'UPDATED' && !empty($log->details)) {
-                if (str_contains($log->details, 'Status geändert:') && str_contains($log->details, '-> inaktiv')) {
-                    $activeTotalSeconds = 0; 
-                }
-                if (preg_match('/Rang geändert:.*?-> ([\w-]+)/', $log->details, $matches)) {
-                    $currentRank = $matches[1];
-                }
-            }
+         foreach ($logs as $log) {
+             if ($log->log_type === 'UPDATED' && !empty($log->details)) {
+                 if (str_contains($log->details, 'Status geändert:') && str_contains($log->details, '-> inaktiv')) {
+                     $activeTotalSeconds = 0; 
+                 }
+                 if (preg_match('/Rang geändert:.*?-> ([\w-]+)/', $log->details, $matches)) {
+                     $currentRank = $matches[1];
+                 }
+             }
 
-            if ($log->log_type === 'DUTY_START') {
-                $lastStartLog = $log;
-            } 
-            elseif ($log->log_type === 'DUTY_END' && $lastStartLog) {
-                $duration = $lastStartLog->created_at->diffInSeconds($log->created_at);
-                if (!isset($archiveByRank[$currentRank])) {
-                    $archiveByRank[$currentRank] = 0;
-                }
-                $archiveByRank[$currentRank] += $duration;
-                $activeTotalSeconds += $duration;
-                $lastStartLog = null;
-            }
-        }
+             if ($log->log_type === 'DUTY_START') {
+                 $lastStartLog = $log;
+             } 
+             elseif ($log->log_type === 'DUTY_END' && $lastStartLog) {
+                 $duration = $lastStartLog->created_at->diffInSeconds($log->created_at);
+                 if (!isset($archiveByRank[$currentRank])) {
+                     $archiveByRank[$currentRank] = 0;
+                 }
+                 $archiveByRank[$currentRank] += $duration;
+                 $activeTotalSeconds += $duration;
+                 $lastStartLog = null;
+             }
+         }
 
-        if ($lastStartLog) {
-            $duration = $lastStartLog->created_at->diffInSeconds(Carbon::now());
-            if (!isset($archiveByRank[$currentRank])) {
-                $archiveByRank[$currentRank] = 0;
-            }
-            $archiveByRank[$currentRank] += $duration;
-            $activeTotalSeconds += $duration;
-        }
+         if ($lastStartLog) {
+             $duration = $lastStartLog->created_at->diffInSeconds(Carbon::now());
+             if (!isset($archiveByRank[$currentRank])) {
+                 $archiveByRank[$currentRank] = 0;
+             }
+             $archiveByRank[$currentRank] += $duration;
+             $activeTotalSeconds += $duration;
+         }
 
-        return [
-            'active_total_seconds' => $activeTotalSeconds,
-            'archive_by_rank' => $archiveByRank,
-        ];
+         return [
+             'active_total_seconds' => $activeTotalSeconds,
+             'archive_by_rank' => $archiveByRank,
+         ];
     }
-
+    
+    /**
+     * Berechnet die wöchentlichen Dienststunden seit dem Beitritt, 
+     * basierend auf der NEUEN DutyRecord-Tabelle. 
+     */
     public function calculateWeeklyHoursSinceEntry(): array
     {
         if (!$this->hire_date) {
             return [];
         }
 
-        $startDate = $this->hire_date->copy()->startOfWeek(); // Start der ersten Woche
-        $endDate = Carbon::now()->endOfWeek(); // Ende der aktuellen Woche
+        $startDate = $this->hire_date->copy()->startOfDay();
         $weeklyData = [];
 
-        // 1. Initialisiere alle Wochen von hire_date bis heute mit 00:00 h
-        $currentWeek = $startDate->copy();
+        // 1. Hole alle ABGESCHLOSSENEN DutyRecords (end_time IS NOT NULL)
+        $records = $this->dutyRecords()
+            ->select('start_time', 'duration_seconds', 'type')
+            ->where('start_time', '>=', $startDate)
+            ->whereNotNull('end_time') // Nur abgeschlossene Dienste
+            ->get();
+
+        // 2. Initialisiere alle Wochen (von hire_date bis heute) mit 00:00 h
+        $currentWeek = $this->hire_date->copy()->startOfWeek(Carbon::MONDAY);
+        $endDate = Carbon::now()->endOfWeek(Carbon::SUNDAY);
+
         while ($currentWeek->lessThanOrEqualTo($endDate)) {
-            $kw = $currentWeek->format('Y') . "_" . "KW" . $currentWeek->format('W');
-            // Sicherstellen, dass die KW nicht schon existiert, falls die Schleife mehrmals durchlaufen wird (z.B. bei Jahreswechsel)
-            if (!isset($weeklyData[$kw])) {
-                $weeklyData[$kw] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
-            }
+            // Verwende das korrekte, sortierbare Y_KW-Format
+            $kwKey = $currentWeek->format('Y') . "_KW" . $currentWeek->format('W');
+            $weeklyData[$kwKey] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
             $currentWeek->addWeek();
         }
 
-        $logTypes = ['DUTY_START', 'DUTY_END', 'LEITSTELLE_START', 'LEITSTELLE_END'];
-        // Hole alle relevanten Logs seit dem hire_date
-        $logs = $this->activityLogs()
-            ->whereIn('log_type', $logTypes)
-            ->where('created_at', '>=', $this->hire_date->copy()->startOfDay()) // Wir nutzen das genaue hire_date für die Logs-Abfrage
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        $lastDutyStart = null;
-        $lastLeitstelleStart = null;
-
-        // 2. Verarbeite die Logs und addiere die Zeiten zur korrekten Kalenderwoche
-        foreach ($logs as $log) {
-            // HINWEIS: Carbon's `format('W')` funktioniert gut für europäische KWs.
-            $kw = $log->created_at->format('Y') . "_" . "KW" . $log->created_at->format('W');
+        // 3. Füge die Zeiten aus den abgeschlossenen DutyRecords hinzu.
+        foreach ($records as $record) {
+            $kwKey = $record->start_time->format('Y') . "_KW" . $record->start_time->format('W');
             
-            // Sollte immer existieren wegen der Initialisierung, aber zur Sicherheit:
-            if (!isset($weeklyData[$kw])) {
-                $weeklyData[$kw] = ['normal_seconds' => 0, 'leitstelle_seconds' => 0];
+            $typeKey = ($record->type === 'LEITSTELLE') ? 'leitstelle_seconds' : 'normal_seconds';
+            
+            if (isset($weeklyData[$kwKey])) {
+                $weeklyData[$kwKey][$typeKey] += $record->duration_seconds;
             }
+        }
+        
+        // 4. LAUFENDER DIENST (end_time IS NULL) hinzufügen
+        /** @var DutyRecord $openRecord */
+        $openRecord = $this->dutyRecords()
+            ->whereNull('end_time')
+            ->latest('start_time')
+            ->first();
 
-            switch ($log->log_type) {
-                case 'DUTY_START': 
-                    // Prüfe auf Überlappung (falls vergessen wurde auszuloggen, aber hier wird einfach überschrieben)
-                    $lastDutyStart = $log; 
-                    break;
-                case 'DUTY_END':
-                    if ($lastDutyStart) {
-                        // Wichtig: Prüfen, ob der Start-Log in der gleichen KW liegt
-                        // (Wenn Logs zwischen Wochen liegen, ist die Logik komplexer,
-                        // aber für eine einfache Addition pro KW ist das in Ordnung,
-                        // solange Start und Ende in der gleichen KW liegen oder nur kurze Übergänge existieren).
-                        // In deinem Fall gehen wir davon aus, dass Start und Ende in derselben Woche stattfinden
-                        // oder die Methode ist für Übergänge wie in deinem Code geplant (Gesamtzeit zwischen Start und Endlog).
-                        // Da die Schleife nach dem Ende des Dienstes fortfährt, wird die volle Dauer der End-KW gutgeschrieben.
-                        $weeklyData[$kw]['normal_seconds'] += $lastDutyStart->created_at->diffInSeconds($log->created_at);
-                        $lastDutyStart = null;
-                    }
-                    break;
-                case 'LEITSTELLE_START': $lastLeitstelleStart = $log; break;
-                case 'LEITSTELLE_END':
-                    if ($lastLeitstelleStart) {
-                        $weeklyData[$kw]['leitstelle_seconds'] += $lastLeitstelleStart->created_at->diffInSeconds($log->created_at);
-                        $lastLeitstelleStart = null;
-                    }
-                    break;
+        if ($openRecord && $openRecord->start_time->isSameWeek(Carbon::now())) {
+            $currentKwKey = Carbon::now()->format('Y') . "_KW" . Carbon::now()->format('W');
+            $duration = $openRecord->start_time->diffInSeconds(Carbon::now());
+            
+            if (isset($weeklyData[$currentKwKey])) {
+                $typeKey = ($openRecord->type === 'LEITSTELLE') ? 'leitstelle_seconds' : 'normal_seconds';
+                $weeklyData[$currentKwKey][$typeKey] += $duration;
             }
         }
 
-        // 3. Optional: Offene Dienste bis zur aktuellen Zeit addieren (für die aktuelle KW)
-        $currentKw = "KW" . Carbon::now()->format('W');
-        if ($lastDutyStart && $lastDutyStart->created_at->isSameWeek(Carbon::now())) {
-            $weeklyData[$currentKw]['normal_seconds'] += $lastDutyStart->created_at->diffInSeconds(Carbon::now());
-        }
-        if ($lastLeitstelleStart && $lastLeitstelleStart->created_at->isSameWeek(Carbon::now())) {
-            $weeklyData[$currentKw]['leitstelle_seconds'] += $lastLeitstelleStart->created_at->diffInSeconds(Carbon::now());
-        }
-
-        // 4. Sortieren (KW absteigend)
+        // 5. Sortieren (Y_KW absteigend)
         krsort($weeklyData);
         return $weeklyData;
     }
 
     // --- Relationen ---
-    public function activityLogs() { return $this->hasMany(ActivityLog::class); }
-    public function receivedEvaluations() { return $this->hasMany(Evaluation::class, 'user_id'); }
-    public function serviceRecords() { return $this->hasMany(ServiceRecord::class); }
-    public function reports() { return $this->hasMany(Report::class); }
-    public function vacations() { return $this->hasMany(Vacation::class); }
+    public function activityLogs(): HasMany { return $this->hasMany(ActivityLog::class); }
+    public function dutyRecords(): HasMany { return $this->hasMany(DutyRecord::class); } // NEUE RELATION
+    public function receivedEvaluations(): HasMany { return $this->hasMany(Evaluation::class, 'user_id'); }
+    public function serviceRecords(): HasMany { return $this->hasMany(ServiceRecord::class); }
+    public function reports(): HasMany { return $this->hasMany(Report::class); }
+    public function vacations(): HasMany { return $this->hasMany(Vacation::class); }
     public function attendedReports() { return $this->belongsToMany(Report::class, 'report_user'); }
     public function canImpersonate(): bool{ return $this->hasAnyRole('chief', 'Super-Admin'); }
     public function canBeImpersonated(): bool{ return !$this->hasAnyRole('chief', 'Super-Admin'); }
-    public function prescriptions(){ return $this->hasMany(Prescription::class); }
+    public function prescriptions(): HasMany{ return $this->hasMany(Prescription::class); }
     public function trainingModules(){ 
         return $this->belongsToMany(TrainingModule::class, 'training_module_user')
         ->using(\App\Models\Pivots\TrainingModuleUser::class)
@@ -262,8 +246,8 @@ class User extends Authenticatable
     }
 
     public function qualifications(){ return $this->trainingModules()->wherePivot('status', 'bestanden'); }
-    public function examAttempts(){ return $this->hasMany(ExamAttempt::class); }
-    public function pushSubscriptions() { return $this->hasMany(\App\Models\PushSubscription::class); }
+    public function examAttempts(): HasMany{ return $this->hasMany(ExamAttempt::class); }
+    public function pushSubscriptions(): HasMany { return $this->hasMany(\App\Models\PushSubscription::class); }
     
     // Falls du die Relation nutzen willst (optional, da wir oben oft den String nutzen)
     public function rankRelation(){ return $this->belongsTo(Rank::class, 'rank', 'name'); }
